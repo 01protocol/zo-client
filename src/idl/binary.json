@@ -1,0 +1,1121 @@
+{
+  "version": "0.0.0",
+  "name": "binary",
+  "instructions": [
+    {
+      "name": "initMasterLp",
+      "accounts": [
+        {
+          "name": "initializer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "masterLp",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "pythProductInfo",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pythPriceInfo",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "collateralMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "collateralVaultAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "lpMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "nonce",
+          "type": "u8"
+        },
+        {
+          "name": "maxLiquidityAlloc",
+          "type": "u64"
+        },
+        {
+          "name": "liquidityInjectionRatio",
+          "type": "u64"
+        },
+        {
+          "name": "tradingFee",
+          "type": "u64"
+        },
+        {
+          "name": "lpFee",
+          "type": "u64"
+        },
+        {
+          "name": "expirationCycle",
+          "type": "u64"
+        },
+        {
+          "name": "tradingClosingBuffer",
+          "type": "u64"
+        },
+        {
+          "name": "startingLiquidityInShares",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initBop",
+      "accounts": [
+        {
+          "name": "initializer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "masterLp",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "masterLpPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "masterLpTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "bop",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "latestBop",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pythProductInfo",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pythPriceInfo",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "withdrawLpHolding",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "withdrawCollateralHolding",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "nonce",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "initPosition",
+      "accounts": [
+        {
+          "name": "trader",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "marginAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "position",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "masterLp",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bop",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "nonce",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "placeTrade",
+      "accounts": [
+        {
+          "name": "trader",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "marginAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "masterLp",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bop",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "prevBop",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bopPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pythProductInfo",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pythPriceInfo",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "position",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "binarySignerPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "marginState",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "marginProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "memo",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "shareAmount",
+          "type": "u64"
+        },
+        {
+          "name": "isLong",
+          "type": "bool"
+        },
+        {
+          "name": "maxCost",
+          "type": "u64"
+        },
+        {
+          "name": "binarySignerNonce",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "resolve",
+      "accounts": [
+        {
+          "name": "resolver",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "binarySignerPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bop",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "bopPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pythProductInfo",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pythPriceInfo",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "masterLp",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "masterLpPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "masterLpTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "withdrawLpHolding",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "withdrawCollateralHolding",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "lpMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marginState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marginStateVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marginProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "binarySignerNonce",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "claimEarnings",
+      "accounts": [
+        {
+          "name": "trader",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "binarySignerPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "marginAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "masterLp",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "bop",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "position",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "traderTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marginState",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marginProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "binarySignerNonce",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "liquidate",
+      "accounts": [
+        {
+          "name": "liquidator",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "marginAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "position",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "posBop",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mlp",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pythProductInfo",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pythPriceInfo",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "marginProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "trader",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "binarySignerPda",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marginState",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "binarySignerNonce",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "stake",
+      "accounts": [
+        {
+          "name": "staker",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "stakerTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stakerLpAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "latestBop",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "masterLp",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "masterLpPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "lpMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "collateralVaultAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "declareWithdrawAtExpiry",
+      "accounts": [
+        {
+          "name": "staker",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "stakerLpAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "withdrawReceipt",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "withdrawLpHolding",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "bop",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "lpAmount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "withdrawAtExpiry",
+      "accounts": [
+        {
+          "name": "staker",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "stakerTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "withdrawCollateralHolding",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "withdrawReceipt",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "bop",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "bopPda",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "updateMlpSettings",
+      "accounts": [
+        {
+          "name": "manager",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "masterLp",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "maxLiquidityAlloc",
+          "type": {
+            "option": "u64"
+          }
+        },
+        {
+          "name": "liquidityInjectionRatio",
+          "type": {
+            "option": "u64"
+          }
+        },
+        {
+          "name": "startingLiquidityInShares",
+          "type": {
+            "option": "u64"
+          }
+        },
+        {
+          "name": "expirationCycle",
+          "type": {
+            "option": "u64"
+          }
+        },
+        {
+          "name": "tradingClosingBuffer",
+          "type": {
+            "option": "u64"
+          }
+        },
+        {
+          "name": "tradingFee",
+          "type": {
+            "option": "u64"
+          }
+        },
+        {
+          "name": "lpFee",
+          "type": {
+            "option": "u64"
+          }
+        },
+        {
+          "name": "pythProductInfo",
+          "type": {
+            "option": "publicKey"
+          }
+        },
+        {
+          "name": "pythPriceInfo",
+          "type": {
+            "option": "publicKey"
+          }
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "WithdrawReceipt",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "staker",
+            "type": "publicKey"
+          },
+          {
+            "name": "isClaimed",
+            "type": "bool"
+          },
+          {
+            "name": "bop",
+            "type": "publicKey"
+          },
+          {
+            "name": "amountLpToWithdraw",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Bop",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "isResolved",
+            "type": "bool"
+          },
+          {
+            "name": "nonce",
+            "type": "u8"
+          },
+          {
+            "name": "masterLp",
+            "type": "publicKey"
+          },
+          {
+            "name": "strikePrice",
+            "type": "u64"
+          },
+          {
+            "name": "finalPrice",
+            "type": "u64"
+          },
+          {
+            "name": "expiryTimestamp",
+            "type": "u64"
+          },
+          {
+            "name": "tradingClosingBuffer",
+            "type": "u64"
+          },
+          {
+            "name": "tvl",
+            "type": "u64"
+          },
+          {
+            "name": "vReserveShares",
+            "type": "u64"
+          },
+          {
+            "name": "vLongAmount",
+            "type": "u64"
+          },
+          {
+            "name": "vShortAmount",
+            "type": "u64"
+          },
+          {
+            "name": "initialLiquidityReceived",
+            "type": "u64"
+          },
+          {
+            "name": "availableLiquidityInShares",
+            "type": "u64"
+          },
+          {
+            "name": "liquidityInjectionRatio",
+            "type": "u64"
+          },
+          {
+            "name": "pythProductInfo",
+            "type": "publicKey"
+          },
+          {
+            "name": "pythPriceInfo",
+            "type": "publicKey"
+          },
+          {
+            "name": "lpLeftToWithdraw",
+            "type": "u64"
+          },
+          {
+            "name": "withdrawLpHolding",
+            "type": "publicKey"
+          },
+          {
+            "name": "withdrawCollateralHolding",
+            "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Position",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "nonce",
+            "type": "u8"
+          },
+          {
+            "name": "trader",
+            "type": "publicKey"
+          },
+          {
+            "name": "marginAccount",
+            "type": "publicKey"
+          },
+          {
+            "name": "masterLp",
+            "type": "publicKey"
+          },
+          {
+            "name": "latestBop",
+            "type": "publicKey"
+          },
+          {
+            "name": "isLong",
+            "type": "bool"
+          },
+          {
+            "name": "avgSharePrice",
+            "type": "u64"
+          },
+          {
+            "name": "shares",
+            "type": "u64"
+          },
+          {
+            "name": "initialDeposit",
+            "type": "u64"
+          },
+          {
+            "name": "borrowAmount",
+            "type": "u64"
+          },
+          {
+            "name": "unclaimedCollateral",
+            "type": "u64"
+          },
+          {
+            "name": "lastActivityTimestamp",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "MasterLP",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "manager",
+            "type": "publicKey"
+          },
+          {
+            "name": "nonce",
+            "type": "u8"
+          },
+          {
+            "name": "maxLiquidityAlloc",
+            "type": "u64"
+          },
+          {
+            "name": "startingLiquidityInShares",
+            "type": "u64"
+          },
+          {
+            "name": "liquidityInjectionRatio",
+            "type": "u64"
+          },
+          {
+            "name": "expirationCycle",
+            "type": "u64"
+          },
+          {
+            "name": "tradingClosingBuffer",
+            "type": "u64"
+          },
+          {
+            "name": "tradingFee",
+            "type": "u64"
+          },
+          {
+            "name": "lpFee",
+            "type": "u64"
+          },
+          {
+            "name": "latestBop",
+            "type": "publicKey"
+          },
+          {
+            "name": "pythProductInfo",
+            "type": "publicKey"
+          },
+          {
+            "name": "pythPriceInfo",
+            "type": "publicKey"
+          },
+          {
+            "name": "collateralMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "collateralVaultAccount",
+            "type": "publicKey"
+          },
+          {
+            "name": "lpMint",
+            "type": "publicKey"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 300,
+      "name": "Unauthorized",
+      "msg": "Signer is unauthorized"
+    },
+    {
+      "code": 301,
+      "name": "InvalidAccount",
+      "msg": "One or more accounts passed are invalid"
+    },
+    {
+      "code": 302,
+      "name": "InvalidData",
+      "msg": "One or more data passed are invalid"
+    },
+    {
+      "code": 303,
+      "name": "MathFailure",
+      "msg": "Math failure"
+    },
+    {
+      "code": 304,
+      "name": "ConversionFailure",
+      "msg": "Unit conversion failure"
+    },
+    {
+      "code": 305,
+      "name": "EarningsAlreadyClaimed",
+      "msg": "Earnings already claimed for this position"
+    },
+    {
+      "code": 306,
+      "name": "InvalidBop",
+      "msg": "Bop is invalid"
+    },
+    {
+      "code": 307,
+      "name": "BopExpired",
+      "msg": "Bop is already expired."
+    },
+    {
+      "code": 308,
+      "name": "WithdrawAlreadyClaimed",
+      "msg": "Withdraw was already claimed"
+    },
+    {
+      "code": 309,
+      "name": "WithdrawNotReady",
+      "msg": "Expiration time not reached yet, cannot withdraw"
+    },
+    {
+      "code": 310,
+      "name": "LatestBopStillOngoing",
+      "msg": "Cannot initialize a new bop while the last one is still on going"
+    },
+    {
+      "code": 311,
+      "name": "NothingToClaim",
+      "msg": "No available shares to claim"
+    },
+    {
+      "code": 312,
+      "name": "PriceOracleIssue",
+      "msg": "Price oracle status is not valid"
+    },
+    {
+      "code": 313,
+      "name": "SlippageExceeded",
+      "msg": "Slippage exceeded tolerance"
+    },
+    {
+      "code": 314,
+      "name": "Overclosing",
+      "msg": "You are trying to close more shares than you own"
+    },
+    {
+      "code": 315,
+      "name": "CalculatePFinal",
+      "msg": "Error when calculating p final"
+    },
+    {
+      "code": 316,
+      "name": "Timestamp",
+      "msg": "Error with timestamp calculations"
+    },
+    {
+      "code": 317,
+      "name": "Injection",
+      "msg": "Error when calculating injection amount"
+    },
+    {
+      "code": 318,
+      "name": "StupidityCheckpoint",
+      "msg": "Stupidity Checkpoint is preventing you from burning money"
+    },
+    {
+      "code": 319,
+      "name": "NotMarkedLiquidate",
+      "msg": "Account not marked for liquidation"
+    },
+    {
+      "code": 320,
+      "name": "InvalidPreviousBop",
+      "msg": "Previous Bop is Invalid"
+    },
+    {
+      "code": 321,
+      "name": "UnsettledPosition",
+      "msg": "Cannot place trade when previous position is unsettled"
+    },
+    {
+      "code": 322,
+      "name": "BelowInitialMarginRequirement",
+      "msg": "Below initial margin requirement"
+    },
+    {
+      "code": 323,
+      "name": "UnderLiquidation",
+      "msg": "Account is under liquidation, cannot do anything"
+    },
+    {
+      "code": 324,
+      "name": "InvalidMargin",
+      "msg": "Invalid margin account"
+    }
+  ],
+  "metadata": {
+    "address": "H7w7jLeKZEzkWpQwx4R3Nm46JxdsYNZ6NrQ7cSfMdE7k"
+  }
+}

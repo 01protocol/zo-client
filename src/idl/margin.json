@@ -1,0 +1,1075 @@
+{
+  "version": "0.0.0",
+  "name": "margin",
+  "instructions": [
+    {
+      "name": "initState",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "nonce",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "initMargin",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "nonce",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "deposit",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "withdraw",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "everMarket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "everOrder",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initEverlastingMarket",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "everlastingMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vAssetMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vQuoteMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vAssetVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vQuoteVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reqQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "marketNonce",
+          "type": "u8"
+        },
+        {
+          "name": "vaultSignerNonce",
+          "type": "u64"
+        },
+        {
+          "name": "vAssetLotSize",
+          "type": "u64"
+        },
+        {
+          "name": "vCollateralLotSize",
+          "type": "u64"
+        },
+        {
+          "name": "vCollateralDustThreshold",
+          "type": "u64"
+        },
+        {
+          "name": "strike",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "initEverlastingOrder",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "traderAssetAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "everOrder",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "everMarket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "nonce",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "newEverlastingOrder",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "traderAssetAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "everOrder",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "everMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reqQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vAssetMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vAssetVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vQuoteMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vQuoteVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "isLong",
+          "type": "bool"
+        },
+        {
+          "name": "limitPrice",
+          "type": "u64"
+        },
+        {
+          "name": "maxBaseQuantity",
+          "type": "u64"
+        },
+        {
+          "name": "maxQuoteQuantity",
+          "type": "u64"
+        },
+        {
+          "name": "orderType",
+          "type": {
+            "defined": "OrderType"
+          }
+        }
+      ]
+    },
+    {
+      "name": "cancelEverlastingOrder",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "order",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "everMarket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "orderId",
+          "type": "u128"
+        },
+        {
+          "name": "isLong",
+          "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "updateEverlastingFunding",
+      "accounts": [
+        {
+          "name": "everMarket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "pythProductInfo",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pythPriceInfo",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "markLiquidate",
+      "accounts": [
+        {
+          "name": "liquidator",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "forcePruneOrders",
+      "accounts": [
+        {
+          "name": "pruner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "order",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "everMarket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "limit",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "forceCloseEverlastingPosition",
+      "accounts": [
+        {
+          "name": "liquidator",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "traderAssetAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "order",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "everMarket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reqQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vAssetMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vAssetVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vQuoteMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vQuoteVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "endLiquidate",
+      "accounts": [
+        {
+          "name": "liquidator",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "everMarket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "State",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "nonce",
+            "type": "u8"
+          },
+          {
+            "name": "admin",
+            "type": "publicKey"
+          },
+          {
+            "name": "vault",
+            "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Margin",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "nonce",
+            "type": "u8"
+          },
+          {
+            "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "collateral",
+            "type": "u64"
+          },
+          {
+            "name": "isBeingLiquidated",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "EverlastingMarket",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "nonce",
+            "type": "u8"
+          },
+          {
+            "name": "admin",
+            "type": "publicKey"
+          },
+          {
+            "name": "vAssetLotSize",
+            "type": "u64"
+          },
+          {
+            "name": "vQuoteLotSize",
+            "type": "u64"
+          },
+          {
+            "name": "strike",
+            "type": "u64"
+          },
+          {
+            "name": "dexMarket",
+            "type": "publicKey"
+          },
+          {
+            "name": "bids",
+            "type": "publicKey"
+          },
+          {
+            "name": "asks",
+            "type": "publicKey"
+          },
+          {
+            "name": "reqQ",
+            "type": "publicKey"
+          },
+          {
+            "name": "eventQ",
+            "type": "publicKey"
+          },
+          {
+            "name": "vAssetMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "vAssetVault",
+            "type": "publicKey"
+          },
+          {
+            "name": "vQuoteMint",
+            "type": "publicKey"
+          },
+          {
+            "name": "vQuoteVault",
+            "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "EverlastingOrder",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "nonce",
+            "type": "u8"
+          },
+          {
+            "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "assetAccount",
+            "type": "publicKey"
+          },
+          {
+            "name": "everMarket",
+            "type": "publicKey"
+          },
+          {
+            "name": "openOrders",
+            "type": "publicKey"
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "OrderType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Limit"
+          },
+          {
+            "name": "ImmediateOrCancel"
+          },
+          {
+            "name": "PostOnly"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 300,
+      "name": "MathFailure",
+      "msg": "A math failure occured, likely due to overflow"
+    },
+    {
+      "code": 301,
+      "name": "InsufficientFunds",
+      "msg": "The amount you are withdrawing exceeds the available collateral"
+    },
+    {
+      "code": 302,
+      "name": "Unauthorized",
+      "msg": "Unauthorized to perform the operation"
+    },
+    {
+      "code": 303,
+      "name": "InvalidArguments",
+      "msg": "Arguments passed were invalid"
+    },
+    {
+      "code": 304,
+      "name": "InvalidMint",
+      "msg": "Invalid mint for transaction"
+    },
+    {
+      "code": 305,
+      "name": "InvalidOrderState",
+      "msg": "Everlasting account state is invalid"
+    },
+    {
+      "code": 306,
+      "name": "BelowMarginMaintenance",
+      "msg": "Going below Margin maintenance"
+    },
+    {
+      "code": 307,
+      "name": "AboveMarginMaintenance",
+      "msg": "Above Margin maintenance"
+    },
+    {
+      "code": 308,
+      "name": "PositionValueCalculationFailure",
+      "msg": "Couldn't calculate the position value"
+    },
+    {
+      "code": 309,
+      "name": "InvalidPythAccount",
+      "msg": "Pyth account is invalid"
+    },
+    {
+      "code": 310,
+      "name": "IncompleteLiquidation",
+      "msg": "Liquidation has not fully completed"
+    },
+    {
+      "code": 311,
+      "name": "NotMarkedLiquidate",
+      "msg": "The account has not been marked for liquidation"
+    },
+    {
+      "code": 312,
+      "name": "UnderLiquidation",
+      "msg": "Account is under liquidation"
+    },
+    {
+      "code": 313,
+      "name": "LoadDexMarketFailure",
+      "msg": "Failed to load dex market"
+    },
+    {
+      "code": 314,
+      "name": "LoadOpenOrdersFailure",
+      "msg": "Failed to load open orders"
+    },
+    {
+      "code": 315,
+      "name": "CalculateMarginRatioFailure",
+      "msg": "Failed to calculate margin ratio"
+    },
+    {
+      "code": 316,
+      "name": "BelowPositionInitialMarginFraction",
+      "msg": "Current margin fraction is below position initial margin fraction"
+    },
+    {
+      "code": 317,
+      "name": "NoPositionToClose",
+      "msg": "No active positions to close"
+    }
+  ]
+}
