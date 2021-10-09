@@ -17,7 +17,6 @@
     "@project-serum/serum": "^0.13.36",
     "@solana/spl-token": "^0.1.6",
     "@solana/web3.js": "^1.23.0",
-    "bignumber.js": "^9.0.1",
     "bn.js": "^5.2.0",
     "buffer-layout": "^1.2.2",
     "decimal.js": "^10.3.1",

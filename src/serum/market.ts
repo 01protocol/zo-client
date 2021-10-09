@@ -231,7 +231,6 @@ export class Market {
     ownerAddress: PublicKey,
     cacheDurationMs = 0,
   ): Promise<Order[]> {
-    
     const [bids, asks, openOrdersAccounts] = await Promise.all([
       this.loadBids(connection),
       this.loadAsks(connection),
@@ -249,13 +248,10 @@ export class Market {
     asks: Orderbook,
     openOrdersAccounts: OpenOrders[],
   ): Order[] {
-    
     return [...bids, ...asks].filter((order) =>
       openOrdersAccounts.some((openOrders) => {
-        
-          return order.openOrdersAddress.equals(openOrders.address)
-        }
-      ),
+        return order.openOrdersAddress.equals(openOrders.address);
+      }),
     );
   }
 
@@ -866,7 +862,7 @@ export class Orderbook {
     return this.items(false);
   }
 
-  * items(descending = false): Generator<Order> {
+  *items(descending = false): Generator<Order> {
     for (const {
       key,
       ownerSlot,

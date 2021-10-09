@@ -1,15 +1,5 @@
-import { Provider } from "@project-serum/anchor";
-import {
-  ConfirmOptions,
-  Connection,
-  PublicKey,
-  SystemProgram,
-  SYSVAR_RENT_PUBKEY,
-} from "@solana/web3.js";
-import BaseAccount, { Web3Account } from "./BaseAccount";
-import { ZERO_ONE_MARGIN_PROGRAM_ID } from "../config";
-
-const PDA_SEED = [Buffer.from("statev1")];
+import { PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
+import BaseAccount from "./BaseAccount";
 
 export interface Schema {
   nonce: number;
@@ -18,28 +8,30 @@ export interface Schema {
 }
 
 export default class State extends BaseAccount<Schema> {
-  private static _programAddress: [PublicKey, number] | undefined = undefined;
+  private static _prevPid: PublicKey | null = null;
+  private static _programAddress: [PublicKey, number] | null = null;
 
-  public static async programAddress() {
-    if (State._programAddress === undefined) {
-      State._programAddress = await PublicKey.findProgramAddress(
-        PDA_SEED,
-        ZERO_ONE_MARGIN_PROGRAM_ID,
+  public static async programAddress(): Promise<[PublicKey, number]> {
+    if (
+      this._prevPid == null ||
+      this._programAddress == null ||
+      !this.program.programId.equals(this._prevPid)
+    ) {
+      this._prevPid = this.program.programId;
+      this._programAddress = await PublicKey.findProgramAddress(
+        [Buffer.from("statev1")],
+        this._prevPid,
       );
     }
-    return State._programAddress;
+    return this._programAddress;
   }
 
-  static async init(vault: PublicKey, provider: Provider): Promise<State> {
-    const [key, nonce] = await State.programAddress();
-    const program = Web3Account.getProgram(
-      provider,
-      ZERO_ONE_MARGIN_PROGRAM_ID,
-    );
+  static async init(vault: PublicKey): Promise<State> {
+    const [key, nonce] = await this.programAddress();
 
-    await program.rpc.initState!(nonce, {
+    await this.program.rpc.initState!(nonce, {
       accounts: {
-        admin: provider.wallet.publicKey,
+        admin: this.provider.wallet.publicKey,
         state: key,
         vault,
         rent: SYSVAR_RENT_PUBKEY,
@@ -47,22 +39,13 @@ export default class State extends BaseAccount<Schema> {
       },
     });
 
-    return await State.load(provider.connection, provider.wallet);
+    return await State.load();
   }
 
-  static async load(
-    connection: Connection,
-    wallet: any,
-    opts?: ConfirmOptions,
-  ): Promise<State> {
-    const stateKey =  (await State.programAddress())[0];
-    const provider = Web3Account.getProvider(connection, wallet, opts);
-    const program = Web3Account.getProgram(
-      provider,
-      ZERO_ONE_MARGIN_PROGRAM_ID,
-    );
-    const client = program.account.state!;
-    const data = await client.fetch(stateKey);
-    return new this(stateKey, program, client, data as Schema);
+  static async load(): Promise<State> {
+    const accName = "state";
+    const stateKey = (await State.programAddress())[0];
+    const data = await this.program.account[accName]!.fetch(stateKey);
+    return new this(stateKey, "state", data as Schema);
   }
 }

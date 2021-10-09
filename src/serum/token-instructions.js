@@ -1,10 +1,10 @@
-import * as BufferLayout from 'buffer-layout';
+import * as BufferLayout from "buffer-layout";
 import {
   PublicKey,
   SYSVAR_RENT_PUBKEY,
   TransactionInstruction,
-} from '@solana/web3.js';
-import { publicKeyLayout } from './layout';
+} from "@solana/web3.js";
+import { publicKeyLayout } from "./layout";
 
 // NOTE: Update these if the position of arguments for the initializeAccount instruction changes
 export const INITIALIZE_ACCOUNT_ACCOUNT_INDEX = 0;
@@ -22,66 +22,66 @@ export const CLOSE_ACCOUNT_DESTINATION_INDEX = 1;
 export const CLOSE_ACCOUNT_OWNER_INDEX = 2;
 
 export const TOKEN_PROGRAM_ID = new PublicKey(
-  'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
 );
 
 export const WRAPPED_SOL_MINT = new PublicKey(
-  'So11111111111111111111111111111111111111112',
+  "So11111111111111111111111111111111111111112",
 );
 
 export const MSRM_MINT = new PublicKey(
-  'MSRMcoVyrFxnSgo5uXwone5SKcGhT1KEJMFEkMEWf9L',
+  "MSRMcoVyrFxnSgo5uXwone5SKcGhT1KEJMFEkMEWf9L",
 );
 export const MSRM_DECIMALS = 0;
 
 export const SRM_MINT = new PublicKey(
-  'SRMuApVNdxXokk5GT7XD5cUUgXMBCoAz2LHeuAoKWRt',
+  "SRMuApVNdxXokk5GT7XD5cUUgXMBCoAz2LHeuAoKWRt",
 );
 export const SRM_DECIMALS = 6;
 
-const LAYOUT = BufferLayout.union(BufferLayout.u8('instruction'));
+const LAYOUT = BufferLayout.union(BufferLayout.u8("instruction"));
 LAYOUT.addVariant(
   0,
   BufferLayout.struct([
-    BufferLayout.u8('decimals'),
-    publicKeyLayout('mintAuthority'),
-    BufferLayout.u8('freezeAuthorityOption'),
-    publicKeyLayout('freezeAuthority'),
+    BufferLayout.u8("decimals"),
+    publicKeyLayout("mintAuthority"),
+    BufferLayout.u8("freezeAuthorityOption"),
+    publicKeyLayout("freezeAuthority"),
   ]),
-  'initializeMint',
+  "initializeMint",
 );
-LAYOUT.addVariant(1, BufferLayout.struct([]), 'initializeAccount');
+LAYOUT.addVariant(1, BufferLayout.struct([]), "initializeAccount");
 LAYOUT.addVariant(
   3,
-  BufferLayout.struct([BufferLayout.nu64('amount')]),
-  'transfer',
+  BufferLayout.struct([BufferLayout.nu64("amount")]),
+  "transfer",
 );
 LAYOUT.addVariant(
   4,
-  BufferLayout.struct([BufferLayout.nu64('amount')]),
-  'approve',
+  BufferLayout.struct([BufferLayout.nu64("amount")]),
+  "approve",
 );
-LAYOUT.addVariant(5, BufferLayout.struct([]), 'revoke');
+LAYOUT.addVariant(5, BufferLayout.struct([]), "revoke");
 LAYOUT.addVariant(
   6,
   BufferLayout.struct([
-    BufferLayout.u8('authorityType'),
-    BufferLayout.u8('newAuthorityOption'),
-    publicKeyLayout('newAuthority'),
+    BufferLayout.u8("authorityType"),
+    BufferLayout.u8("newAuthorityOption"),
+    publicKeyLayout("newAuthority"),
   ]),
-  'setAuthority',
+  "setAuthority",
 );
 LAYOUT.addVariant(
   7,
-  BufferLayout.struct([BufferLayout.nu64('amount')]),
-  'mintTo',
+  BufferLayout.struct([BufferLayout.nu64("amount")]),
+  "mintTo",
 );
 LAYOUT.addVariant(
   8,
-  BufferLayout.struct([BufferLayout.nu64('amount')]),
-  'burn',
+  BufferLayout.struct([BufferLayout.nu64("amount")]),
+  "burn",
 );
-LAYOUT.addVariant(9, BufferLayout.struct([]), 'closeAccount');
+LAYOUT.addVariant(9, BufferLayout.struct([]), "closeAccount");
 
 const instructionMaxSpan = Math.max(
   ...Object.values(LAYOUT.registry).map((r) => r.span),

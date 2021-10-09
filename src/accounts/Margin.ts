@@ -1,22 +1,11 @@
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import {
-  ConfirmOptions,
-  Connection,
-  PublicKey,
-  SystemProgram,
-  SYSVAR_RENT_PUBKEY,
-} from "@solana/web3.js";
-import { BN, Program, Provider } from "@project-serum/anchor";
+import { PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
+import { BN } from "@project-serum/anchor";
 import BaseAccount from "./BaseAccount";
-import TokenAccountBalance from "./TokenAccountBalance";
+import TokenAccountBalance from "../utils/TokenAccountBalance";
 import State from "./State";
-import {
-  DEX_PROGRAM_ID,
-  IDL_MARGIN,
-  SKIP_PREFLIGHT,
-  ZERO_ONE_MARGIN_PROGRAM_ID,
-} from "../config";
-import { sleep } from "../utils/sleep";
+import { DEX_PROGRAM_ID } from "../config";
+import { sleep } from "../utils";
 import EverlastingMarket from "./EverlastingMarket";
 import EverlastingOrder from "./EverlastingOrder";
 import * as anchor from "@project-serum/anchor";
@@ -33,73 +22,38 @@ export interface Schema {
 }
 
 export default class Margin extends BaseAccount<Schema> {
-  static async init(
-    connection: Connection,
-    wallet: any,
-    opts: ConfirmOptions = { commitment: "finalized" },
-    pid?: PublicKey,
-  ): Promise<Margin> {
-    const provider = new Provider(connection, wallet, {
-      skipPreflight: SKIP_PREFLIGHT,
-      ...opts,
-    });
-    const program = new Program(
-      IDL_MARGIN,
-      pid ?? ZERO_ONE_MARGIN_PROGRAM_ID,
-      provider,
-    );
-
+  static async init(): Promise<Margin> {
     const [key, nonce] = await PublicKey.findProgramAddress(
-      [
-        program.provider.wallet.publicKey.toBuffer(),
-        anchor.utils.bytes.utf8.encode("marginv1"),
-      ],
-      program.programId,
+      [this.wallet.publicKey.toBuffer(), Buffer.from("marginv1")],
+      this.program.programId,
     );
 
-    await program.rpc.initMargin!(nonce, {
-      accounts: {
-        authority: program.provider.wallet.publicKey,
-        margin: key,
-        rent: SYSVAR_RENT_PUBKEY,
-        systemProgram: SystemProgram.programId,
-      },
-    });
-    await sleep(2500);
-    return await Margin.load(
-      program.provider.wallet.publicKey,
-      connection,
-      wallet,
-      opts,
-      pid,
+    this.connection.confirmTransaction(
+      await this.program.rpc.initMargin!(nonce, {
+        accounts: {
+          authority: this.program.provider.wallet.publicKey,
+          margin: key,
+          rent: SYSVAR_RENT_PUBKEY,
+          systemProgram: SystemProgram.programId,
+        },
+      }),
     );
+    return await Margin.load(this.program.provider.wallet.publicKey);
   }
 
-  static async load(
-    traderKey: PublicKey,
-    connection: Connection,
-    wallet: any,
-    opts?: ConfirmOptions,
-    pid?: PublicKey,
-  ): Promise<Margin> {
-    const provider = new Provider(connection, wallet, {
-      skipPreflight: SKIP_PREFLIGHT,
-      ...opts,
-    });
-    const program = new Program(
-      IDL_MARGIN,
-      pid ?? ZERO_ONE_MARGIN_PROGRAM_ID,
-      provider,
-    );
+  static async load(traderKey?: PublicKey): Promise<Margin> {
+    traderKey = traderKey ?? this.wallet.publicKey;
 
+    const clientName = "margin";
     const [key, _nonce] = await PublicKey.findProgramAddress(
       [traderKey.toBuffer(), anchor.utils.bytes.utf8.encode("marginv1")],
-      program.programId,
+      this.program.programId,
     );
 
-    const client = program.account.margin!;
-    let data = Margin.processData(await client.fetch(key));
-    return new this(key, program, client, data as Schema);
+    let data = this.processData(
+      await this.program.account[clientName]!.fetch(key),
+    );
+    return new this(key, clientName, data as Schema);
   }
 
   private static processData(data: any): Schema {
@@ -139,7 +93,6 @@ export default class Margin extends BaseAccount<Schema> {
     everMarket: EverlastingMarket,
     everOrder: EverlastingOrder,
   ): Promise<void> {
-
     await this.program.rpc.withdraw!(amount, {
       accounts: {
         authority: this.wallet.publicKey,
@@ -152,9 +105,9 @@ export default class Margin extends BaseAccount<Schema> {
         everOrder: everOrder.pubKey,
         openOrders: everOrder.data.openOrders,
         dexMarket: everMarket.data.dexMarket,
-        marketBids: everMarket.dexMarketAcc.bidsAddress,
-        marketAsks: everMarket.dexMarketAcc.asksAddress,
-        dexProgram: DEX_PROGRAM_ID
+        marketBids: everMarket.dexMarket.bidsAddress,
+        marketAsks: everMarket.dexMarket.asksAddress,
+        dexProgram: DEX_PROGRAM_ID,
       },
     });
 

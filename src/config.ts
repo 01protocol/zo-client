@@ -82,16 +82,16 @@ export const USDC_MINT_AUTH_ADDRESS = new PublicKey(
 );
 
 export const EVERLASTING_MARKET = new PublicKey(
-  "7htE41GPCgnom2Q1ChT4qh7wcpFWq94RfeUexBmsHjXw"
-)
+  "7htE41GPCgnom2Q1ChT4qh7wcpFWq94RfeUexBmsHjXw",
+);
 
 export const DEX_MARKET = new PublicKey(
-  "CiakMn8A53zQQPCauHUH2bGiWnTSNymGBiwzTqGwfAQt"
-)
+  "CiakMn8A53zQQPCauHUH2bGiWnTSNymGBiwzTqGwfAQt",
+);
 
-export const LOT_SIZE = 1000
+export const LOT_SIZE = 1000;
 
-export const FEE = 0.2
+export const FEE = 0.2;
 
 export const PC_STARTING_BUFFER = 100_000_000;
 

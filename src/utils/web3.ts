@@ -66,7 +66,7 @@ export async function getSignaturesForAddress(
   return resp.result;
 }
 
-export default async function getSignaturesForAddressRecent(
+export async function getSignaturesForAddressRecent(
   connection: Connection,
   address: PublicKey,
 ) {

@@ -1,2 +1,2 @@
-export * as lmsr from "./lmsr";
-export * as vamm from "./vamm";
+export * from "./lmsr";
+export * from "./vamm";

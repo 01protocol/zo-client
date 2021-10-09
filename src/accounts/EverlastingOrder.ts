@@ -6,7 +6,7 @@ import {
   SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { AccountClient, BN, Program } from "@project-serum/anchor";
+import { BN } from "@project-serum/anchor";
 import { createTokenAccount } from "../utils";
 import BaseAccount from "./BaseAccount";
 import EverlastingMarket from "./EverlastingMarket";
@@ -30,37 +30,32 @@ export enum DexOrderType {
 export default class EverlastingOrder extends BaseAccount<Schema> {
   private constructor(
     pubKey: PublicKey,
-    program: Program,
-    accountClient: AccountClient,
+    accountClientName: string,
     data: Readonly<Schema>,
-    public readonly openOrdersAcc: OpenOrders,
+    public readonly openOrders: OpenOrders,
   ) {
-    super(pubKey, program, accountClient, data);
+    super(pubKey, accountClientName, data);
   }
 
   static async init({
-    program,
     margin,
     market,
   }: Readonly<{
-    program: Program;
     margin: Margin;
     market: EverlastingMarket;
   }>): Promise<EverlastingOrder> {
-    const conn = program.provider.connection;
-    const wallet = program.provider.wallet;
-    const { key, nonce } = await this.getKeyAndNonce(wallet, program);
+    const { key, nonce } = await this.getKeyAndNonce();
 
     const ooKey = Keypair.generate();
     const traderAssetAccount = await createTokenAccount(
-      program.provider,
+      this.provider,
       market.data.vAssetMint,
       margin.pubKey,
     );
 
-    await program.rpc.initEverlastingOrder!(nonce, {
+    await this.program.rpc.initEverlastingOrder!(nonce, {
       accounts: {
-        authority: wallet.publicKey,
+        authority: this.wallet.publicKey,
         margin: margin.pubKey,
         traderAssetAccount: traderAssetAccount,
         everOrder: key,
@@ -73,9 +68,9 @@ export default class EverlastingOrder extends BaseAccount<Schema> {
       },
       instructions: [
         SystemProgram.createAccount({
-          fromPubkey: wallet.publicKey,
+          fromPubkey: this.wallet.publicKey,
           newAccountPubkey: ooKey.publicKey,
-          lamports: await conn.getMinimumBalanceForRentExemption(
+          lamports: await this.connection.getMinimumBalanceForRentExemption(
             12 + 8 * 409 + 16,
           ),
           space: 12 + 8 * 409 + 16,
@@ -85,19 +80,18 @@ export default class EverlastingOrder extends BaseAccount<Schema> {
       signers: [ooKey],
     });
 
-    return await this.load(key, program);
+    return await this.load(key);
   }
 
-  private static async getKeyAndNonce(wallet: any, program: Program) {
+  private static async getKeyAndNonce() {
     const [key, nonce] = await PublicKey.findProgramAddress(
-      [wallet.publicKey.toBuffer(), Buffer.from("orderv1")],
-      program.programId,
+      [this.wallet.publicKey.toBuffer(), Buffer.from("orderv1")],
+      this.program.programId,
     );
     return { key, nonce };
   }
 
   async newOrder({
-    program,
     margin,
     market,
     isLong,
@@ -106,7 +100,6 @@ export default class EverlastingOrder extends BaseAccount<Schema> {
     maxQuoteQty,
     orderType,
   }: Readonly<{
-    program: Program;
     margin: Margin;
     market: EverlastingMarket;
     isLong: boolean;
@@ -115,8 +108,6 @@ export default class EverlastingOrder extends BaseAccount<Schema> {
     maxQuoteQty: BN; // in decimals
     orderType: DexOrderType;
   }>): Promise<void> {
-    const wallet = program.provider.wallet;
-
     let type: any;
     switch (orderType) {
       case DexOrderType.Limit:
@@ -138,7 +129,7 @@ export default class EverlastingOrder extends BaseAccount<Schema> {
         throw new Error("Unknown order type: " + orderType);
     }
 
-    await program.rpc.newEverlastingOrder!(
+    await this.program.rpc.newEverlastingOrder!(
       isLong,
       limitPrice,
       maxBaseQty,
@@ -146,7 +137,7 @@ export default class EverlastingOrder extends BaseAccount<Schema> {
       type,
       {
         accounts: {
-          authority: wallet.publicKey,
+          authority: this.wallet.publicKey,
           margin: margin.pubKey,
           traderAssetAccount: this.data.assetAccount,
           everOrder: this.pubKey,
@@ -170,23 +161,19 @@ export default class EverlastingOrder extends BaseAccount<Schema> {
   }
 
   async cancelOrder({
-    program,
     margin,
     market,
     orderId,
     isLong,
   }: Readonly<{
-    program: Program;
     margin: Margin;
     market: EverlastingMarket;
     orderId: BN;
     isLong: boolean;
   }>): Promise<void> {
-    const wallet = program.provider.wallet;
-
-    await program.rpc.cancelEverlastingOrder!(orderId, isLong, {
+    await this.program.rpc.cancelEverlastingOrder!(orderId, isLong, {
       accounts: {
-        authority: wallet.publicKey,
+        authority: this.wallet.publicKey,
         margin: margin.pubKey,
         order: this.pubKey,
         openOrders: this.data.openOrders,
@@ -202,40 +189,35 @@ export default class EverlastingOrder extends BaseAccount<Schema> {
 
   // Returns all orders currently on the book
   static async getActiveOrders(
-    program: Program,
     margin: Margin,
-    dexMarketAcc: Market,
+    dexMarket: Market,
   ): Promise<Order[]> {
-    return await dexMarketAcc.loadOrdersForOwner(
-      program.provider.connection,
+    return await dexMarket.loadOrdersForOwner(
+      this.provider.connection,
       margin.pubKey,
     );
   }
 
-  static async load(
-    pubkey: PublicKey,
-    program: Program,
-  ): Promise<EverlastingOrder> {
-    const client = program.account.everlastingOrder!;
-    const data = (await client.fetch(pubkey)) as Schema;
+  static async load(pubkey: PublicKey): Promise<EverlastingOrder> {
+    const clientName = "everlastingOrder";
+    const data = (await this.program.account[clientName]!.fetch(
+      pubkey,
+    )) as Schema;
     return new this(
       pubkey,
-      program,
-      client,
+      clientName,
       data,
       await OpenOrders.load(
-        program.provider.connection,
+        this.program.provider.connection,
         data.openOrders,
         DEX_PROGRAM_ID,
       ),
     );
   }
 
-  static async loadFromWallet(program: Program): Promise<EverlastingOrder> {
-    const wallet = program.provider.wallet;
-    const { key } = await this.getKeyAndNonce(wallet, program);
-
-    return await this.load(key, program);
+  static async loadFromWallet(): Promise<EverlastingOrder> {
+    const { key } = await this.getKeyAndNonce();
+    return await this.load(key);
   }
 
   static async forceCancel({
@@ -243,17 +225,15 @@ export default class EverlastingOrder extends BaseAccount<Schema> {
     everOrder,
     market,
     limit,
-    program,
   }: Readonly<{
     marginKey: PublicKey;
     everOrder: EverlastingOrder;
     market: EverlastingMarket;
     limit: number;
-    program: Program;
   }>) {
-    await program.rpc.forcePruneOrders!(limit, {
+    await this.program.rpc.forcePruneOrders!(limit, {
       accounts: {
-        pruner: program.provider.wallet.publicKey,
+        pruner: this.wallet.publicKey,
         margin: marginKey,
         order: everOrder.pubKey,
         everMarket: market.pubKey,
@@ -272,16 +252,14 @@ export default class EverlastingOrder extends BaseAccount<Schema> {
     marginKey,
     everOrder,
     market,
-    program,
   }: Readonly<{
     marginKey: PublicKey;
     everOrder: EverlastingOrder;
     market: EverlastingMarket;
-    program: Program;
   }>) {
-    const tx = await program.rpc.forceCloseEverlastingPosition!({
+    const tx = await this.program.rpc.forceCloseEverlastingPosition!({
       accounts: {
-        liquidator: program.provider.wallet.publicKey,
+        liquidator: this.wallet.publicKey,
         margin: marginKey,
         traderAssetAccount: everOrder.data.assetAccount,
         order: everOrder.pubKey,

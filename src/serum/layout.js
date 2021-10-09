@@ -1,14 +1,14 @@
 // @ts-nocheck
 
-import { bits, Blob, Layout, u32, UInt } from 'buffer-layout';
-import { PublicKey } from '@solana/web3.js';
-import BN from 'bn.js';
+import { bits, Blob, Layout, u32, UInt } from "buffer-layout";
+import { PublicKey } from "@solana/web3.js";
+import BN from "bn.js";
 
 class Zeros extends Blob {
   decode(b, offset) {
     const slice = super.decode(b, offset);
     if (!slice.every((v) => v === 0)) {
-      throw new Error('nonzero padding bytes');
+      throw new Error("nonzero padding bytes");
     }
     return slice;
   }
@@ -38,11 +38,11 @@ export function publicKeyLayout(property) {
 
 class BNLayout extends Blob {
   decode(b, offset) {
-    return new BN(super.decode(b, offset), 10, 'le');
+    return new BN(super.decode(b, offset), 10, "le");
   }
 
   encode(src, b, offset) {
-    return super.encode(src.toArrayLike(Buffer, 'le', this.span), b, offset);
+    return super.encode(src.toArrayLike(Buffer, "le", this.span), b, offset);
   }
 }
 
@@ -135,7 +135,7 @@ class EnumLayout extends UInt {
     if (this.values[src] !== undefined) {
       return super.encode(this.values[src], b, offset);
     }
-    throw new Error('Invalid ' + this.property);
+    throw new Error("Invalid " + this.property);
   }
 
   decode(b, offset) {
@@ -146,7 +146,7 @@ class EnumLayout extends UInt {
     if (entry) {
       return entry[0];
     }
-    throw new Error('Invalid ' + this.property);
+    throw new Error("Invalid " + this.property);
   }
 }
 
@@ -167,15 +167,15 @@ export function selfTradeBehaviorLayout(property) {
 }
 
 const ACCOUNT_FLAGS_LAYOUT = new WideBits();
-ACCOUNT_FLAGS_LAYOUT.addBoolean('initialized');
-ACCOUNT_FLAGS_LAYOUT.addBoolean('market');
-ACCOUNT_FLAGS_LAYOUT.addBoolean('openOrders');
-ACCOUNT_FLAGS_LAYOUT.addBoolean('requestQueue');
-ACCOUNT_FLAGS_LAYOUT.addBoolean('eventQueue');
-ACCOUNT_FLAGS_LAYOUT.addBoolean('bids');
-ACCOUNT_FLAGS_LAYOUT.addBoolean('asks');
+ACCOUNT_FLAGS_LAYOUT.addBoolean("initialized");
+ACCOUNT_FLAGS_LAYOUT.addBoolean("market");
+ACCOUNT_FLAGS_LAYOUT.addBoolean("openOrders");
+ACCOUNT_FLAGS_LAYOUT.addBoolean("requestQueue");
+ACCOUNT_FLAGS_LAYOUT.addBoolean("eventQueue");
+ACCOUNT_FLAGS_LAYOUT.addBoolean("bids");
+ACCOUNT_FLAGS_LAYOUT.addBoolean("asks");
 
-export function accountFlagsLayout(property = 'accountFlags') {
+export function accountFlagsLayout(property = "accountFlags") {
   return ACCOUNT_FLAGS_LAYOUT.replicate(property);
 }
 

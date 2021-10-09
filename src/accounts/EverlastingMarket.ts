@@ -6,12 +6,13 @@ import {
   SYSVAR_RENT_PUBKEY,
   Transaction,
 } from "@solana/web3.js";
-import { AccountClient, BN, Program } from "@project-serum/anchor";
+import { BN } from "@project-serum/anchor";
 import BaseAccount from "./BaseAccount";
 import { getMintInfo, createMint, createTokenAccount } from "../utils";
+import { EVER_MARKET_ID } from "../config";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { Market } from "../serum/market";
-import TokenAccountBalance from "./TokenAccountBalance";
+import TokenAccountBalance from "../utils/TokenAccountBalance";
 
 export interface Schema {
   nonce: number;
@@ -33,27 +34,23 @@ export interface Schema {
 export default class EverlastingMarket extends BaseAccount<Schema> {
   private constructor(
     pubKey: PublicKey,
-    program: Program,
-    accountClient: AccountClient,
+    clientName: string,
     data: Readonly<Schema>,
     public readonly vAssetDecimals: number,
     public readonly vQuoteDecimals: number,
-    public readonly dexMarketAcc: Market,
+    public readonly dexMarket: Market,
   ) {
-    super(pubKey, program, accountClient, data);
+    super(pubKey, clientName, data);
   }
 
-  static async getEverlastingMarketPda(
-    program: Program,
-  ): Promise<[PublicKey, number]> {
+  static async getEverlastingMarketPda(): Promise<[PublicKey, number]> {
     return await PublicKey.findProgramAddress(
       [Buffer.from("everlastingv1")],
-      program.programId,
+      this.program.programId,
     );
   }
 
   static async init({
-    program,
     vAssetDecimals,
     vQuoteDecimals,
     vAssetLotSize,
@@ -61,7 +58,6 @@ export default class EverlastingMarket extends BaseAccount<Schema> {
     vQuoteDustThreshold,
     strike,
   }: Readonly<{
-    program: Program;
     vAssetDecimals: number;
     vQuoteDecimals: number;
     vAssetLotSize: BN;
@@ -69,9 +65,9 @@ export default class EverlastingMarket extends BaseAccount<Schema> {
     vQuoteDustThreshold: BN;
     strike: BN;
   }>): Promise<EverlastingMarket> {
-    const conn = program.provider.connection;
-    const provider = program.provider;
-    const wallet = program.provider.wallet;
+    const conn = this.program.provider.connection;
+    const provider = this.program.provider;
+    const wallet = this.program.provider.wallet;
 
     const dexMarket = Keypair.generate();
     const asks = Keypair.generate();
@@ -81,7 +77,7 @@ export default class EverlastingMarket extends BaseAccount<Schema> {
 
     const [everlastingMarketKey, nonce] = await PublicKey.findProgramAddress(
       [Buffer.from("everlastingv1")],
-      program.programId,
+      this.program.programId,
     );
 
     const [vaultOwner, vaultSignerNonce] = (await (async function () {
@@ -165,7 +161,7 @@ export default class EverlastingMarket extends BaseAccount<Schema> {
       await provider.send(tx, [dexMarket, reqQ, eventQ, bids, asks]),
     );
 
-    const tx2 = await program.rpc.initEverlastingMarket!(
+    await this.program.rpc.initEverlastingMarket!(
       nonce,
       vaultSignerNonce,
       vAssetLotSize,
@@ -192,29 +188,23 @@ export default class EverlastingMarket extends BaseAccount<Schema> {
         },
       },
     );
-    return await this.load(everlastingMarketKey, program);
+    return await this.load(everlastingMarketKey);
   }
 
   static async load(
-    pubkey: PublicKey,
-    program: Program,
+    pubkey: PublicKey = EVER_MARKET_ID,
   ): Promise<EverlastingMarket> {
-    const client = program.account.everlastingMarket!;
+    const clientName = "everlastingMarket";
+    const client = this.program.account[clientName]!;
     const data = (await client.fetch(pubkey)) as Schema;
 
     return new this(
       pubkey,
-      program,
-      client,
+      clientName,
       data,
-      (await getMintInfo(program.provider, data.vAssetMint)).decimals,
-      (await getMintInfo(program.provider, data.vQuoteMint)).decimals,
-      await Market.load(
-        program.provider.connection,
-        data.dexMarket,
-        {},
-        DEX_PROGRAM_ID,
-      ),
+      (await getMintInfo(this.provider, data.vAssetMint)).decimals,
+      (await getMintInfo(this.provider, data.vQuoteMint)).decimals,
+      await Market.load(this.connection, data.dexMarket, {}, DEX_PROGRAM_ID),
     );
   }
 
@@ -254,9 +244,9 @@ export default class EverlastingMarket extends BaseAccount<Schema> {
     const tx = await this.program.rpc.updateEverlastingFunding!({
       accounts: {
         everMarket: this.pubKey,
-        dexMarket: this.dexMarketAcc.address,
-        marketBids: this.dexMarketAcc.bidsAddress,
-        marketAsks: this.dexMarketAcc.asksAddress,
+        dexMarket: this.dexMarket.address,
+        marketBids: this.dexMarket.bidsAddress,
+        marketAsks: this.dexMarket.asksAddress,
         pythProductInfo,
         pythPriceInfo,
         dexProgram: DEX_PROGRAM_ID,
