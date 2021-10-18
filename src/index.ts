@@ -14,3 +14,4 @@ export {
 } from "./accounts/EverlastingOrder";
 
 export { Market, Orderbook } from "./serum/market";
+export { EVENT_QUEUE_HEADER, decodeEventsSince } from "./serum/queue";

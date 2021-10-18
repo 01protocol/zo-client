@@ -40,7 +40,7 @@ const REQUEST = struct([
   u64("clientOrderId"),
 ]);
 
-const EVENT_QUEUE_HEADER = struct([
+export const EVENT_QUEUE_HEADER = struct([
   blob(5),
 
   accountFlagsLayout("accountFlags"),
