@@ -1,12 +1,21 @@
 import { ConfirmOptions, Connection, PublicKey } from "@solana/web3.js";
-import { AccountClient, Provider } from "@project-serum/anchor";
-import { Wallet } from "../types";
+import {
+  Program,
+  AccountClient,
+  Provider,
+  IdlAccounts,
+  IdlTypes,
+} from "@project-serum/anchor";
+import { Wallet, Zo } from "../types";
 import { setProvider, getProgram } from "../global";
 
-export default abstract class BaseAccount<T> {
+export default abstract class BaseAccount<
+  T,
+  K extends keyof Program<Zo>["account"]
+> {
   protected constructor(
-    public readonly pubKey: PublicKey,
-    protected readonly accountClientName: string,
+    public readonly pubkey: PublicKey,
+    protected readonly accountClientName: K,
     public data: Readonly<T>,
   ) {}
 
@@ -43,21 +52,10 @@ export default abstract class BaseAccount<T> {
   }
 
   get accountClient(): AccountClient {
-    return this.program[this.accountClientName]!;
+    return this.program.account[this.accountClientName]!;
   }
 
   async refresh(): Promise<void> {
-    this.data = (await this.accountClient.fetch(this.pubKey)) as T;
-  }
-
-  // NOTE: DEPRECATED
-  async reloadProgram(conn?: Connection, opts?: ConfirmOptions): Promise<void> {
-    console.warn("Use of deprecated BaseAccount.reloadProgram");
-    setProvider(
-      new Provider(conn ?? this.connection, this.wallet, {
-        skipPreflight: true,
-        ...opts,
-      }),
-    );
+    this.data = (await this.accountClient.fetch(this.pubkey)) as T;
   }
 }

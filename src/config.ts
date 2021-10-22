@@ -1,14 +1,25 @@
 import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { Idl } from "@project-serum/anchor";
 
-// == IDLs ==
-import IDL_MARGIN_ from "./idl/margin.json";
+// == ACCOUNT SIZES ==
+export const STATE_ACCOUNT_SIZE = 8 + 22123;
+export const CACHE_ACCOUNT_SIZE = 8 + 96100;
+export const CONTROL_ACCOUNT_SIZE = 8 + 8032;
 
-export const IDL_MARGIN = IDL_MARGIN_ as Idl;
+export const DEX_MARKET_ACCOUNT_SIZE = 12 + 1464;
+export const REQ_Q_ACCOUNT_SIZE = 12 + 5120;
+export const EVENT_Q_ACCOUNT_SIZE = 12 + 262144;
+export const BIDS_ACCOUNT_SIZE = 12 + 65536;
+export const ASKS_ACCOUNT_SIZE = 12 + 65536;
+
+
+// == IDLs ==
+import ZERO_ONE_IDL_ from "./idl/zo.json";
+export const ZERO_ONE_IDL = ZERO_ONE_IDL_ as Idl;
 
 // == 01 PROGRAM IDS ==
-export const ZERO_ONE_MARGIN_PROGRAM_ID = new PublicKey(
-  "EhYhuJ1r778o5WdCYiKtedBap9FFVdmdAbzrsuCKtwqB",
+export const ZERO_ONE_PROGRAM_ID = new PublicKey(
+  "AjGXinumkbrDGkAPmSEPGEQ8jC89ExXArbF6uEioEZS5",
 );
 export const DEX_PROGRAM_ID = new PublicKey(
   "249z8gAKdX41bjfz7SFUxGmbAqDtSLU2tsSYzb7MkUCN",
@@ -39,12 +50,6 @@ export const MEMO_PROGRAM_ID = new PublicKey(
 );
 export const RENT_PROGRAM_ID = new PublicKey(
   "SysvarRent111111111111111111111111111111111",
-);
-export const CLOCK_PROGRAM_ID = new PublicKey(
-  "SysvarC1ock11111111111111111111111111111111",
-);
-export const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey(
-  "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
 );
 
 // == PYTH PROGRAM IDS ==

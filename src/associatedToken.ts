@@ -2,12 +2,13 @@ import {
   PublicKey,
   Transaction,
   TransactionInstruction,
+  SystemProgram,
 } from "@solana/web3.js";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { RENT_PROGRAM_ID, SYSTEM_PROGRAM_ID } from "./config";
+import { RENT_PROGRAM_ID } from "./config";
 
 export namespace AssociatedToken {
   export async function findAddress(
@@ -58,7 +59,7 @@ export namespace AssociatedToken {
         isWritable: false,
       },
       {
-        pubkey: SYSTEM_PROGRAM_ID,
+        pubkey: SystemProgram.programId,
         isSigner: false,
         isWritable: false,
       },

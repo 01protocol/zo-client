@@ -13,12 +13,17 @@ import {
   u64,
 } from "@solana/spl-token";
 import { Provider } from "@project-serum/anchor";
+import BN from "bn.js";
+import Decimal from "decimal.js";
 
 export * from "./web3";
-export { default as TokenAccountBalance } from "./TokenAccountBalance";
 
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export function loadWrappedI80F48({ data }: { data: BN }): Decimal {
+  return new Decimal(`0b${data.toString(2)}p-48`);
 }
 
 export async function getMintInfo(
