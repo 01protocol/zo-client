@@ -1,116 +1,238 @@
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
+import {
+  PublicKey,
+  SystemProgram,
+  Keypair,
+  SYSVAR_RENT_PUBKEY,
+} from "@solana/web3.js";
 import { BN } from "@project-serum/anchor";
 import BaseAccount from "./BaseAccount";
-import TokenAccountBalance from "../utils/TokenAccountBalance";
 import State from "./State";
-import { DEX_PROGRAM_ID } from "../config";
-import { sleep } from "../utils";
-import EverlastingMarket from "./EverlastingMarket";
-import EverlastingOrder from "./EverlastingOrder";
-import * as anchor from "@project-serum/anchor";
+import Control from "./Control";
+import { MarginSchema as Schema, OrderType } from "../types";
+import { DEX_PROGRAM_ID, CONTROL_ACCOUNT_SIZE } from "../config";
 
-// TODO: Move into config, make parameter, define constants
-// for several token types.
-const NUM_DECIMALS = 6;
+export default class Margin extends BaseAccount<Schema, "margin"> {
+  private constructor(
+    pubkey: PublicKey,
+    accClient: "margin",
+    data: Schema,
+    public readonly control: Control,
+    public readonly state: State,
+  ) {
+    super(pubkey, accClient, data);
+  }
 
-export interface Schema {
-  nonce: number;
-  authority: PublicKey;
-  collateral: TokenAccountBalance;
-  isBeingLiquidated: boolean;
-}
+  private static fetch(k: PublicKey): Promise<Schema> {
+    return this.program.account["margin"].fetch(k);
+  }
 
-export default class Margin extends BaseAccount<Schema> {
-  static async init(): Promise<Margin> {
-    const [key, nonce] = await PublicKey.findProgramAddress(
-      [this.wallet.publicKey.toBuffer(), Buffer.from("marginv1")],
-      this.program.programId,
-    );
+  static async load(st: State): Promise<Margin> {
+    const [key, _nonce] = await this.getPda(st, this.wallet.publicKey);
+    const clientName = "margin";
+    let data = await this.fetch(key);
+    let control = await Control.load(data.control);
+    return new this(key, clientName, data, control, st);
+  }
 
+  static async create(st: State): Promise<Margin> {
+    const [[key, nonce], control, controlLamports] = await Promise.all([
+      this.getPda(st, this.wallet.publicKey),
+      Keypair.generate(),
+      this.connection.getMinimumBalanceForRentExemption(CONTROL_ACCOUNT_SIZE),
+    ]);
     this.connection.confirmTransaction(
-      await this.program.rpc.initMargin!(nonce, {
+      await this.program.rpc.createMargin!(nonce, {
         accounts: {
-          authority: this.program.provider.wallet.publicKey,
+          state: st.pubkey,
+          authority: this.wallet.publicKey,
           margin: key,
+          control: control.publicKey,
           rent: SYSVAR_RENT_PUBKEY,
           systemProgram: SystemProgram.programId,
         },
+        instructions: [
+          SystemProgram.createAccount({
+            fromPubkey: this.wallet.publicKey,
+            newAccountPubkey: control.publicKey,
+            lamports: controlLamports,
+            space: CONTROL_ACCOUNT_SIZE,
+            programId: this.program.programId,
+          }),
+        ],
+        signers: [control],
       }),
     );
-    return await Margin.load(this.program.provider.wallet.publicKey);
+    return await Margin.load(st);
   }
 
-  static async load(traderKey?: PublicKey): Promise<Margin> {
-    traderKey = traderKey ?? this.wallet.publicKey;
-
-    const clientName = "margin";
-    const [key, _nonce] = await PublicKey.findProgramAddress(
-      [traderKey.toBuffer(), anchor.utils.bytes.utf8.encode("marginv1")],
+  static async getPda(
+    st: State,
+    traderKey: PublicKey,
+  ): Promise<[PublicKey, number]> {
+    return await PublicKey.findProgramAddress(
+      [traderKey.toBuffer(), st.pubkey.toBuffer(), Buffer.from("marginv1")],
       this.program.programId,
     );
-
-    let data = this.processData(
-      await this.program.account[clientName]!.fetch(key),
-    );
-    return new this(key, clientName, data as Schema);
   }
 
-  private static processData(data: any): Schema {
-    return {
-      ...data,
-      collateral: new TokenAccountBalance(data.collateral, NUM_DECIMALS),
-    };
+  async getOpenOrdersKey(symbol: string): Promise<[PublicKey, number]> {
+    const dexMarket = this.state.getSymbolMarketKey(symbol);
+    return await PublicKey.findProgramAddress(
+      [this.data.control.toBuffer(), dexMarket.toBuffer()],
+      DEX_PROGRAM_ID,
+    );
+  }
+
+  async getSymbolOpenOrders(
+    symbol: string,
+  ): Promise<Control["data"]["openOrdersAgg"][0]> {
+    const marketIndex = this.state.getSymbolIndex(symbol);
+    const market = await this.state.getSymbolMarket(symbol);
+    const oo = this.control.data.openOrdersAgg[marketIndex];
+    if (!oo) {
+      throw RangeError(
+        `Invalid index ${marketIndex} in <Margin ${this.pubkey.toBase58()}>`,
+      );
+    }
+    return oo;
   }
 
   async refresh(): Promise<void> {
-    this.data = Margin.processData(await this.accountClient.fetch(this.pubKey));
+    this.data = await Margin.fetch(this.pubkey);
   }
 
   async deposit(
-    amount: BN,
     tokenAccount: PublicKey,
-    state: State,
+    vault: PublicKey,
+    amount: BN,
   ): Promise<void> {
     await this.program.rpc.deposit!(amount, {
       accounts: {
+        state: this.state.pubkey,
+        stateSigner: this.state.signer,
         authority: this.wallet.publicKey,
-        margin: this.pubKey,
+        margin: this.pubkey,
         tokenAccount,
-        state: state.pubKey,
-        vault: state.data.vault,
+        vault,
         tokenProgram: TOKEN_PROGRAM_ID,
       },
     });
-
     await this.refresh();
   }
 
   async withdraw(
-    amount: BN,
     tokenAccount: PublicKey,
-    state: State,
-    everMarket: EverlastingMarket,
-    everOrder: EverlastingOrder,
+    vault: PublicKey,
+    amount: BN,
   ): Promise<void> {
     await this.program.rpc.withdraw!(amount, {
       accounts: {
+        state: this.state.pubkey,
+        stateSigner: this.state.signer,
+        cache: this.state.cache.pubkey,
         authority: this.wallet.publicKey,
-        margin: this.pubKey,
+        margin: this.pubkey,
+        control: this.data.control,
         tokenAccount,
-        state: state.pubKey,
-        vault: state.data.vault,
+        vault,
         tokenProgram: TOKEN_PROGRAM_ID,
-        everMarket: everMarket.pubKey,
-        everOrder: everOrder.pubKey,
-        openOrders: everOrder.data.openOrders,
-        dexMarket: everMarket.data.dexMarket,
-        marketBids: everMarket.dexMarket.bidsAddress,
-        marketAsks: everMarket.dexMarket.asksAddress,
+      },
+    });
+    await this.refresh();
+  }
+
+  async createPerpOpenOrders(symbol: string) {
+    const [ooKey, _] = await this.getOpenOrdersKey(symbol);
+    await this.program.rpc.createPerpOpenOrders(symbol, {
+      accounts: {
+        state: this.state.pubkey,
+        stateSigner: this.state.signer,
+        authority: this.wallet.publicKey,
+        margin: this.pubkey,
+        control: this.data.control,
+        openOrders: ooKey,
+        dexMarket: this.state.getSymbolMarketKey(symbol),
+        dexProgram: DEX_PROGRAM_ID,
+        rent: SYSVAR_RENT_PUBKEY,
+        systemProgram: SystemProgram.programId,
+      },
+    });
+    await this.refresh();
+  }
+
+  async placePerpOrder({
+    symbol,
+    orderType,
+    isLong,
+    assetAccount,
+    limitPrice,
+    maxBaseQty,
+    maxQuoteQty,
+  }: Readonly<{
+    symbol: string;
+    orderType: OrderType;
+    isLong: boolean;
+    assetAccount: PublicKey;
+    limitPrice: BN;
+    maxBaseQty: BN;
+    maxQuoteQty: BN;
+  }>) {
+    const market = await this.state.getSymbolMarket(symbol);
+    const oo = await this.getSymbolOpenOrders(symbol);
+
+    await this.program.rpc.placePerpOrder(
+      isLong,
+      limitPrice,
+      maxBaseQty,
+      maxQuoteQty,
+      orderType,
+      {
+        accounts: {
+          state: this.state.pubkey,
+          stateSigner: this.state.signer,
+          cache: this.state.cache.pubkey,
+          authority: this.wallet.publicKey,
+          margin: this.pubkey,
+          traderAssetAccount: assetAccount,
+          control: this.control.pubkey,
+          openOrders: oo.key,
+          dexMarket: market.address,
+          reqQ: market.requestQueueAddress,
+          eventQ: market.eventQueueAddress,
+          marketBids: market.bidsAddress,
+          marketAsks: market.asksAddress,
+          vAssetMint: market.baseMintAddress,
+          vAssetVault: market.baseVaultAddress,
+          vQuoteMint: market.quoteMintAddress,
+          vQuoteVault: market.quoteVaultAddress,
+          dexProgram: DEX_PROGRAM_ID,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          rent: SYSVAR_RENT_PUBKEY,
+        },
+      },
+    );
+    await this.refresh();
+  }
+
+  async cancelPerpOrder(symbol: string, isLong: boolean, orderId: BN) {
+    const market = await this.state.getSymbolMarket(symbol);
+    const oo = await this.getSymbolOpenOrders(symbol);
+
+    await this.program.rpc.cancelPerpOrder(orderId, isLong, {
+      accounts: {
+        state: this.state.pubkey,
+        cache: this.state.cache.pubkey,
+        authority: this.wallet.publicKey,
+        margin: this.pubkey,
+        control: this.control.pubkey,
+        openOrders: oo.key,
+        dexMarket: market.address,
+        marketBids: market.bidsAddress,
+        marketAsks: market.asksAddress,
+        eventQ: market.eventQueueAddress,
         dexProgram: DEX_PROGRAM_ID,
       },
     });
-
-    await this.refresh();
   }
 }

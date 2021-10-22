@@ -144,6 +144,7 @@ export class Market {
     return getFilteredProgramAccounts(connection, programId, filters);
   }
 
+  // TODO: change to use provider?
   static async load(
     connection: Connection,
     address: PublicKey,
@@ -200,12 +201,28 @@ export class Market {
     return this._decoded.quoteMint;
   }
 
+  get baseVaultAddress(): PublicKey {
+    return this._decoded.baseVault;
+  }
+
+  get quoteVaultAddress(): PublicKey {
+    return this._decoded.quoteVault;
+  }
+
   get bidsAddress(): PublicKey {
     return this._decoded.bids;
   }
 
   get asksAddress(): PublicKey {
     return this._decoded.asks;
+  }
+
+  get eventQueueAddress(): PublicKey {
+    return this._decoded.eventQueue;
+  }
+
+  get requestQueueAddress(): PublicKey {
+    return this._decoded.requestQueue;
   }
 
   get decoded(): any {

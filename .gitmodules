@@ -1,0 +1,3 @@
+[submodule "solana"]
+	path = solana
+	url = git@github.com:01protocol/solana.git

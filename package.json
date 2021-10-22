@@ -8,12 +8,14 @@
   "types": "lib/esm/index.d.ts",
   "scripts": {
     "build": "tsc && tsc -p tsconfig.cjs.json",
+    "sync:idl": "rm -R src/idl src/types; cp -R solana/target/types solana/target/idl src",
+    "build:idl": "cd solana && anchor run build && cd .. && npm run sync:idl",
     "postinstall": "npm run build"
   },
   "dependencies": {
     "@ledgerhq/hw-transport": "^6.2.0",
     "@ledgerhq/hw-transport-webusb": "^6.2.0",
-    "@project-serum/anchor": "^0.16.1",
+    "@project-serum/anchor": "^0.18.0",
     "@project-serum/serum": "^0.13.36",
     "@solana/spl-token": "^0.1.6",
     "@solana/web3.js": "^1.23.0",
@@ -37,6 +39,6 @@
     "typescript": "^4.3.5"
   },
   "prettier": {
-      "trailingComma": "all"
+    "trailingComma": "all"
   }
 }
