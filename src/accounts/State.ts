@@ -298,8 +298,8 @@ export default class State extends BaseAccount<Schema, "state"> {
     });
   }
 
-  async realizeFees(sym: string) {
-    await this.program.rpc.realizeFees({
+  async realizeMarketFees(sym: string) {
+    await this.program.rpc.realizeMarketFees({
       accounts: {
         state: this.pubkey,
         stateSigner: this.signer,
@@ -310,16 +310,29 @@ export default class State extends BaseAccount<Schema, "state"> {
     });
   }
 
-  async initPerpMarket(
-    symbol: string,
-    perpType: PerpType,
-    vAssetDecimals: number,
-    vQuoteDecimals: number,
-    vAssetLotSize: number,
-    vQuoteLotSize: number,
-    strike: BN,
-    oracle: PublicKey,
-  ) {
+  async initPerpMarket({
+    symbol,
+    perpType,
+    vAssetLotSize,
+    vQuoteLotSize,
+    strike,
+    minMmf,
+    baseImf,
+    oracle,
+    fallbackOracle,
+    coinDecimals,
+  }: Readonly<{
+    symbol: string;
+    perpType: PerpType;
+    vAssetLotSize: number;
+    vQuoteLotSize: number;
+    strike: BN;
+    minMmf: number;
+    baseImf: number;
+    coinDecimals: number;
+    oracle: PublicKey;
+    fallbackOracle: PublicKey;
+  }>) {
     const [dexMarket, asks, bids, reqQ, eventQ] = [
       Keypair.generate(),
       Keypair.generate(),
@@ -333,8 +346,6 @@ export default class State extends BaseAccount<Schema, "state"> {
       eventQLamports,
       bidsLamports,
       asksLamports,
-      vAssetMint,
-      vQuoteMint,
     ] = await Promise.all([
       this.connection.getMinimumBalanceForRentExemption(
         DEX_MARKET_ACCOUNT_SIZE,
@@ -343,31 +354,6 @@ export default class State extends BaseAccount<Schema, "state"> {
       this.connection.getMinimumBalanceForRentExemption(EVENT_Q_ACCOUNT_SIZE),
       this.connection.getMinimumBalanceForRentExemption(BIDS_ACCOUNT_SIZE),
       this.connection.getMinimumBalanceForRentExemption(ASKS_ACCOUNT_SIZE),
-      createMint(this.provider, this.signer, vAssetDecimals),
-      createMint(this.provider, this.signer, vQuoteDecimals),
-    ]);
-
-    const [vaultOwner, vaultSignerNonce] = (await (async function () {
-      const nonce = new BN(0);
-      while (true) {
-        try {
-          const vaultOwner = await PublicKey.createProgramAddress(
-            [
-              dexMarket.publicKey.toBuffer(),
-              nonce.toArrayLike(Buffer, "le", 8),
-            ],
-            DEX_PROGRAM_ID,
-          );
-          return [vaultOwner, nonce];
-        } catch (_) {
-          nonce.iaddn(1);
-        }
-      }
-    })()) as [PublicKey, BN];
-
-    const [vAssetVault, vQuoteVault] = await Promise.all([
-      createTokenAccount(this.provider, vAssetMint, vaultOwner),
-      createTokenAccount(this.provider, vQuoteMint, vaultOwner),
     ]);
 
     const tx = new Transaction().add(
@@ -413,21 +399,19 @@ export default class State extends BaseAccount<Schema, "state"> {
 
     await this.program.rpc.initPerpMarket(
       symbol,
-      vaultSignerNonce,
       perpType,
       vAssetLotSize,
       vQuoteLotSize,
       strike,
+      minMmf,
+      baseImf,
+      coinDecimals,
       {
         accounts: {
           state: this.pubkey,
           stateSigner: this.signer,
           admin: this.data.admin,
           cache: this.data.cache,
-          vAssetMint,
-          vQuoteMint,
-          vAssetVault,
-          vQuoteVault,
           dexMarket: dexMarket.publicKey,
           bids: bids.publicKey,
           asks: asks.publicKey,
@@ -435,6 +419,7 @@ export default class State extends BaseAccount<Schema, "state"> {
           eventQ: eventQ.publicKey,
           dexProgram: DEX_PROGRAM_ID,
           oracle,
+          fallback: fallbackOracle,
           rent: SYSVAR_RENT_PUBKEY,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,

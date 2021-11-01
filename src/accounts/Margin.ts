@@ -146,7 +146,7 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
 
   async createPerpOpenOrders(symbol: string) {
     const [ooKey, _] = await this.getOpenOrdersKey(symbol);
-    await this.program.rpc.createPerpOpenOrders(symbol, {
+    await this.program.rpc.createPerpOpenOrders({
       accounts: {
         state: this.state.pubkey,
         stateSigner: this.state.signer,
@@ -167,7 +167,6 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
     symbol,
     orderType,
     isLong,
-    assetAccount,
     limitPrice,
     maxBaseQty,
     maxQuoteQty,
@@ -175,7 +174,6 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
     symbol: string;
     orderType: OrderType;
     isLong: boolean;
-    assetAccount: PublicKey;
     limitPrice: BN;
     maxBaseQty: BN;
     maxQuoteQty: BN;
@@ -196,7 +194,6 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
           cache: this.state.cache.pubkey,
           authority: this.wallet.publicKey,
           margin: this.pubkey,
-          traderAssetAccount: assetAccount,
           control: this.control.pubkey,
           openOrders: oo.key,
           dexMarket: market.address,
@@ -204,12 +201,7 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
           eventQ: market.eventQueueAddress,
           marketBids: market.bidsAddress,
           marketAsks: market.asksAddress,
-          vAssetMint: market.baseMintAddress,
-          vAssetVault: market.baseVaultAddress,
-          vQuoteMint: market.quoteMintAddress,
-          vQuoteVault: market.quoteVaultAddress,
           dexProgram: DEX_PROGRAM_ID,
-          tokenProgram: TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         },
       },

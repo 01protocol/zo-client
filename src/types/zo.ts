@@ -157,7 +157,7 @@ export type Zo = {
       ]
     },
     {
-      "name": "realizeFees",
+      "name": "realizeMarketFees",
       "accounts": [
         {
           "name": "state",
@@ -523,26 +523,6 @@ export type Zo = {
           "isSigner": false
         },
         {
-          "name": "vAssetMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "vQuoteMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "vAssetVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vQuoteVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
           "name": "dexMarket",
           "isMut": true,
           "isSigner": false
@@ -578,6 +558,11 @@ export type Zo = {
           "isSigner": false
         },
         {
+          "name": "fallback",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "rent",
           "isMut": false,
           "isSigner": false
@@ -597,10 +582,6 @@ export type Zo = {
         {
           "name": "symbol",
           "type": "string"
-        },
-        {
-          "name": "vaultSignerNonce",
-          "type": "u64"
         },
         {
           "name": "perpType",
@@ -627,6 +608,10 @@ export type Zo = {
         {
           "name": "baseImf",
           "type": "u16"
+        },
+        {
+          "name": "coinDecimals",
+          "type": "u8"
         }
       ]
     },
@@ -735,12 +720,7 @@ export type Zo = {
           "isSigner": false
         }
       ],
-      "args": [
-        {
-          "name": "symbol",
-          "type": "string"
-        }
-      ]
+      "args": []
     },
     {
       "name": "placePerpOrder",
@@ -767,11 +747,6 @@ export type Zo = {
         },
         {
           "name": "margin",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "traderAssetAccount",
           "isMut": true,
           "isSigner": false
         },
@@ -811,32 +786,7 @@ export type Zo = {
           "isSigner": false
         },
         {
-          "name": "vAssetMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vAssetVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vQuoteMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vQuoteVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
           "name": "dexProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
         },
@@ -1203,7 +1153,7 @@ export type Zo = {
             "name": "collateral",
             "type": {
               "array": [
-                "u64",
+                "i64",
                 50
               ]
             }
@@ -1234,6 +1184,10 @@ export type Zo = {
           },
           {
             "name": "insurance",
+            "type": "u64"
+          },
+          {
+            "name": "feesAccrued",
             "type": "u64"
           },
           {
@@ -1382,7 +1336,7 @@ export type Zo = {
           },
           {
             "name": "nativePcTotal",
-            "type": "u64"
+            "type": "i64"
           },
           {
             "name": "posSize",
@@ -1390,7 +1344,7 @@ export type Zo = {
           },
           {
             "name": "realizedPnl",
-            "type": "i128"
+            "type": "i64"
           },
           {
             "name": "coinOnBids",
@@ -1615,7 +1569,7 @@ export type Zo = {
     },
     {
       "code": 303,
-      "name": "InvalidArguments",
+      "name": "InvalidArgument",
       "msg": "Arguments passed were invalid"
     },
     {
@@ -1797,6 +1751,16 @@ export type Zo = {
       "code": 339,
       "name": "OracleNeedsUpdating",
       "msg": "Oracle last updated time is beyond the valid time since last update"
+    },
+    {
+      "code": 340,
+      "name": "InvalidSymbol",
+      "msg": "The symbol is invalid"
+    },
+    {
+      "code": 341,
+      "name": "NegativeCollateral",
+      "msg": "Negative collateral value"
     }
   ]
 };
@@ -1960,7 +1924,7 @@ export const IDL: Zo = {
       ]
     },
     {
-      "name": "realizeFees",
+      "name": "realizeMarketFees",
       "accounts": [
         {
           "name": "state",
@@ -2326,26 +2290,6 @@ export const IDL: Zo = {
           "isSigner": false
         },
         {
-          "name": "vAssetMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "vQuoteMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "vAssetVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vQuoteVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
           "name": "dexMarket",
           "isMut": true,
           "isSigner": false
@@ -2381,6 +2325,11 @@ export const IDL: Zo = {
           "isSigner": false
         },
         {
+          "name": "fallback",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "rent",
           "isMut": false,
           "isSigner": false
@@ -2400,10 +2349,6 @@ export const IDL: Zo = {
         {
           "name": "symbol",
           "type": "string"
-        },
-        {
-          "name": "vaultSignerNonce",
-          "type": "u64"
         },
         {
           "name": "perpType",
@@ -2430,6 +2375,10 @@ export const IDL: Zo = {
         {
           "name": "baseImf",
           "type": "u16"
+        },
+        {
+          "name": "coinDecimals",
+          "type": "u8"
         }
       ]
     },
@@ -2538,12 +2487,7 @@ export const IDL: Zo = {
           "isSigner": false
         }
       ],
-      "args": [
-        {
-          "name": "symbol",
-          "type": "string"
-        }
-      ]
+      "args": []
     },
     {
       "name": "placePerpOrder",
@@ -2570,11 +2514,6 @@ export const IDL: Zo = {
         },
         {
           "name": "margin",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "traderAssetAccount",
           "isMut": true,
           "isSigner": false
         },
@@ -2614,32 +2553,7 @@ export const IDL: Zo = {
           "isSigner": false
         },
         {
-          "name": "vAssetMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vAssetVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vQuoteMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vQuoteVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
           "name": "dexProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
         },
@@ -3006,7 +2920,7 @@ export const IDL: Zo = {
             "name": "collateral",
             "type": {
               "array": [
-                "u64",
+                "i64",
                 50
               ]
             }
@@ -3037,6 +2951,10 @@ export const IDL: Zo = {
           },
           {
             "name": "insurance",
+            "type": "u64"
+          },
+          {
+            "name": "feesAccrued",
             "type": "u64"
           },
           {
@@ -3185,7 +3103,7 @@ export const IDL: Zo = {
           },
           {
             "name": "nativePcTotal",
-            "type": "u64"
+            "type": "i64"
           },
           {
             "name": "posSize",
@@ -3193,7 +3111,7 @@ export const IDL: Zo = {
           },
           {
             "name": "realizedPnl",
-            "type": "i128"
+            "type": "i64"
           },
           {
             "name": "coinOnBids",
@@ -3418,7 +3336,7 @@ export const IDL: Zo = {
     },
     {
       "code": 303,
-      "name": "InvalidArguments",
+      "name": "InvalidArgument",
       "msg": "Arguments passed were invalid"
     },
     {
@@ -3600,6 +3518,16 @@ export const IDL: Zo = {
       "code": 339,
       "name": "OracleNeedsUpdating",
       "msg": "Oracle last updated time is beyond the valid time since last update"
+    },
+    {
+      "code": 340,
+      "name": "InvalidSymbol",
+      "msg": "The symbol is invalid"
+    },
+    {
+      "code": 341,
+      "name": "NegativeCollateral",
+      "msg": "Negative collateral value"
     }
   ]
 };
