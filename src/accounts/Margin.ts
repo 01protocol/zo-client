@@ -76,6 +76,14 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
     );
   }
 
+  async refresh(): Promise<void> {
+    [this.data] = await Promise.all([
+      Margin.fetch(this.pubkey),
+      this.control.refresh(),
+      this.state.refresh(),
+    ]);
+  }
+
   async getOpenOrdersKey(symbol: string): Promise<[PublicKey, number]> {
     const dexMarket = this.state.getSymbolMarketKey(symbol);
     return await PublicKey.findProgramAddress(
@@ -88,18 +96,12 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
     symbol: string,
   ): Promise<Control["data"]["openOrdersAgg"][0]> {
     const marketIndex = this.state.getSymbolIndex(symbol);
-    const market = await this.state.getSymbolMarket(symbol);
-    const oo = this.control.data.openOrdersAgg[marketIndex];
-    if (!oo) {
-      throw RangeError(
-        `Invalid index ${marketIndex} in <Margin ${this.pubkey.toBase58()}>`,
-      );
+    let oo = this.control.data.openOrdersAgg[marketIndex];
+    if (oo!.key.equals(PublicKey.default)) {
+      await this.createPerpOpenOrders(symbol);
+      oo = this.control.data.openOrdersAgg[marketIndex];
     }
-    return oo;
-  }
-
-  async refresh(): Promise<void> {
-    this.data = await Margin.fetch(this.pubkey);
+    return oo!;
   }
 
   async deposit(
