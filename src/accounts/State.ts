@@ -9,6 +9,7 @@ import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import BN from "bn.js";
 import { USDC_MINT_ADDRESS } from "../config";
 import {
+  findIndexOf,
   createMint,
   createTokenAccount,
   createTokenAccountIxs,
@@ -56,23 +57,34 @@ export default class State extends BaseAccount<Schema, "state"> {
 
   static async fetch(k: PublicKey): Promise<Schema> {
     let data = (await this.program.account["state"].fetch(k)) as StateSchema;
+
     // Convert StateSchema to Schema.
     const dec = new TextDecoder("utf-8");
     return {
       ...data,
       vaults: data.vaults.filter((k) => !k.equals(PublicKey.default)),
-      collaterals: data.collaterals.filter(
-        (c) => !c.mint.equals(PublicKey.default),
-      ),
-      // The perpMarkets that are filtered out are at the end, so
-      // filter does not affect the index.
+      collaterals: data.collaterals
+        // Remove null collaterals.
+        .slice(
+          0,
+          findIndexOf(
+            data.collaterals,
+            (c) => c.mint.equals(PublicKey.default),
+          ),
+        ),
       perpMarkets: data.perpMarkets
-        .filter((p) => !p.dexMarket.equals(PublicKey.default))
+        // Remove null PerpMarkets.
+        .slice(
+          0,
+          findIndexOf(
+            data.collaterals,
+            (p) => p.dexMarket.equals(PublicKey.default),
+          ),
+        )
+        // Need to convert symbol, which is a [u8; 24], to a JS String.
+        // Can't use String.fromCodePoint since that takes in u16,
+        // when we are receiving a UTF-8 byte array.
         .map((x) => {
-          // Need to convert symbol, which is a [u8; 24], to a JS String.
-          // Can't use String.fromCodePoint since that takes in u16,
-          // when we are receiving a UTF-8 byte array.
-
           // Find null char.
           let i = x.symbol.indexOf(0);
           i = i < 0 ? x.symbol.length : i;
@@ -82,7 +94,7 @@ export default class State extends BaseAccount<Schema, "state"> {
             ...x,
             symbol,
           };
-        }, new Map()),
+        }),
     };
   }
 

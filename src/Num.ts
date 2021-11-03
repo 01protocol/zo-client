@@ -1,4 +1,6 @@
+import { PublicKey } from '@solana/web3.js'
 import BN from "bn.js";
+import Decimal from "decimal.js";
 
 export default class Num {
   public readonly n: Readonly<BN>;
@@ -6,6 +8,7 @@ export default class Num {
   public constructor(
     n: Readonly<BN> | number,
     public readonly decimals: number,
+    public readonly mint: Readonly<PublicKey> | null
   ) {
     if (!Number.isInteger(decimals)) {
       throw TypeError(`Invalid number of decimals ${decimals}`);
@@ -26,7 +29,19 @@ export default class Num {
       : `${s.slice(0, i)}.${s.slice(i, i + precision)}${"0".repeat(l)}`;
   }
 
-  public toNumber(): number {
-    return Number.parseFloat(this.toString());
+  _float: number | null = null;
+  get float(): number {
+    if (!this._float) {
+      this._float = Number.parseFloat(this.toString());
+    }
+    return this._float;
+  }
+
+  _dec: Decimal | null = null;
+  get dec(): Decimal {
+    if (!this._dec) {
+      this._dec = new Decimal(this.toString());
+    }
+    return this._dec;
   }
 }

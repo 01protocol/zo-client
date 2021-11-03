@@ -9,8 +9,13 @@ import { BN } from "@project-serum/anchor";
 import BaseAccount from "./BaseAccount";
 import State from "./State";
 import Control from "./Control";
-import { MarginSchema as Schema, OrderType } from "../types";
+import Num from "../Num";
+import { MarginSchema, OrderType } from "../types";
 import { DEX_PROGRAM_ID, CONTROL_ACCOUNT_SIZE } from "../config";
+
+interface Schema extends Omit<MarginSchema, "collateral"> {
+  collateral: Num[];
+}
 
 export default class Margin extends BaseAccount<Schema, "margin"> {
   private constructor(
@@ -23,14 +28,20 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
     super(pubkey, accClient, data);
   }
 
-  private static fetch(k: PublicKey): Promise<Schema> {
-    return this.program.account["margin"].fetch(k);
+  private static async fetch(k: PublicKey, st: State): Promise<Schema> {
+    const data = await this.program.account["margin"].fetch(k);
+    return {
+      ...data,
+      collateral: st.data.collaterals.map(
+        (c, i) => new Num(data.collateral[i]!, c.decimals, c.mint),
+      ),
+    };
   }
 
   static async load(st: State): Promise<Margin> {
     const [key, _nonce] = await this.getPda(st, this.wallet.publicKey);
     const clientName = "margin";
-    let data = await this.fetch(key);
+    let data = await this.fetch(key, st);
     let control = await Control.load(data.control);
     return new this(key, clientName, data, control, st);
   }
@@ -78,7 +89,7 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
 
   async refresh(): Promise<void> {
     [this.data] = await Promise.all([
-      Margin.fetch(this.pubkey),
+      Margin.fetch(this.pubkey, this.state),
       this.control.refresh(),
       this.state.refresh(),
     ]);
