@@ -1,4 +1,4 @@
-import { PublicKey } from '@solana/web3.js'
+import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import Decimal from "decimal.js";
 
@@ -6,15 +6,19 @@ export default class Num {
   public readonly n: Readonly<BN>;
 
   public constructor(
-    n: Readonly<BN> | number,
+    n: BN | Decimal | number,
     public readonly decimals: number,
-    public readonly mint: Readonly<PublicKey> | null
+    public readonly mint: Readonly<PublicKey> | null,
   ) {
     if (!Number.isInteger(decimals)) {
       throw TypeError(`Invalid number of decimals ${decimals}`);
     }
     if (BN.isBN(n)) {
       this.n = n;
+    } else if (n instanceof Decimal) {
+      this.n = new BN(
+        n.times(new Decimal(10).toPower(decimals)).round().toString(),
+      );
     } else {
       this.n = new BN(n * Math.pow(10, decimals));
     }
