@@ -55,7 +55,5 @@ export default abstract class BaseAccount<
     return this.program.account[this.accountClientName]!;
   }
 
-  async refresh(): Promise<void> {
-    this.data = (await this.accountClient.fetch(this.pubkey)) as T;
-  }
+  abstract refresh(): Promise<void>;
 }

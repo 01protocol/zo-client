@@ -23,41 +23,16 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
     super(pubkey, accClient, data);
   }
 
-  private static processData(data: Schema): Schema {
-    return {
-      ...data,
-    };
-  }
-
-  static async getPda(
-    st: State,
-    traderKey: PublicKey,
-  ): Promise<[PublicKey, number]> {
-    return await PublicKey.findProgramAddress(
-      [traderKey.toBuffer(), st.pubkey.toBuffer(), Buffer.from("marginv1")],
-      this.program.programId,
-    );
-  }
-
-  async getOpenOrders(dexMarket: PublicKey): Promise<[PublicKey, number]> {
-    return await PublicKey.findProgramAddress(
-      [this.data.control.toBuffer(), dexMarket.toBuffer()],
-      DEX_PROGRAM_ID,
-    );
+  private static fetch(k: PublicKey): Promise<Schema> {
+    return this.program.account["margin"].fetch(k);
   }
 
   static async load(st: State): Promise<Margin> {
     const [key, _nonce] = await this.getPda(st, this.wallet.publicKey);
     const clientName = "margin";
-    let data = this.processData(
-      await this.program.account[clientName]!.fetch(key),
-    );
+    let data = await this.fetch(key);
     let control = await Control.load(data.control);
     return new this(key, clientName, data, control, st);
-  }
-
-  async refresh(): Promise<void> {
-    this.data = Margin.processData(await this.accountClient.fetch(this.pubkey));
   }
 
   static async create(st: State): Promise<Margin> {
@@ -69,7 +44,7 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
     this.connection.confirmTransaction(
       await this.program.rpc.createMargin!(nonce, {
         accounts: {
-          state: this.state.pubkey,
+          state: st.pubkey,
           authority: this.wallet.publicKey,
           margin: key,
           control: control.publicKey,
@@ -89,6 +64,42 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
       }),
     );
     return await Margin.load(st);
+  }
+
+  static async getPda(
+    st: State,
+    traderKey: PublicKey,
+  ): Promise<[PublicKey, number]> {
+    return await PublicKey.findProgramAddress(
+      [traderKey.toBuffer(), st.pubkey.toBuffer(), Buffer.from("marginv1")],
+      this.program.programId,
+    );
+  }
+
+  async getOpenOrdersKey(symbol: string): Promise<[PublicKey, number]> {
+    const dexMarket = this.state.getSymbolMarketKey(symbol);
+    return await PublicKey.findProgramAddress(
+      [this.data.control.toBuffer(), dexMarket.toBuffer()],
+      DEX_PROGRAM_ID,
+    );
+  }
+
+  async getSymbolOpenOrders(
+    symbol: string,
+  ): Promise<Control["data"]["openOrdersAgg"][0]> {
+    const marketIndex = this.state.getSymbolIndex(symbol);
+    const market = await this.state.getSymbolMarket(symbol);
+    const oo = this.control.data.openOrdersAgg[marketIndex];
+    if (!oo) {
+      throw RangeError(
+        `Invalid index ${marketIndex} in <Margin ${this.pubkey.toBase58()}>`,
+      );
+    }
+    return oo;
+  }
+
+  async refresh(): Promise<void> {
+    this.data = await Margin.fetch(this.pubkey);
   }
 
   async deposit(
@@ -131,8 +142,8 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
     await this.refresh();
   }
 
-  async createPerpOpenOrders(symbol: string, dexMarket: PublicKey) {
-    const [ooKey, _] = await this.getOpenOrders(dexMarket);
+  async createPerpOpenOrders(symbol: string) {
+    const [ooKey, _] = await this.getOpenOrdersKey(symbol);
     await this.program.rpc.createPerpOpenOrders(symbol, {
       accounts: {
         state: this.state.pubkey,
@@ -141,49 +152,35 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
         margin: this.pubkey,
         control: this.data.control,
         openOrders: ooKey,
-        dexMarket,
+        dexMarket: this.state.getSymbolMarketKey(symbol),
         dexProgram: DEX_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
         systemProgram: SystemProgram.programId,
       },
     });
+    await this.refresh();
   }
 
   async placePerpOrder({
-    assetAccount,
-    dexMarket,
-    reqQ,
-    eventQ,
-    marketBids,
-    marketAsks,
+    symbol,
+    orderType,
     isLong,
+    assetAccount,
     limitPrice,
     maxBaseQty,
     maxQuoteQty,
-    orderType,
-    vAssetMint,
-    vAssetVault,
-    vQuoteMint,
-    vQuoteVault,
-    openOrders,
   }: Readonly<{
-    assetAccount: PublicKey;
-    dexMarket: PublicKey;
-    reqQ: PublicKey;
-    eventQ: PublicKey;
-    marketBids: PublicKey;
-    marketAsks: PublicKey;
+    symbol: string;
+    orderType: OrderType;
     isLong: boolean;
+    assetAccount: PublicKey;
     limitPrice: BN;
     maxBaseQty: BN;
     maxQuoteQty: BN;
-    orderType: OrderType;
-    vAssetMint: PublicKey;
-    vAssetVault: PublicKey;
-    vQuoteMint: PublicKey;
-    vQuoteVault: PublicKey;
-    openOrders: PublicKey;
   }>) {
+    const market = await this.state.getSymbolMarket(symbol);
+    const oo = await this.getSymbolOpenOrders(symbol);
+
     await this.program.rpc.placePerpOrder(
       isLong,
       limitPrice,
@@ -193,32 +190,49 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
       {
         accounts: {
           state: this.state.pubkey,
+          stateSigner: this.state.signer,
           cache: this.state.cache.pubkey,
           authority: this.wallet.publicKey,
           margin: this.pubkey,
           traderAssetAccount: assetAccount,
           control: this.control.pubkey,
-          openOrders,
-          dexMarket,
-          reqQ,
-          eventQ,
-          marketBids,
-          marketAsks,
-          vAssetMint,
-          vAssetVault,
-          vQuoteMint,
-          vQuoteVault,
+          openOrders: oo.key,
+          dexMarket: market.address,
+          reqQ: market.requestQueueAddress,
+          eventQ: market.eventQueueAddress,
+          marketBids: market.bidsAddress,
+          marketAsks: market.asksAddress,
+          vAssetMint: market.baseMintAddress,
+          vAssetVault: market.baseVaultAddress,
+          vQuoteMint: market.quoteMintAddress,
+          vQuoteVault: market.quoteVaultAddress,
           dexProgram: DEX_PROGRAM_ID,
           tokenProgram: TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         },
       },
     );
+    await this.refresh();
   }
 
-  async cancelPerpOrder(orderId: BN, isLong: boolean) {
+  async cancelPerpOrder(symbol: string, isLong: boolean, orderId: BN) {
+    const market = await this.state.getSymbolMarket(symbol);
+    const oo = await this.getSymbolOpenOrders(symbol);
+
     await this.program.rpc.cancelPerpOrder(orderId, isLong, {
-      accounts: {},
+      accounts: {
+        state: this.state.pubkey,
+        cache: this.state.cache.pubkey,
+        authority: this.wallet.publicKey,
+        margin: this.pubkey,
+        control: this.control.pubkey,
+        openOrders: oo.key,
+        dexMarket: market.address,
+        marketBids: market.bidsAddress,
+        marketAsks: market.asksAddress,
+        eventQ: market.eventQueueAddress,
+        dexProgram: DEX_PROGRAM_ID,
+      },
     });
   }
 }

@@ -3,6 +3,7 @@ import {
   Keypair,
   SystemProgram,
   Transaction,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import {
   TOKEN_PROGRAM_ID,
@@ -42,15 +43,14 @@ export async function getMintInfo(
   };
 }
 
-export async function createMint(
+export async function createMintIxs(
+  mint: Keypair,
   provider: Provider,
   authority: PublicKey,
   decimals: number,
   freezeAuthority?: PublicKey,
-): Promise<PublicKey> {
-  const mint = new Keypair();
-  const tx = new Transaction();
-  tx.add(
+): Promise<TransactionInstruction[]> {
+  return [
     SystemProgram.createAccount({
       fromPubkey: provider.wallet.publicKey,
       newAccountPubkey: mint.publicKey,
@@ -65,19 +65,16 @@ export async function createMint(
       authority,
       freezeAuthority ?? null,
     ),
-  );
-  await provider.send(tx, [mint]);
-  return mint.publicKey;
+  ];
 }
 
-export async function createTokenAccount(
+export async function createTokenAccountIxs(
+  vault: Keypair,
   provider: Provider,
   mint: PublicKey,
   owner: PublicKey,
-): Promise<PublicKey> {
-  const vault = Keypair.generate();
-  const tx = new Transaction();
-  tx.add(
+): Promise<TransactionInstruction[]> {
+  return [
     SystemProgram.createAccount({
       fromPubkey: provider.wallet.publicKey,
       newAccountPubkey: vault.publicKey,
@@ -93,7 +90,38 @@ export async function createTokenAccount(
       vault.publicKey,
       owner,
     ),
+  ];
+}
+
+export async function createMint(
+  provider: Provider,
+  authority: PublicKey,
+  decimals: number,
+  freezeAuthority?: PublicKey,
+): Promise<PublicKey> {
+  const mint = new Keypair();
+  const tx = new Transaction();
+  tx.add(
+    ...(await createMintIxs(
+      mint,
+      provider,
+      authority,
+      decimals,
+      freezeAuthority,
+    )),
   );
+  await provider.send(tx, [mint]);
+  return mint.publicKey;
+}
+
+export async function createTokenAccount(
+  provider: Provider,
+  mint: PublicKey,
+  owner: PublicKey,
+): Promise<PublicKey> {
+  const vault = Keypair.generate();
+  const tx = new Transaction();
+  tx.add(...(await createTokenAccountIxs(vault, provider, mint, owner)));
   await provider.send(tx, [vault]);
   return vault.publicKey;
 }

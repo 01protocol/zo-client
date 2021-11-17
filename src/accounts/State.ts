@@ -8,9 +8,14 @@ import {
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import BN from "bn.js";
 import { USDC_MINT_ADDRESS } from "../config";
-import { createMint, createTokenAccount } from "../utils";
+import {
+  createMint,
+  createTokenAccount,
+  createTokenAccountIxs,
+} from "../utils";
 import BaseAccount from "./BaseAccount";
 import Cache from "./Cache";
+import { Market } from "../serum/market";
 import { StateSchema, PerpType } from "../types";
 import {
   DEX_PROGRAM_ID,
@@ -24,12 +29,11 @@ import {
 } from "../config";
 
 type PerpMarket = Omit<StateSchema["perpMarkets"][0], "symbol"> & {
-  index: number;
+  symbol: string;
 };
 
 interface Schema extends Omit<StateSchema, "perpMarkets"> {
-  // Map symbol to PerpMarket.
-  perpMarkets: Map<string, PerpMarket>;
+  perpMarkets: PerpMarket[];
 }
 
 export default class State extends BaseAccount<Schema, "state"> {
@@ -43,40 +47,6 @@ export default class State extends BaseAccount<Schema, "state"> {
     super(pubkey, accClient, data);
   }
 
-  static processData(data: StateSchema): Schema {
-    // Convert StateSchema to Schema. Need to convert symbol,
-    // which is a [u8; 24], to a JS String. Can't use String.fromCodePoint
-    // since that takes in u16, when we are receiving a UTF-8 byte array.
-    const dec = new TextDecoder("utf-8");
-    return {
-      ...data,
-      vaults: data.vaults.filter((k) => !k.equals(PublicKey.default)),
-      collaterals: data.collaterals.filter(
-        (c) => !c.mint.equals(PublicKey.default),
-      ),
-      perpMarkets: data.perpMarkets
-        .filter((p) => !p.dexMarket.equals(PublicKey.default))
-        .reduce((acc, x, index) => {
-          // Find null char.
-          let i = x.symbol.indexOf(0);
-          i = i < 0 ? x.symbol.length : i;
-          const symbol = dec.decode(new Uint8Array(x.symbol.slice(0, i)));
-
-          acc[symbol] = {
-            ...x,
-            index,
-          };
-          return acc;
-        }, new Map()),
-    };
-  }
-
-  async refresh(): Promise<void> {
-    this.data = State.processData(
-      (await this.accountClient.fetch(this.pubkey)) as StateSchema,
-    );
-  }
-
   static async getSigner(stateKey: PublicKey): Promise<[PublicKey, number]> {
     return await PublicKey.findProgramAddress(
       [stateKey.toBuffer()],
@@ -84,16 +54,45 @@ export default class State extends BaseAccount<Schema, "state"> {
     );
   }
 
+  static async fetch(k: PublicKey): Promise<Schema> {
+    let data = (await this.program.account["state"].fetch(k)) as StateSchema;
+    // Convert StateSchema to Schema.
+    const dec = new TextDecoder("utf-8");
+    return {
+      ...data,
+      vaults: data.vaults.filter((k) => !k.equals(PublicKey.default)),
+      collaterals: data.collaterals.filter(
+        (c) => !c.mint.equals(PublicKey.default),
+      ),
+      // The perpMarkets that are filtered out are at the end, so
+      // filter does not affect the index.
+      perpMarkets: data.perpMarkets
+        .filter((p) => !p.dexMarket.equals(PublicKey.default))
+        .map((x) => {
+          // Need to convert symbol, which is a [u8; 24], to a JS String.
+          // Can't use String.fromCodePoint since that takes in u16,
+          // when we are receiving a UTF-8 byte array.
+
+          // Find null char.
+          let i = x.symbol.indexOf(0);
+          i = i < 0 ? x.symbol.length : i;
+          const symbol = dec.decode(new Uint8Array(x.symbol.slice(0, i)));
+
+          return {
+            ...x,
+            symbol,
+          };
+        }, new Map()),
+    };
+  }
+
   static async load(k: PublicKey): Promise<State> {
-    const rawData = (await this.program.account["state"]!.fetch(
-      k,
-    )) as StateSchema;
+    const data = await this.fetch(k);
     const [signer, signerNonce] = await this.getSigner(k);
-    if (signerNonce !== rawData.signerNonce) {
+    if (signerNonce !== data.signerNonce) {
       throw Error("Invalid state signer nonce");
     }
-    const cache = await Cache.load(rawData.cache);
-    const data = this.processData(rawData);
+    const cache = await Cache.load(data.cache);
     return new this(k, "state", data, signer, cache);
   }
 
@@ -147,6 +146,53 @@ export default class State extends BaseAccount<Schema, "state"> {
     return await State.load(state.publicKey);
   }
 
+  async refresh(): Promise<void> {
+    this.data = await State.fetch(this.pubkey);
+  }
+
+  getMintVaultCollateral(
+    mint: PublicKey,
+  ): [PublicKey, Schema["collaterals"][0]] {
+    const i = this.data.collaterals.findIndex((x) => x.mint.equals(mint));
+    if (i < 0) {
+      throw RangeError(
+        `Invalid mint ${mint.toBase58()} for <State ${this.pubkey.toBase58()}>`,
+      );
+    }
+    return [
+      this.data.vaults[i] as PublicKey,
+      this.data.collaterals[i] as Schema["collaterals"][0],
+    ];
+  }
+
+  getSymbolIndex(sym: string): number {
+    const i = this.data.perpMarkets.findIndex((x) => x.symbol === sym);
+    if (i < 0) {
+      throw RangeError(
+        `Invalid symbol ${sym} for <State ${this.pubkey.toBase58()}>`,
+      );
+    }
+    return i;
+  }
+
+  getSymbolMarketKey(sym: string): PublicKey {
+    return this.data.perpMarkets[this.getSymbolIndex(sym)]
+      ?.dexMarket as PublicKey;
+  }
+
+  _getSymbolMarket: { [k: string]: Market } = {};
+  async getSymbolMarket(sym: string): Promise<Market> {
+    if (!this._getSymbolMarket[sym]) {
+      this._getSymbolMarket[sym] = await Market.load(
+        this.connection,
+        this.getSymbolMarketKey(sym),
+        this.provider.opts,
+        DEX_PROGRAM_ID,
+      );
+    }
+    return this._getSymbolMarket[sym] as Market;
+  }
+
   async changeAdmin(newAdmin: PublicKey) {
     await this.program.rpc.changeAdmin({
       accounts: {
@@ -157,28 +203,108 @@ export default class State extends BaseAccount<Schema, "state"> {
     });
   }
 
-  async changeInsurance(x: BN, tokenAccount: PublicKey, vault: PublicKey) {
-    await this.program.rpc[x.isNeg() ? "reduceInsurance" : "addInsurance"](
-      x.abs(),
+  async addCollateral({
+    weight,
+    mint,
+    oracle,
+    fallbackOracle,
+  }: Readonly<{
+    weight: number;
+    mint: PublicKey;
+    oracle?: PublicKey;
+    fallbackOracle?: PublicKey;
+  }>) {
+    const vault = Keypair.generate();
+    await this.program.rpc.addCollateral(
+      weight,
+      oracle !== undefined,
+      fallbackOracle !== undefined,
       {
         accounts: {
+          admin: this.data.admin,
           state: this.pubkey,
           stateSigner: this.signer,
-          admin: this.data.admin,
-          tokenAccount,
+          cache: this.cache.pubkey,
           vault,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          mint,
+          oracle: oracle ?? PublicKey.default,
+          fallback: fallbackOracle ?? PublicKey.default,
+        },
+        instructions: [
+          ...(await createTokenAccountIxs(
+            vault,
+            this.provider,
+            mint,
+            this.signer,
+          )),
+        ],
+        signers: [vault],
+      },
+    );
+  }
+
+  async updateCollateral({
+    weight,
+    mint,
+    oracle,
+    hasFallbackOracle,
+    fallbackOracle,
+  }: Readonly<{
+    weight: number | null;
+    mint: PublicKey;
+    oracle: PublicKey | null;
+    hasFallbackOracle: boolean | null;
+    fallbackOracle: PublicKey | null;
+  }>) {
+    await this.program.rpc.updateCollateral(
+      weight,
+      oracle,
+      hasFallbackOracle,
+      fallbackOracle,
+      {
+        accounts: {
+          admin: this.data.admin,
+          state: this.pubkey,
+          cache: this.cache.pubkey,
+          mint,
         },
       },
     );
   }
 
-  async realizeFees(dexMarket: PublicKey) {
+  async addInsurance(x: BN, tokenAccount: PublicKey, vault: PublicKey) {
+    await this.program.rpc.addInsurance(x, {
+      accounts: {
+        state: this.pubkey,
+        stateSigner: this.signer,
+        authority: this.wallet.publicKey,
+        tokenAccount,
+        vault,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      },
+    });
+  }
+
+  async reduceInsurance(x: BN, tokenAccount: PublicKey, vault: PublicKey) {
+    await this.program.rpc.reduceInsurance(x, {
+      accounts: {
+        state: this.pubkey,
+        stateSigner: this.signer,
+        admin: this.data.admin,
+        tokenAccount,
+        vault,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      },
+    });
+  }
+
+  async realizeFees(sym: string) {
     await this.program.rpc.realizeFees({
       accounts: {
         state: this.pubkey,
         stateSigner: this.signer,
-        dexMarket,
+        signer: this.signer,
+        dexMarket: this.getSymbolMarketKey(sym),
         dexProgram: DEX_PROGRAM_ID,
       },
     });
@@ -317,19 +443,16 @@ export default class State extends BaseAccount<Schema, "state"> {
     );
   }
 
-  async updatePerpFunding(
-    dexMarket: PublicKey,
-    marketBids: PublicKey,
-    marketAsks: PublicKey,
-  ) {
+  async updatePerpFunding(symbol: string) {
+    const market = await this.getSymbolMarket(symbol);
     await this.program.rpc.updatePerpFunding({
       accounts: {
         state: this.pubkey,
         stateSigner: this.signer,
         cache: this.cache.pubkey,
-        dexMarket,
-        marketBids,
-        marketAsks,
+        dexMarket: market.address,
+        marketBids: market.bidsAddress,
+        marketAsks: market.asksAddress,
         dexProgram: DEX_PROGRAM_ID,
       },
     });
