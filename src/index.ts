@@ -3,9 +3,10 @@ export * from "./config";
 export * from "./utils";
 export * from "./global";
 export * from "./associatedToken";
-
 export * from "./math/lmsr";
 export * from "./math/vamm";
+
+export { default as Num } from './Num';
 
 export { default as State } from "./accounts/State";
 export { default as Margin } from "./accounts/Margin";

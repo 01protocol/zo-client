@@ -157,7 +157,7 @@
       ]
     },
     {
-      "name": "realizeFees",
+      "name": "realizeMarketFees",
       "accounts": [
         {
           "name": "state",
@@ -523,26 +523,6 @@
           "isSigner": false
         },
         {
-          "name": "vAssetMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "vQuoteMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "vAssetVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vQuoteVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
           "name": "dexMarket",
           "isMut": true,
           "isSigner": false
@@ -578,6 +558,11 @@
           "isSigner": false
         },
         {
+          "name": "fallback",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "rent",
           "isMut": false,
           "isSigner": false
@@ -597,10 +582,6 @@
         {
           "name": "symbol",
           "type": "string"
-        },
-        {
-          "name": "vaultSignerNonce",
-          "type": "u64"
         },
         {
           "name": "perpType",
@@ -627,6 +608,10 @@
         {
           "name": "baseImf",
           "type": "u16"
+        },
+        {
+          "name": "coinDecimals",
+          "type": "u8"
         }
       ]
     },
@@ -735,12 +720,7 @@
           "isSigner": false
         }
       ],
-      "args": [
-        {
-          "name": "symbol",
-          "type": "string"
-        }
-      ]
+      "args": []
     },
     {
       "name": "placePerpOrder",
@@ -767,11 +747,6 @@
         },
         {
           "name": "margin",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "traderAssetAccount",
           "isMut": true,
           "isSigner": false
         },
@@ -811,32 +786,7 @@
           "isSigner": false
         },
         {
-          "name": "vAssetMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vAssetVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vQuoteMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vQuoteVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
           "name": "dexProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
         },
@@ -1203,7 +1153,7 @@
             "name": "collateral",
             "type": {
               "array": [
-                "u64",
+                "i64",
                 50
               ]
             }
@@ -1234,6 +1184,10 @@
           },
           {
             "name": "insurance",
+            "type": "u64"
+          },
+          {
+            "name": "feesAccrued",
             "type": "u64"
           },
           {
@@ -1382,7 +1336,7 @@
           },
           {
             "name": "nativePcTotal",
-            "type": "u64"
+            "type": "i64"
           },
           {
             "name": "posSize",
@@ -1390,7 +1344,7 @@
           },
           {
             "name": "realizedPnl",
-            "type": "i128"
+            "type": "i64"
           },
           {
             "name": "coinOnBids",
@@ -1615,7 +1569,7 @@
     },
     {
       "code": 303,
-      "name": "InvalidArguments",
+      "name": "InvalidArgument",
       "msg": "Arguments passed were invalid"
     },
     {
@@ -1797,6 +1751,16 @@
       "code": 339,
       "name": "OracleNeedsUpdating",
       "msg": "Oracle last updated time is beyond the valid time since last update"
+    },
+    {
+      "code": 340,
+      "name": "InvalidSymbol",
+      "msg": "The symbol is invalid"
+    },
+    {
+      "code": 341,
+      "name": "NegativeCollateral",
+      "msg": "Negative collateral value"
     }
   ]
 }

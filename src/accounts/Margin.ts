@@ -9,8 +9,13 @@ import { BN } from "@project-serum/anchor";
 import BaseAccount from "./BaseAccount";
 import State from "./State";
 import Control from "./Control";
-import { MarginSchema as Schema, OrderType } from "../types";
+import Num from "../Num";
+import { MarginSchema, OrderType } from "../types";
 import { DEX_PROGRAM_ID, CONTROL_ACCOUNT_SIZE } from "../config";
+
+interface Schema extends Omit<MarginSchema, "collateral"> {
+  collateral: Num[];
+}
 
 export default class Margin extends BaseAccount<Schema, "margin"> {
   private constructor(
@@ -23,14 +28,20 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
     super(pubkey, accClient, data);
   }
 
-  private static fetch(k: PublicKey): Promise<Schema> {
-    return this.program.account["margin"].fetch(k);
+  private static async fetch(k: PublicKey, st: State): Promise<Schema> {
+    const data = await this.program.account["margin"].fetch(k);
+    return {
+      ...data,
+      collateral: st.data.collaterals.map(
+        (c, i) => new Num(data.collateral[i]!, c.decimals, c.mint),
+      ),
+    };
   }
 
   static async load(st: State): Promise<Margin> {
     const [key, _nonce] = await this.getPda(st, this.wallet.publicKey);
     const clientName = "margin";
-    let data = await this.fetch(key);
+    let data = await this.fetch(key, st);
     let control = await Control.load(data.control);
     return new this(key, clientName, data, control, st);
   }
@@ -76,6 +87,14 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
     );
   }
 
+  async refresh(): Promise<void> {
+    [this.data] = await Promise.all([
+      Margin.fetch(this.pubkey, this.state),
+      this.control.refresh(),
+      this.state.refresh(),
+    ]);
+  }
+
   async getOpenOrdersKey(symbol: string): Promise<[PublicKey, number]> {
     const dexMarket = this.state.getSymbolMarketKey(symbol);
     return await PublicKey.findProgramAddress(
@@ -88,18 +107,12 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
     symbol: string,
   ): Promise<Control["data"]["openOrdersAgg"][0]> {
     const marketIndex = this.state.getSymbolIndex(symbol);
-    const market = await this.state.getSymbolMarket(symbol);
-    const oo = this.control.data.openOrdersAgg[marketIndex];
-    if (!oo) {
-      throw RangeError(
-        `Invalid index ${marketIndex} in <Margin ${this.pubkey.toBase58()}>`,
-      );
+    let oo = this.control.data.openOrdersAgg[marketIndex];
+    if (oo!.key.equals(PublicKey.default)) {
+      await this.createPerpOpenOrders(symbol);
+      oo = this.control.data.openOrdersAgg[marketIndex];
     }
-    return oo;
-  }
-
-  async refresh(): Promise<void> {
-    this.data = await Margin.fetch(this.pubkey);
+    return oo!;
   }
 
   async deposit(
@@ -144,7 +157,7 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
 
   async createPerpOpenOrders(symbol: string) {
     const [ooKey, _] = await this.getOpenOrdersKey(symbol);
-    await this.program.rpc.createPerpOpenOrders(symbol, {
+    await this.program.rpc.createPerpOpenOrders({
       accounts: {
         state: this.state.pubkey,
         stateSigner: this.state.signer,
@@ -165,7 +178,6 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
     symbol,
     orderType,
     isLong,
-    assetAccount,
     limitPrice,
     maxBaseQty,
     maxQuoteQty,
@@ -173,7 +185,6 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
     symbol: string;
     orderType: OrderType;
     isLong: boolean;
-    assetAccount: PublicKey;
     limitPrice: BN;
     maxBaseQty: BN;
     maxQuoteQty: BN;
@@ -194,7 +205,6 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
           cache: this.state.cache.pubkey,
           authority: this.wallet.publicKey,
           margin: this.pubkey,
-          traderAssetAccount: assetAccount,
           control: this.control.pubkey,
           openOrders: oo.key,
           dexMarket: market.address,
@@ -202,12 +212,7 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
           eventQ: market.eventQueueAddress,
           marketBids: market.bidsAddress,
           marketAsks: market.asksAddress,
-          vAssetMint: market.baseMintAddress,
-          vAssetVault: market.baseVaultAddress,
-          vQuoteMint: market.quoteMintAddress,
-          vQuoteVault: market.quoteVaultAddress,
           dexProgram: DEX_PROGRAM_ID,
-          tokenProgram: TOKEN_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         },
       },
