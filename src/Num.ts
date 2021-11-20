@@ -1,4 +1,5 @@
 import BN from "bn.js";
+import Decimal from 'decimal.js'
 
 export default class Num {
   public readonly n: Readonly<BN>;
@@ -26,7 +27,11 @@ export default class Num {
       : `${s.slice(0, i)}.${s.slice(i, i + precision)}${"0".repeat(l)}`;
   }
 
-  public toNumber(): number {
+  get number(): number {
     return Number.parseFloat(this.toString());
+  }
+
+  get decimal(): Decimal {
+    return new Decimal(this.number);
   }
 }
