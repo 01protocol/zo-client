@@ -27,6 +27,26 @@ export function loadWrappedI80F48({ data }: { data: BN }): Decimal {
   return new Decimal(`0b${data.toString(2)}p-48`);
 }
 
+/// Instead of returning -1 if the element is not found,
+/// return `array.length`. Much easier to use for slicing.
+export function findIndexOf<T>(l: T[], p: (T) => boolean) {
+  for (let i = 0; i < l.length; ++i) {
+    if (p(l[i])) {
+      return i;
+    }
+  }
+  return l.length;
+}
+
+export function findLastIndexOf<T>(l: T[], p: (T) => boolean) {
+  for (let i = l.length - 1; i >= 0; --i) {
+    if (p(l[i])) {
+      return i;
+    }
+  }
+  return -1;
+}
+
 export async function getMintInfo(
   provider: Provider,
   pubkey: PublicKey,
