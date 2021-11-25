@@ -2,11 +2,11 @@ import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
 import { Idl } from "@project-serum/anchor";
 
 // == ACCOUNT SIZES ==
-export const STATE_ACCOUNT_SIZE = 8 + 22123;
-export const CACHE_ACCOUNT_SIZE = 8 + 96100;
-export const CONTROL_ACCOUNT_SIZE = 8 + 8032;
+export const STATE_ACCOUNT_SIZE = 8 + 15981;
+export const CACHE_ACCOUNT_SIZE = 8 + 107200;
+export const CONTROL_ACCOUNT_SIZE = 8 + 8932;
 
-export const DEX_MARKET_ACCOUNT_SIZE = 12 + 1464;
+export const DEX_MARKET_ACCOUNT_SIZE = 12 + 1360;
 export const REQ_Q_ACCOUNT_SIZE = 12 + 5120;
 export const EVENT_Q_ACCOUNT_SIZE = 12 + 262144;
 export const BIDS_ACCOUNT_SIZE = 12 + 65536;

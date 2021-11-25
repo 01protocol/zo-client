@@ -10,6 +10,7 @@ import BN from "bn.js";
 import { USDC_MINT_ADDRESS } from "../config";
 import {
   findIndexOf,
+  loadSymbol,
   createMint,
   createTokenAccount,
   createTokenAccountIxs,
@@ -17,7 +18,7 @@ import {
 import BaseAccount from "./BaseAccount";
 import Cache from "./Cache";
 import { Market } from "../serum/market";
-import { StateSchema, PerpType } from "../types";
+import { StateSchema, PerpType, OracleType } from "../types";
 import {
   DEX_PROGRAM_ID,
   STATE_ACCOUNT_SIZE,
@@ -29,12 +30,21 @@ import {
   ASKS_ACCOUNT_SIZE,
 } from "../config";
 
-type PerpMarket = Omit<StateSchema["perpMarkets"][0], "symbol"> & {
-  symbol: string;
+type CollateralInfo = Omit<StateSchema["collaterals"][0], "oracleSymbol"> & {
+  oracleSymbol: string;
 };
 
-interface Schema extends Omit<StateSchema, "perpMarkets"> {
+type PerpMarket = Omit<
+  StateSchema["perpMarkets"][0],
+  "symbol" | "oracleSymbol"
+> & {
+  symbol: string;
+  oracleSymbol: string;
+};
+
+interface Schema extends Omit<StateSchema, "perpMarkets" | "collaterals"> {
   perpMarkets: PerpMarket[];
+  collaterals: CollateralInfo[];
 }
 
 export default class State extends BaseAccount<Schema, "state"> {
@@ -59,7 +69,6 @@ export default class State extends BaseAccount<Schema, "state"> {
     let data = (await this.program.account["state"].fetch(k)) as StateSchema;
 
     // Convert StateSchema to Schema.
-    const dec = new TextDecoder("utf-8");
     return {
       ...data,
       vaults: data.vaults.filter((k) => !k.equals(PublicKey.default)),
@@ -67,34 +76,27 @@ export default class State extends BaseAccount<Schema, "state"> {
         // Remove null collaterals.
         .slice(
           0,
-          findIndexOf(
-            data.collaterals,
-            (c) => c.mint.equals(PublicKey.default),
+          findIndexOf(data.collaterals, (c) =>
+            c.mint.equals(PublicKey.default),
           ),
-        ),
+        )
+        .map((x) => ({
+          ...x,
+          oracleSymbol: loadSymbol(x.oracleSymbol),
+        })),
       perpMarkets: data.perpMarkets
         // Remove null PerpMarkets.
         .slice(
           0,
-          findIndexOf(
-            data.collaterals,
-            (p) => p.dexMarket.equals(PublicKey.default),
+          findIndexOf(data.perpMarkets, (p) =>
+            p.dexMarket.equals(PublicKey.default),
           ),
         )
-        // Need to convert symbol, which is a [u8; 24], to a JS String.
-        // Can't use String.fromCodePoint since that takes in u16,
-        // when we are receiving a UTF-8 byte array.
-        .map((x) => {
-          // Find null char.
-          let i = x.symbol.indexOf(0);
-          i = i < 0 ? x.symbol.length : i;
-          const symbol = dec.decode(new Uint8Array(x.symbol.slice(0, i)));
-
-          return {
-            ...x,
-            symbol,
-          };
-        }),
+        .map((x) => ({
+          ...x,
+          symbol: loadSymbol(x.symbol),
+          oracleSymbol: loadSymbol(x.oracleSymbol),
+        })),
     };
   }
 
@@ -108,7 +110,7 @@ export default class State extends BaseAccount<Schema, "state"> {
     return new this(k, "state", data, signer, cache);
   }
 
-  static async init(baseMint: PublicKey = USDC_MINT_ADDRESS): Promise<State> {
+  static async init(): Promise<State> {
     const [state, cache, stateLamports, cacheLamports] = await Promise.all([
       Keypair.generate(),
       Keypair.generate(),
@@ -118,19 +120,11 @@ export default class State extends BaseAccount<Schema, "state"> {
 
     const [stateSigner, signerNonce] = await this.getSigner(state.publicKey);
 
-    const baseVault = await createTokenAccount(
-      this.provider,
-      baseMint,
-      stateSigner,
-    );
-
     await this.program.rpc.initState!(signerNonce, {
       accounts: {
         admin: this.wallet.publicKey,
         state: state.publicKey,
         stateSigner,
-        baseMint,
-        baseVault,
         cache: cache.publicKey,
         rent: SYSVAR_RENT_PUBKEY,
         systemProgram: SystemProgram.programId,
@@ -159,7 +153,10 @@ export default class State extends BaseAccount<Schema, "state"> {
   }
 
   async refresh(): Promise<void> {
-    this.data = await State.fetch(this.pubkey);
+    [this.data] = await Promise.all([
+      State.fetch(this.pubkey),
+      this.cache.refresh(),
+    ]);
   }
 
   getMintVaultCollateral(
@@ -218,29 +215,36 @@ export default class State extends BaseAccount<Schema, "state"> {
   async addCollateral({
     weight,
     mint,
-    oracle,
-    fallbackOracle,
+    oracleSymbol,
+    isBorrowable,
+    optimalUtil,
+    optimalRate,
+    maxRate,
   }: Readonly<{
     weight: number;
     mint: PublicKey;
-    oracle?: PublicKey;
-    fallbackOracle?: PublicKey;
+    oracleSymbol: string;
+    isBorrowable: boolean;
+    optimalUtil: number;
+    optimalRate: number;
+    maxRate: number;
   }>) {
     const vault = Keypair.generate();
     await this.program.rpc.addCollateral(
+      oracleSymbol,
       weight,
-      oracle !== undefined,
-      fallbackOracle !== undefined,
+      isBorrowable,
+      optimalUtil,
+      optimalRate,
+      maxRate,
       {
         accounts: {
           admin: this.data.admin,
           state: this.pubkey,
           stateSigner: this.signer,
-          cache: this.cache.pubkey,
-          vault,
+          cache: this.data.cache,
+          vault: vault.publicKey,
           mint,
-          oracle: oracle ?? PublicKey.default,
-          fallback: fallbackOracle ?? PublicKey.default,
         },
         instructions: [
           ...(await createTokenAccountIxs(
@@ -257,29 +261,50 @@ export default class State extends BaseAccount<Schema, "state"> {
 
   async updateCollateral({
     weight,
+    oracleSymbol,
     mint,
-    oracle,
-    hasFallbackOracle,
-    fallbackOracle,
   }: Readonly<{
     weight: number | null;
+    oracleSymbol: string | null;
     mint: PublicKey;
-    oracle: PublicKey | null;
-    hasFallbackOracle: boolean | null;
-    fallbackOracle: PublicKey | null;
   }>) {
-    await this.program.rpc.updateCollateral(
-      weight,
-      oracle,
-      hasFallbackOracle,
-      fallbackOracle,
+    await this.program.rpc.updateCollateral(weight, oracleSymbol, {
+      accounts: {
+        admin: this.data.admin,
+        state: this.pubkey,
+        cache: this.cache.pubkey,
+        mint,
+      },
+    });
+  }
+
+  async addOracle({
+    symbol,
+    baseDecimals,
+    quoteDecimals,
+    oracles,
+  }: Readonly<{
+    symbol: string;
+    baseDecimals: number;
+    quoteDecimals: number;
+    oracles: [OracleType, PublicKey][];
+  }>) {
+    await this.program.rpc.addOracle(
+      symbol,
+      baseDecimals,
+      quoteDecimals,
+      oracles.map((x) => x[0]),
       {
         accounts: {
           admin: this.data.admin,
           state: this.pubkey,
-          cache: this.cache.pubkey,
-          mint,
+          cache: this.data.cache,
         },
+        remainingAccounts: oracles.map((x) => ({
+          isSigner: false,
+          isWritable: false,
+          pubkey: x[1],
+        })),
       },
     );
   }
@@ -310,8 +335,8 @@ export default class State extends BaseAccount<Schema, "state"> {
     });
   }
 
-  async realizeMarketFees(sym: string) {
-    await this.program.rpc.realizeMarketFees({
+  async sweepMarketFees(sym: string) {
+    await this.program.rpc.sweepMarketFees({
       accounts: {
         state: this.pubkey,
         stateSigner: this.signer,
@@ -324,26 +349,24 @@ export default class State extends BaseAccount<Schema, "state"> {
 
   async initPerpMarket({
     symbol,
+    oracleSymbol,
     perpType,
     vAssetLotSize,
     vQuoteLotSize,
     strike,
     minMmf,
     baseImf,
-    oracle,
-    fallbackOracle,
     coinDecimals,
   }: Readonly<{
     symbol: string;
+    oracleSymbol: string;
     perpType: PerpType;
-    vAssetLotSize: number;
-    vQuoteLotSize: number;
+    vAssetLotSize: BN;
+    vQuoteLotSize: BN;
     strike: BN;
     minMmf: number;
     baseImf: number;
     coinDecimals: number;
-    oracle: PublicKey;
-    fallbackOracle: PublicKey;
   }>) {
     const [dexMarket, asks, bids, reqQ, eventQ] = [
       Keypair.generate(),
@@ -411,6 +434,7 @@ export default class State extends BaseAccount<Schema, "state"> {
 
     await this.program.rpc.initPerpMarket(
       symbol,
+      oracleSymbol,
       perpType,
       vAssetLotSize,
       vQuoteLotSize,
@@ -430,8 +454,6 @@ export default class State extends BaseAccount<Schema, "state"> {
           reqQ: reqQ.publicKey,
           eventQ: eventQ.publicKey,
           dexProgram: DEX_PROGRAM_ID,
-          oracle,
-          fallback: fallbackOracle,
           rent: SYSVAR_RENT_PUBKEY,
           systemProgram: SystemProgram.programId,
           tokenProgram: TOKEN_PROGRAM_ID,

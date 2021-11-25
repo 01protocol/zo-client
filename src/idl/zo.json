@@ -21,16 +21,6 @@
           "isSigner": false
         },
         {
-          "name": "baseVault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "baseMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "cache",
           "isMut": true,
           "isSigner": false
@@ -157,7 +147,7 @@
       ]
     },
     {
-      "name": "realizeMarketFees",
+      "name": "sweepMarketFees",
       "accounts": [
         {
           "name": "state",
@@ -219,30 +209,32 @@
           "name": "mint",
           "isMut": false,
           "isSigner": false
-        },
-        {
-          "name": "oracle",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "fallback",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
+        {
+          "name": "oracleSymbol",
+          "type": "string"
+        },
         {
           "name": "weight",
           "type": "u16"
         },
         {
-          "name": "hasOracle",
+          "name": "isBorrowable",
           "type": "bool"
         },
         {
-          "name": "hasFallback",
-          "type": "bool"
+          "name": "optimalUtil",
+          "type": "u16"
+        },
+        {
+          "name": "optimalRate",
+          "type": "u16"
+        },
+        {
+          "name": "maxRate",
+          "type": "u16"
         }
       ]
     },
@@ -278,21 +270,9 @@
           }
         },
         {
-          "name": "newOracle",
+          "name": "newOracleSymbol",
           "type": {
-            "option": "publicKey"
-          }
-        },
-        {
-          "name": "newHasFallback",
-          "type": {
-            "option": "bool"
-          }
-        },
-        {
-          "name": "newFallbackOracle",
-          "type": {
-            "option": "publicKey"
+            "option": "string"
           }
         }
       ]
@@ -314,17 +294,33 @@
           "name": "cache",
           "isMut": true,
           "isSigner": false
-        },
-        {
-          "name": "oracle",
-          "isMut": false,
-          "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "symbol",
+          "type": "string"
+        },
+        {
+          "name": "baseDecimals",
+          "type": "u8"
+        },
+        {
+          "name": "quoteDecimals",
+          "type": "u8"
+        },
+        {
+          "name": "oracleTypes",
+          "type": {
+            "vec": {
+              "defined": "OracleType"
+            }
+          }
+        }
+      ]
     },
     {
-      "name": "updateOracle",
+      "name": "removeOracle",
       "accounts": [
         {
           "name": "admin",
@@ -340,19 +336,12 @@
           "name": "cache",
           "isMut": true,
           "isSigner": false
-        },
-        {
-          "name": "oracleToUpdate",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
         {
-          "name": "newKey",
-          "type": {
-            "option": "publicKey"
-          }
+          "name": "symbol",
+          "type": "string"
         }
       ]
     },
@@ -411,6 +400,11 @@
           "isSigner": false
         },
         {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "authority",
           "isMut": false,
           "isSigner": true
@@ -438,6 +432,10 @@
       ],
       "args": [
         {
+          "name": "repayOnly",
+          "type": "bool"
+        },
+        {
           "name": "amount",
           "type": "u64"
         }
@@ -458,7 +456,7 @@
         },
         {
           "name": "cache",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -493,6 +491,10 @@
         }
       ],
       "args": [
+        {
+          "name": "allowBorrow",
+          "type": "bool"
+        },
         {
           "name": "amount",
           "type": "u64"
@@ -553,16 +555,6 @@
           "isSigner": false
         },
         {
-          "name": "oracle",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "fallback",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "rent",
           "isMut": false,
           "isSigner": false
@@ -581,6 +573,10 @@
       "args": [
         {
           "name": "symbol",
+          "type": "string"
+        },
+        {
+          "name": "oracleSymbol",
           "type": "string"
         },
         {
@@ -653,15 +649,9 @@
           }
         },
         {
-          "name": "newOracleKey",
+          "name": "newOracleSymbol",
           "type": {
-            "option": "publicKey"
-          }
-        },
-        {
-          "name": "newOracleFallback",
-          "type": {
-            "option": "publicKey"
+            "option": "string"
           }
         }
       ]
@@ -906,7 +896,7 @@
         },
         {
           "name": "cache",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -941,7 +931,58 @@
           "isSigner": true
         },
         {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "control",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "forceCancelAllPerpOrders",
+      "accounts": [
+        {
+          "name": "pruner",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "control",
           "isMut": true,
           "isSigner": false
         },
@@ -952,6 +993,188 @@
         },
         {
           "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reqQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "limit",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "forceCloseEverlastingPosition",
+      "accounts": [
+        {
+          "name": "liquidator",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "control",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reqQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "liquidatePerpPosition",
+      "accounts": [
+        {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "liqor",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "liqorMargin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "liqorControl",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "liqorOo",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "liqee",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "liqeeMargin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "liqeeControl",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "liqeeOo",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reqQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
           "isMut": true,
           "isSigner": false
         },
@@ -974,53 +1197,6 @@
       "args": []
     },
     {
-      "name": "forceCancelAllPerpOrders",
-      "accounts": [
-        {
-          "name": "pruner",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "margin",
-          "isMut": true,
-          "isSigner": false
-        }
-      ],
-      "args": [
-        {
-          "name": "limit",
-          "type": "u16"
-        }
-      ]
-    },
-    {
-      "name": "forceCloseEverlastingPosition",
-      "accounts": [
-        {
-          "name": "liquidator",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "margin",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "rent",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "endLiquidate",
       "accounts": [
         {
@@ -1029,7 +1205,27 @@
           "isSigner": true
         },
         {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "control",
           "isMut": true,
           "isSigner": false
         },
@@ -1075,7 +1271,81 @@
           "isSigner": false
         }
       ],
+      "args": [
+        {
+          "name": "symbols",
+          "type": {
+            "vec": "string"
+          }
+        },
+        {
+          "name": "mockPrices",
+          "type": {
+            "option": {
+              "vec": {
+                "option": "u64"
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "cacheInterestRate",
+      "accounts": [
+        {
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
       "args": []
+    },
+    {
+      "name": "consumeEvents",
+      "accounts": [
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQueue",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "coinFeeReceivableAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "pcFeeReceivableAccount",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "limit",
+          "type": "u16"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -1085,7 +1355,7 @@
         "kind": "struct",
         "fields": [
           {
-            "name": "oracleCache",
+            "name": "oracles",
             "type": {
               "array": [
                 {
@@ -1096,13 +1366,33 @@
             }
           },
           {
-            "name": "markCache",
+            "name": "marks",
             "type": {
               "array": [
                 {
                   "defined": "MarkCache"
                 },
                 100
+              ]
+            }
+          },
+          {
+            "name": "fundingCache",
+            "type": {
+              "array": [
+                "i128",
+                100
+              ]
+            }
+          },
+          {
+            "name": "borrowCache",
+            "type": {
+              "array": [
+                {
+                  "defined": "BorrowCache"
+                },
+                50
               ]
             }
           }
@@ -1153,7 +1443,9 @@
             "name": "collateral",
             "type": {
               "array": [
-                "i64",
+                {
+                  "defined": "WrappedI80F48"
+                },
                 50
               ]
             }
@@ -1227,19 +1519,66 @@
   ],
   "types": [
     {
+      "name": "BorrowCache",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "supply",
+            "type": {
+              "defined": "WrappedI80F48"
+            }
+          },
+          {
+            "name": "borrows",
+            "type": {
+              "defined": "WrappedI80F48"
+            }
+          },
+          {
+            "name": "supplyMultiplier",
+            "type": {
+              "defined": "WrappedI80F48"
+            }
+          },
+          {
+            "name": "borrowMultiplier",
+            "type": {
+              "defined": "WrappedI80F48"
+            }
+          },
+          {
+            "name": "lastUpdated",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
       "name": "OracleCache",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "key",
-            "type": "publicKey"
+            "name": "symbol",
+            "type": {
+              "defined": "Symbol"
+            }
           },
           {
-            "name": "oracleType",
+            "name": "sources",
             "type": {
-              "defined": "OracleType"
+              "array": [
+                {
+                  "defined": "OracleSource"
+                },
+                2
+              ]
             }
+          },
+          {
+            "name": "lastUpdated",
+            "type": "u64"
           },
           {
             "name": "price",
@@ -1254,8 +1593,12 @@
             }
           },
           {
-            "name": "lastUpdated",
-            "type": "u64"
+            "name": "baseDecimals",
+            "type": "u8"
+          },
+          {
+            "name": "quoteDecimals",
+            "type": "u8"
           }
         ]
       }
@@ -1353,6 +1696,52 @@
           {
             "name": "coinOnAsks",
             "type": "u64"
+          },
+          {
+            "name": "orderCount",
+            "type": "u8"
+          },
+          {
+            "name": "fundingIndex",
+            "type": "i128"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OracleSource",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "ty",
+            "type": {
+              "defined": "OracleType"
+            }
+          },
+          {
+            "name": "key",
+            "type": "publicKey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OraclePrice",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "price",
+            "type": {
+              "defined": "WrappedI80F48"
+            }
+          },
+          {
+            "name": "twap",
+            "type": {
+              "defined": "WrappedI80F48"
+            }
           }
         ]
       }
@@ -1367,6 +1756,12 @@
             "type": "publicKey"
           },
           {
+            "name": "oracleSymbol",
+            "type": {
+              "defined": "Symbol"
+            }
+          },
+          {
             "name": "decimals",
             "type": "u8"
           },
@@ -1375,46 +1770,20 @@
             "type": "u16"
           },
           {
-            "name": "hasOracle",
+            "name": "isBorrowable",
             "type": "bool"
           },
           {
-            "name": "oracle",
-            "type": {
-              "defined": "OracleInfo"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "OracleInfo",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "oracleType",
-            "type": {
-              "defined": "OracleType"
-            }
+            "name": "optimalUtil",
+            "type": "u16"
           },
           {
-            "name": "key",
-            "type": "publicKey"
+            "name": "optimalRate",
+            "type": "u16"
           },
           {
-            "name": "hasFallback",
-            "type": "bool"
-          },
-          {
-            "name": "fallbackOracle",
-            "type": {
-              "defined": "OracleType"
-            }
-          },
-          {
-            "name": "fallbackKey",
-            "type": "publicKey"
+            "name": "maxRate",
+            "type": "u16"
           }
         ]
       }
@@ -1427,22 +1796,19 @@
           {
             "name": "symbol",
             "type": {
-              "array": [
-                "u8",
-                24
-              ]
+              "defined": "Symbol"
+            }
+          },
+          {
+            "name": "oracleSymbol",
+            "type": {
+              "defined": "Symbol"
             }
           },
           {
             "name": "perpType",
             "type": {
               "defined": "PerpType"
-            }
-          },
-          {
-            "name": "oracle",
-            "type": {
-              "defined": "OracleInfo"
             }
           },
           {
@@ -1477,6 +1843,23 @@
       }
     },
     {
+      "name": "Symbol",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "data",
+            "type": {
+              "array": [
+                "u8",
+                24
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "WrappedI80F48",
       "type": {
         "kind": "struct",
@@ -1484,6 +1867,23 @@
           {
             "name": "data",
             "type": "i128"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OracleType",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Nil"
+          },
+          {
+            "name": "Pyth"
+          },
+          {
+            "name": "Switchboard"
           }
         ]
       }
@@ -1532,20 +1932,6 @@
           },
           {
             "name": "Ask"
-          }
-        ]
-      }
-    },
-    {
-      "name": "OracleType",
-      "type": {
-        "kind": "enum",
-        "variants": [
-          {
-            "name": "Pyth"
-          },
-          {
-            "name": "Switchboard"
           }
         ]
       }
@@ -1724,43 +2110,83 @@
     },
     {
       "code": 334,
+      "name": "InvalidOracleType",
+      "msg": "The given oracle type is invalid"
+    },
+    {
+      "code": 335,
+      "name": "PriceOracleIssue",
+      "msg": "Oracle encountered an issue when fetching accurate price."
+    },
+    {
+      "code": 336,
       "name": "InvalidRemainingAccounts",
       "msg": "The remaining accounts passed are invalid"
     },
     {
-      "code": 335,
+      "code": 337,
       "name": "DifferentExpo",
       "msg": "Expo is different"
     },
     {
-      "code": 336,
+      "code": 338,
       "name": "InsufficientInsurance",
       "msg": "Insufficient funds in insurance"
     },
     {
-      "code": 337,
+      "code": 339,
       "name": "InvalidOracle",
       "msg": "The oracle is invalid"
     },
     {
-      "code": 338,
-      "name": "InvalidOracleType",
-      "msg": "The oracle type is invalid"
-    },
-    {
-      "code": 339,
+      "code": 340,
       "name": "OracleNeedsUpdating",
       "msg": "Oracle last updated time is beyond the valid time since last update"
     },
     {
-      "code": 340,
+      "code": 341,
       "name": "InvalidSymbol",
       "msg": "The symbol is invalid"
     },
     {
-      "code": 341,
+      "code": 342,
       "name": "NegativeCollateral",
       "msg": "Negative collateral value"
+    },
+    {
+      "code": 343,
+      "name": "NothingToRepay",
+      "msg": "There is nothing to repay, cannot use repay only"
+    },
+    {
+      "code": 344,
+      "name": "NothingToWithdraw",
+      "msg": "There is nothing to repay, cannot use without allow borrow"
+    },
+    {
+      "code": 345,
+      "name": "InsufficientWithdrawalLiquidity",
+      "msg": "There is not enough liquidity in the vault to withdraw"
+    },
+    {
+      "code": 346,
+      "name": "UncancelledOpenOrders",
+      "msg": "There are open orders that have not been cancelled yet"
+    },
+    {
+      "code": 347,
+      "name": "InvalidOpenOrdersKey",
+      "msg": "Invalid open orders key"
+    },
+    {
+      "code": 348,
+      "name": "NotBorrowable",
+      "msg": "The asset is not borrowable"
+    },
+    {
+      "code": 349,
+      "name": "InvalidOracleSymbol",
+      "msg": "The oracle symbol is invalid"
     }
   ]
 }

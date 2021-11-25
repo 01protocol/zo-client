@@ -10,6 +10,7 @@ import BaseAccount from "./BaseAccount";
 import State from "./State";
 import Control from "./Control";
 import Num from "../Num";
+import { loadWrappedI80F48 } from "../utils";
 import { MarginSchema, OrderType } from "../types";
 import { DEX_PROGRAM_ID, CONTROL_ACCOUNT_SIZE } from "../config";
 
@@ -29,11 +30,14 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
   }
 
   private static async fetch(k: PublicKey, st: State): Promise<Schema> {
-    const data = await this.program.account["margin"].fetch(k);
+    const data = (await this.program.account["margin"].fetch(
+      k,
+    )) as MarginSchema;
     return {
       ...data,
       collateral: st.data.collaterals.map(
-        (c, i) => new Num(data.collateral[i]!, c.decimals, c.mint),
+        (c, i) =>
+          new Num(loadWrappedI80F48(data.collateral[i]!), c.decimals, c.mint),
       ),
     };
   }
@@ -119,11 +123,13 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
     tokenAccount: PublicKey,
     vault: PublicKey,
     amount: BN,
+    repayOnly: boolean,
   ): Promise<void> {
-    await this.program.rpc.deposit!(amount, {
+    await this.program.rpc.deposit!(repayOnly, amount, {
       accounts: {
         state: this.state.pubkey,
         stateSigner: this.state.signer,
+        cache: this.state.cache.pubkey,
         authority: this.wallet.publicKey,
         margin: this.pubkey,
         tokenAccount,

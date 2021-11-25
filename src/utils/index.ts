@@ -27,9 +27,21 @@ export function loadWrappedI80F48({ data }: { data: BN }): Decimal {
   return new Decimal(`0b${data.toString(2)}p-48`);
 }
 
-/// Instead of returning -1 if the element is not found,
-/// return `array.length`. Much easier to use for slicing.
-export function findIndexOf<T>(l: T[], p: (T) => boolean) {
+const utf8Decoder = new TextDecoder("utf-8");
+export function loadSymbol({ data: s }: { data: number[] }): string {
+  // Need to convert symbol, which is a [u8; 24], to a JS String.
+  // Can't use String.fromCodePoint since that takes in u16,
+  // when we are receiving a UTF-8 byte array.
+  let i = s.indexOf(0);
+  i = i < 0 ? s.length : i;
+  return utf8Decoder.decode(new Uint8Array(s.slice(0, i)));
+}
+
+/**
+ * Instead of returning -1 if the element is not found,
+ * return `array.length`. Much easier to use for slicing.
+ */
+export function findIndexOf<T>(l: readonly T[], p: (T) => boolean) {
   for (let i = 0; i < l.length; ++i) {
     if (p(l[i])) {
       return i;
@@ -38,7 +50,7 @@ export function findIndexOf<T>(l: T[], p: (T) => boolean) {
   return l.length;
 }
 
-export function findLastIndexOf<T>(l: T[], p: (T) => boolean) {
+export function findLastIndexOf<T>(l: readonly T[], p: (T) => boolean) {
   for (let i = l.length - 1; i >= 0; --i) {
     if (p(l[i])) {
       return i;

@@ -2,14 +2,18 @@ import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 import BaseAccount from "./BaseAccount";
 import { CacheSchema } from "../types";
-import { loadWrappedI80F48 } from "../utils";
+import { loadSymbol, loadWrappedI80F48 } from "../utils";
 
-type OracleCache = Omit<CacheSchema["oracleCache"][0], "price" | "twap"> & {
+type OracleCache = Omit<
+  CacheSchema["oracles"][0],
+  "symbol" | "price" | "twap"
+> & {
+  symbol: string;
   price: Decimal;
   twap: Decimal;
 };
 
-type MarkCache = Omit<CacheSchema["markCache"][0], "price" | "twap"> & {
+type MarkCache = Omit<CacheSchema["marks"][0], "price" | "twap"> & {
   price: Decimal;
   twap: {
     startTime: Date;
@@ -20,23 +24,36 @@ type MarkCache = Omit<CacheSchema["markCache"][0], "price" | "twap"> & {
   }[];
 };
 
-type Schema = Omit<CacheSchema, "oracleCache" | "markCache"> & {
-  oracleCache: OracleCache[];
-  markCache: MarkCache[];
+type BorrowCache = Omit<
+  CacheSchema["borrowCache"][0],
+  "supply" | "borrows" | "supplyMultiplier" | "borrowMultiplier"
+> & {
+  supply: Decimal;
+  borrows: Decimal;
+  supplyMultiplier: Decimal;
+  borrowMultiplier: Decimal;
+};
+
+type Schema = Omit<CacheSchema, "oracles" | "marks" | "borrowCache"> & {
+  oracles: OracleCache[];
+  marks: MarkCache[];
+  borrowCache: BorrowCache[];
 };
 
 export default class Cache extends BaseAccount<Schema, "cache"> {
-  static processData(data: CacheSchema): Schema {
+  static async fetch(k: PublicKey): Promise<Schema> {
+    const data = (await this.program.account["cache"].fetch(k)) as CacheSchema;
     return {
       ...data,
-      oracleCache: data.oracleCache
-        .filter((c) => !c.key.equals(PublicKey.default))
+      oracles: data.oracles
+        .filter((c) => !c.symbol.data.every((x) => x === 0))
         .map((c) => ({
           ...c,
+          symbol: loadSymbol(c.symbol),
           price: loadWrappedI80F48(c.price),
           twap: loadWrappedI80F48(c.twap),
         })),
-      markCache: data.markCache
+      marks: data.marks
         .filter((c) => !c.lastUpdated.isZero())
         .map((c) => ({
           ...c,
@@ -50,22 +67,21 @@ export default class Cache extends BaseAccount<Schema, "cache"> {
             close: loadWrappedI80F48(x.close),
           })),
         })),
+      borrowCache: data.borrowCache.map((c) => ({
+        ...c,
+        supply: loadWrappedI80F48(c.supply),
+        borrows: loadWrappedI80F48(c.borrows),
+        supplyMultiplier: loadWrappedI80F48(c.supplyMultiplier),
+        borrowMultiplier: loadWrappedI80F48(c.borrowMultiplier),
+      })),
     };
   }
 
   async refresh(): Promise<void> {
-    this.data = Cache.processData(
-      (await this.accountClient.fetch(this.pubkey)) as CacheSchema,
-    );
+    this.data = await Cache.fetch(this.pubkey);
   }
 
   static async load(k: PublicKey) {
-    return new this(
-      k,
-      "cache",
-      this.processData(
-        (await this.program.account["cache"].fetch(k)) as CacheSchema,
-      ),
-    );
+    return new this(k, "cache", await Cache.fetch(k));
   }
 }

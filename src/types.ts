@@ -19,6 +19,9 @@ export interface Wallet {
 
 export { Zo } from "./types/zo";
 
+// NOTE: These intersection types are a temporary workaround,
+// as anchor's type inference isn't complete yet.
+
 export type OracleType = { pyth: {} } | { switchboard: {} };
 export type PerpType = { future: {} } | { callOption: {} } | { putOption: {} };
 export type OrderType =
@@ -26,22 +29,24 @@ export type OrderType =
   | { immediateOrCancel: {} }
   | { postOnly: {} };
 
-// NOTE: These intersection types are a temporary workaround,
-// as anchor's type inference isn't complete yet.
 type WrappedI80F48 = { data: BN };
-type OracleInfo = IdlTypes<Zo>["OracleInfo"] & {
-  oracleType: OracleType;
-  fallbackOracle: OracleType;
+type Symbol = { data: number[] };
+type OracleSource = IdlTypes<Zo>["OracleSource"] & {
+  ty: OracleType;
 };
 type CollateralInfo = IdlTypes<Zo>["CollateralInfo"] & {
-  oracle: OracleInfo;
+  oracleSymbol: Symbol;
 };
 type PerpMarketInfo = IdlTypes<Zo>["PerpMarketInfo"] & {
+  symbol: Symbol;
+  oracleSymbol: Symbol;
   perpType: PerpType;
-  oracle: OracleInfo;
 };
 type OpenOrdersInfo = IdlTypes<Zo>["OpenOrdersInfo"];
-type OracleCache = IdlTypes<Zo>["OracleCache"] & {
+
+type OracleCache = Omit<IdlTypes<Zo>["OracleCache"], "symbol"> & {
+  symbol: Symbol;
+  sources: OracleSource[];
   price: WrappedI80F48;
   twap: WrappedI80F48;
 };
@@ -55,15 +60,32 @@ type MarkCache = IdlTypes<Zo>["MarkCache"] & {
     close: WrappedI80F48;
   }[];
 };
+type BorrowCache = Omit<
+  IdlTypes<Zo>["BorrowCache"],
+  "supply" | "borrows" | "supplyMultiplier" | "borrowMultiplier"
+> & {
+  supply: WrappedI80F48;
+  borrows: WrappedI80F48;
+  supplyMultiplier: WrappedI80F48;
+  borrowMultiplier: WrappedI80F48;
+};
 
 export type StateSchema = IdlAccounts<Zo>["state"] & {
   collaterals: CollateralInfo[];
   perpMarkets: PerpMarketInfo[];
 };
-export type MarginSchema = IdlAccounts<Zo>["margin"];
+export type MarginSchema = Omit<
+  IdlAccounts<Zo>["margin"],
+  "isBeingLiquidated" | "collateral"
+> & {
+  isBeingLiquidated: boolean;
+  collateral: WrappedI80F48[];
+};
 export type CacheSchema = IdlAccounts<Zo>["cache"] & {
-  oracleCache: OracleCache[];
-  markCache: MarkCache[];
+  oracles: OracleCache[];
+  marks: MarkCache[];
+  fundingCache: BN[];
+  borrowCache: BorrowCache[];
 };
 export type ControlSchema = IdlAccounts<Zo>["control"] & {
   openOrdersAgg: OpenOrdersInfo[];
