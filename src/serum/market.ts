@@ -29,20 +29,11 @@ export const MARKET_STATE_LAYOUT_V3 = struct([
 
   publicKeyLayout("ownAddress"),
 
-  u64("vaultSignerNonce"),
-
-  publicKeyLayout("baseMint"),
-  publicKeyLayout("quoteMint"),
-
-  publicKeyLayout("baseVault"),
   u64("baseDepositsTotal"),
   u64("baseFeesAccrued"),
 
-  publicKeyLayout("quoteVault"),
   u64("quoteDepositsTotal"),
   u64("quoteFeesAccrued"),
-
-  u64("quoteDustThreshold"),
 
   publicKeyLayout("requestQueue"),
   publicKeyLayout("eventQueue"),
@@ -57,15 +48,18 @@ export const MARKET_STATE_LAYOUT_V3 = struct([
 
   u64("referrerRebatesAccrued"),
 
-  u128("longFunding"),
-  u128("shortFunding"),
+  i128("fundingIndex"),
+
   u64("lastUpdated"),
   u64("strike"),
+
+  u64("perpType"),
+  u64("coinDecimals"),
 
   publicKeyLayout("authority"),
   publicKeyLayout("pruneAuthority"),
 
-  blob(976),
+  blob(1016),
 
   blob(7),
 ]);
@@ -167,14 +161,10 @@ export class Market {
     ) {
       throw new Error("Invalid market");
     }
-    const [baseMintDecimals, quoteMintDecimals] = await Promise.all([
-      getMintDecimals(connection, decoded.baseMint),
-      getMintDecimals(connection, decoded.quoteMint),
-    ]);
     return new Market(
       decoded,
-      baseMintDecimals,
-      quoteMintDecimals,
+      decoded.coinDecimals,
+      6,
       options,
       programId,
       layoutOverride,

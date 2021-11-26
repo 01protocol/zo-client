@@ -478,11 +478,23 @@ export default class State extends BaseAccount<Schema, "state"> {
   }
 
   async cacheOracle() {
-    await this.program.rpc.cacheOracle({
-      accounts: {
-        signer: this.signer,
-        cache: this.cache.pubkey,
+    const oracles = this.cache.data.oracles;
+    await this.program.rpc.cacheOracle(
+      oracles.map((x) => x.symbol),
+      null,
+      {
+        accounts: {
+          signer: this.wallet.publicKey,
+          cache: this.cache.pubkey,
+        },
+        remainingAccounts: oracles
+          .flatMap((x) => x.sources)
+          .map((x) => ({
+            isSigner: false,
+            isWritable: false,
+            pubkey: x.key,
+          })),
       },
-    });
+    );
   }
 }
