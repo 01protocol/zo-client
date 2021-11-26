@@ -25,19 +25,6 @@ export const DEX_PROGRAM_ID = new PublicKey(
   "249z8gAKdX41bjfz7SFUxGmbAqDtSLU2tsSYzb7MkUCN",
 );
 
-// == MARGIN IDS ==
-export const MARGIN_STATE_ID = new PublicKey(
-  "AJaVtZzQ7eL4jxSfE4vGAQHjBsYz1tqrmMewWGsMXmRy",
-);
-
-// == EVERLASTING ==
-export const EVER_MARKET_ID = new PublicKey(
-  "7htE41GPCgnom2Q1ChT4qh7wcpFWq94RfeUexBmsHjXw",
-);
-export const DEX_MARKET_ID = new PublicKey(
-  "CiakMn8A53zQQPCauHUH2bGiWnTSNymGBiwzTqGwfAQt",
-);
-
 // == SOLANA PROGRAM IDS ==
 export const SYSTEM_PROGRAM_ID = new PublicKey(
   "11111111111111111111111111111111",

@@ -125,6 +125,24 @@ export async function createTokenAccountIxs(
   ];
 }
 
+export function createMintToIxs(
+  mint: PublicKey,
+  dest: PublicKey,
+  authority: PublicKey,
+  amount: number,
+): TransactionInstruction[] {
+  return [
+    Token.createMintToInstruction(
+      TOKEN_PROGRAM_ID,
+      mint,
+      dest,
+      authority,
+      [],
+      amount,
+    ),
+  ];
+}
+
 export async function createMint(
   provider: Provider,
   authority: PublicKey,
@@ -156,4 +174,15 @@ export async function createTokenAccount(
   tx.add(...(await createTokenAccountIxs(vault, provider, mint, owner)));
   await provider.send(tx, [vault]);
   return vault.publicKey;
+}
+
+export async function mintTo(
+  provider: Provider,
+  mint: PublicKey,
+  dest: PublicKey,
+  amount: number,
+): Promise<void> {
+  const tx = new Transaction();
+  tx.add(...createMintToIxs(mint, dest, provider.wallet.publicKey, amount));
+  await provider.send(tx, []);
 }

@@ -66,24 +66,20 @@ export default class State extends BaseAccount<Schema, "state"> {
   }
 
   static async fetch(k: PublicKey): Promise<Schema> {
-    let data = (await this.program.account["state"].fetch(k)) as StateSchema;
+    const data = (await this.program.account["state"].fetch(k)) as StateSchema;
+
+    const collatEnd = findIndexOf(data.collaterals, (c) =>
+      c.mint.equals(PublicKey.default),
+    );
 
     // Convert StateSchema to Schema.
     return {
       ...data,
-      vaults: data.vaults.filter((k) => !k.equals(PublicKey.default)),
-      collaterals: data.collaterals
-        // Remove null collaterals.
-        .slice(
-          0,
-          findIndexOf(data.collaterals, (c) =>
-            c.mint.equals(PublicKey.default),
-          ),
-        )
-        .map((x) => ({
-          ...x,
-          oracleSymbol: loadSymbol(x.oracleSymbol),
-        })),
+      vaults: data.vaults.slice(0, collatEnd),
+      collaterals: data.collaterals.slice(0, collatEnd).map((x) => ({
+        ...x,
+        oracleSymbol: loadSymbol(x.oracleSymbol),
+      })),
       perpMarkets: data.perpMarkets
         // Remove null PerpMarkets.
         .slice(
@@ -153,6 +149,7 @@ export default class State extends BaseAccount<Schema, "state"> {
   }
 
   async refresh(): Promise<void> {
+    this._getSymbolMarket = {};
     [this.data] = await Promise.all([
       State.fetch(this.pubkey),
       this.cache.refresh(),

@@ -1,11 +1,20 @@
 import State from "./accounts/State";
 import Margin from "./accounts/Margin";
 import { PublicKey } from "@solana/web3.js";
+import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import BN from "bn.js";
-import { createMint, createTokenAccount } from "./utils";
+import { createMint, createTokenAccount, mintTo } from "./utils";
 
 export async function testSetup(): Promise<[State, Margin]> {
   const st = await State.init();
+  const m = await Margin.create(st);
+  const usdcMint = await createMint(st.provider, st.wallet.publicKey, 6);
+  const wallet = await createTokenAccount(
+    m.provider,
+    usdcMint,
+    m.wallet.publicKey,
+  );
+  await mintTo(st.provider, usdcMint, wallet, 500 * 1_000_000);
 
   await st.addOracle({
     symbol: "USDC/USD",
@@ -40,7 +49,7 @@ export async function testSetup(): Promise<[State, Margin]> {
   });
 
   await st.addCollateral({
-    mint: await createMint(st.provider, st.wallet.publicKey, 6),
+    mint: usdcMint,
     oracleSymbol: "USDC/USD",
     weight: 10_000,
     isBorrowable: true,
@@ -60,7 +69,7 @@ export async function testSetup(): Promise<[State, Margin]> {
   });
 
   await st.initPerpMarket({
-    symbol: "BTC-PERP",
+    symbol: "local-BTC-PERP",
     oracleSymbol: "BTC/USD",
     perpType: { future: {} },
     vAssetLotSize: new BN(100),
@@ -73,15 +82,29 @@ export async function testSetup(): Promise<[State, Margin]> {
 
   await st.refresh();
 
-  let m = await Margin.create(st);
-  m.placePerpOrder({
-    symbol: "BTC-PERP",
+  let [vault, _] = st.getMintVaultCollateral(usdcMint);
+
+  await m.deposit(wallet, vault, new BN(500 * 1_000_000), false);
+
+  await m.placePerpOrder({
+    symbol: "local-BTC-PERP",
     isLong: true,
     orderType: { limit: {} },
     limitPrice: new BN(0.5 * 1_000_000),
     maxBaseQty: new BN(4),
     maxQuoteQty: new BN(2 * 1_000_000),
   });
+
+  await m.placePerpOrder({
+    symbol: "local-BTC-PERP",
+    isLong: false,
+    orderType: { limit: {} },
+    limitPrice: new BN(0.6 * 1_000_000),
+    maxBaseQty: new BN(2),
+    maxQuoteQty: new BN(1.2 * 1_000_000),
+  });
+
+  await m.refresh();
 
   return [st, m];
 }
