@@ -4,7 +4,9 @@ import { ControlSchema as Schema } from "../types";
 
 export default class Control extends BaseAccount<Schema, "control"> {
   private static async fetch(k: PublicKey): Promise<Schema> {
-    const data = this.program.account["control"].fetch(k) as unknown as Schema;
+    const data = (await this.program.account["control"].fetch(
+      k,
+    )) as unknown as Schema;
     return {
       ...data,
     };

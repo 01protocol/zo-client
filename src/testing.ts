@@ -1,7 +1,7 @@
 import State from "./accounts/State";
 import Margin from "./accounts/Margin";
 import { PublicKey } from "@solana/web3.js";
-import BN from 'bn.js';
+import BN from "bn.js";
 import { createMint, createTokenAccount } from "./utils";
 
 export async function testSetup(): Promise<[State, Margin]> {
@@ -57,7 +57,7 @@ export async function testSetup(): Promise<[State, Margin]> {
     optimalUtil: 7000,
     optimalRate: 1000,
     maxRate: 10_000,
-  })
+  });
 
   await st.initPerpMarket({
     symbol: "BTC-PERP",
@@ -69,9 +69,19 @@ export async function testSetup(): Promise<[State, Margin]> {
     minMmf: 650,
     baseImf: 1_000,
     coinDecimals: 8,
-  })
+  });
 
   await st.refresh();
 
-  return [st, await Margin.create(st)];
+  let m = await Margin.create(st);
+  m.placePerpOrder({
+    symbol: "BTC-PERP",
+    isLong: true,
+    orderType: { limit: {} },
+    limitPrice: new BN(0.5 * 1_000_000),
+    maxBaseQty: new BN(4),
+    maxQuoteQty: new BN(2 * 1_000_000),
+  });
+
+  return [st, m];
 }
