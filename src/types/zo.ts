@@ -235,6 +235,10 @@ export type Zo = {
         {
           "name": "maxRate",
           "type": "u16"
+        },
+        {
+          "name": "liqFee",
+          "type": "u16"
         }
       ]
     },
@@ -598,11 +602,11 @@ export type Zo = {
           "type": "u64"
         },
         {
-          "name": "minMmf",
+          "name": "baseImf",
           "type": "u16"
         },
         {
-          "name": "baseImf",
+          "name": "liqFee",
           "type": "u16"
         },
         {
@@ -636,12 +640,6 @@ export type Zo = {
         }
       ],
       "args": [
-        {
-          "name": "newMinMmf",
-          "type": {
-            "option": "u16"
-          }
-        },
         {
           "name": "newBaseImf",
           "type": {
@@ -923,37 +921,6 @@ export type Zo = {
       "args": []
     },
     {
-      "name": "markLiquidate",
-      "accounts": [
-        {
-          "name": "liquidator",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "state",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "cache",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "margin",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "control",
-          "isMut": true,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "forceCancelAllPerpOrders",
       "accounts": [
         {
@@ -1194,16 +1161,72 @@ export type Zo = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "assetTransferLots",
+          "type": "i64"
+        }
+      ]
     },
     {
-      "name": "endLiquidate",
+      "name": "liquidateSpotPosition",
       "accounts": [
         {
-          "name": "liquidator",
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "liqor",
           "isMut": false,
           "isSigner": true
         },
+        {
+          "name": "liqorMargin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "liqorControl",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "liqeeMargin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "liqeeControl",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "quoteMint",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "assetTransferAmount",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "settleBankruptcy",
+      "accounts": [
         {
           "name": "state",
           "isMut": false,
@@ -1220,37 +1243,37 @@ export type Zo = {
           "isSigner": false
         },
         {
-          "name": "margin",
+          "name": "liqor",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "liqorMargin",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "control",
+          "name": "liqorControl",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "openOrders",
+          "name": "liqeeMargin",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "dexMarket",
+          "name": "liqeeControl",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "marketBids",
-          "isMut": true,
+          "name": "assetMint",
+          "isMut": false,
           "isSigner": false
         },
         {
-          "name": "marketAsks",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "dexProgram",
+          "name": "quoteMint",
           "isMut": false,
           "isSigner": false
         }
@@ -1291,7 +1314,7 @@ export type Zo = {
       ]
     },
     {
-      "name": "cacheInterestRate",
+      "name": "cacheInterestRates",
       "accounts": [
         {
           "name": "signer",
@@ -1309,7 +1332,16 @@ export type Zo = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "start",
+          "type": "u8"
+        },
+        {
+          "name": "end",
+          "type": "u8"
+        }
+      ]
     },
     {
       "name": "consumeEvents",
@@ -1346,6 +1378,37 @@ export type Zo = {
           "type": "u16"
         }
       ]
+    },
+    {
+      "name": "crankPnl",
+      "accounts": [
+        {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -1436,10 +1499,6 @@ export type Zo = {
             "type": "publicKey"
           },
           {
-            "name": "isBeingLiquidated",
-            "type": "bool"
-          },
-          {
             "name": "collateral",
             "type": {
               "array": [
@@ -1512,6 +1571,14 @@ export type Zo = {
                 100
               ]
             }
+          },
+          {
+            "name": "totalCollaterals",
+            "type": "u16"
+          },
+          {
+            "name": "totalMarkets",
+            "type": "u16"
           }
         ]
       }
@@ -1770,6 +1837,10 @@ export type Zo = {
             "type": "u16"
           },
           {
+            "name": "liqFee",
+            "type": "u16"
+          },
+          {
             "name": "isBorrowable",
             "type": "bool"
           },
@@ -1828,11 +1899,11 @@ export type Zo = {
             "type": "u64"
           },
           {
-            "name": "minMmf",
+            "name": "baseImf",
             "type": "u16"
           },
           {
-            "name": "baseImf",
+            "name": "liqFee",
             "type": "u16"
           },
           {
@@ -1975,7 +2046,7 @@ export type Zo = {
     },
     {
       "code": 307,
-      "name": "AboveMarginMaintenance",
+      "name": "AboveMMF",
       "msg": "Above Margin maintenance"
     },
     {
@@ -2016,16 +2087,16 @@ export type Zo = {
     {
       "code": 315,
       "name": "CalculateMarginRatioFailure",
-      "msg": "Failed to calculate zo ratio"
+      "msg": "Failed to calculate margin ratio"
     },
     {
       "code": 316,
       "name": "BelowInitialMarginFraction",
-      "msg": "Current zo fraction is below position initial zo fraction"
+      "msg": "Current margin fraction is below position initial margin fraction"
     },
     {
       "code": 317,
-      "name": "NoPositionToClose",
+      "name": "NoPositionToLiquidate",
       "msg": "No active positions to close"
     },
     {
@@ -2095,7 +2166,7 @@ export type Zo = {
     },
     {
       "code": 331,
-      "name": "OracleCacheAtCapacity",
+      "name": "OracleCacheFull",
       "msg": "Oracle cache is at full capacity"
     },
     {
@@ -2187,6 +2258,21 @@ export type Zo = {
       "code": 349,
       "name": "InvalidOracleSymbol",
       "msg": "The oracle symbol is invalid"
+    },
+    {
+      "code": 350,
+      "name": "UnliquidatedActivePositions",
+      "msg": "There are active positions that have not been closed"
+    },
+    {
+      "code": 351,
+      "name": "UnliquidatedSpotPositions",
+      "msg": "There are spot/ borrow positions that have not been liquidated"
+    },
+    {
+      "code": 352,
+      "name": "InvalidTimestamp",
+      "msg": "Timestamp is invalid"
     }
   ]
 };
@@ -2428,6 +2514,10 @@ export const IDL: Zo = {
         {
           "name": "maxRate",
           "type": "u16"
+        },
+        {
+          "name": "liqFee",
+          "type": "u16"
         }
       ]
     },
@@ -2791,11 +2881,11 @@ export const IDL: Zo = {
           "type": "u64"
         },
         {
-          "name": "minMmf",
+          "name": "baseImf",
           "type": "u16"
         },
         {
-          "name": "baseImf",
+          "name": "liqFee",
           "type": "u16"
         },
         {
@@ -2829,12 +2919,6 @@ export const IDL: Zo = {
         }
       ],
       "args": [
-        {
-          "name": "newMinMmf",
-          "type": {
-            "option": "u16"
-          }
-        },
         {
           "name": "newBaseImf",
           "type": {
@@ -3116,37 +3200,6 @@ export const IDL: Zo = {
       "args": []
     },
     {
-      "name": "markLiquidate",
-      "accounts": [
-        {
-          "name": "liquidator",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "state",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "cache",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "margin",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "control",
-          "isMut": true,
-          "isSigner": false
-        }
-      ],
-      "args": []
-    },
-    {
       "name": "forceCancelAllPerpOrders",
       "accounts": [
         {
@@ -3387,16 +3440,72 @@ export const IDL: Zo = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "assetTransferLots",
+          "type": "i64"
+        }
+      ]
     },
     {
-      "name": "endLiquidate",
+      "name": "liquidateSpotPosition",
       "accounts": [
         {
-          "name": "liquidator",
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "liqor",
           "isMut": false,
           "isSigner": true
         },
+        {
+          "name": "liqorMargin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "liqorControl",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "liqeeMargin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "liqeeControl",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "assetMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "quoteMint",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "assetTransferAmount",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "settleBankruptcy",
+      "accounts": [
         {
           "name": "state",
           "isMut": false,
@@ -3413,37 +3522,37 @@ export const IDL: Zo = {
           "isSigner": false
         },
         {
-          "name": "margin",
+          "name": "liqor",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "liqorMargin",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "control",
+          "name": "liqorControl",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "openOrders",
+          "name": "liqeeMargin",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "dexMarket",
+          "name": "liqeeControl",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "marketBids",
-          "isMut": true,
+          "name": "assetMint",
+          "isMut": false,
           "isSigner": false
         },
         {
-          "name": "marketAsks",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "dexProgram",
+          "name": "quoteMint",
           "isMut": false,
           "isSigner": false
         }
@@ -3484,7 +3593,7 @@ export const IDL: Zo = {
       ]
     },
     {
-      "name": "cacheInterestRate",
+      "name": "cacheInterestRates",
       "accounts": [
         {
           "name": "signer",
@@ -3502,7 +3611,16 @@ export const IDL: Zo = {
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "start",
+          "type": "u8"
+        },
+        {
+          "name": "end",
+          "type": "u8"
+        }
+      ]
     },
     {
       "name": "consumeEvents",
@@ -3539,6 +3657,37 @@ export const IDL: Zo = {
           "type": "u16"
         }
       ]
+    },
+    {
+      "name": "crankPnl",
+      "accounts": [
+        {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "market",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -3629,10 +3778,6 @@ export const IDL: Zo = {
             "type": "publicKey"
           },
           {
-            "name": "isBeingLiquidated",
-            "type": "bool"
-          },
-          {
             "name": "collateral",
             "type": {
               "array": [
@@ -3705,6 +3850,14 @@ export const IDL: Zo = {
                 100
               ]
             }
+          },
+          {
+            "name": "totalCollaterals",
+            "type": "u16"
+          },
+          {
+            "name": "totalMarkets",
+            "type": "u16"
           }
         ]
       }
@@ -3963,6 +4116,10 @@ export const IDL: Zo = {
             "type": "u16"
           },
           {
+            "name": "liqFee",
+            "type": "u16"
+          },
+          {
             "name": "isBorrowable",
             "type": "bool"
           },
@@ -4021,11 +4178,11 @@ export const IDL: Zo = {
             "type": "u64"
           },
           {
-            "name": "minMmf",
+            "name": "baseImf",
             "type": "u16"
           },
           {
-            "name": "baseImf",
+            "name": "liqFee",
             "type": "u16"
           },
           {
@@ -4168,7 +4325,7 @@ export const IDL: Zo = {
     },
     {
       "code": 307,
-      "name": "AboveMarginMaintenance",
+      "name": "AboveMMF",
       "msg": "Above Margin maintenance"
     },
     {
@@ -4209,16 +4366,16 @@ export const IDL: Zo = {
     {
       "code": 315,
       "name": "CalculateMarginRatioFailure",
-      "msg": "Failed to calculate zo ratio"
+      "msg": "Failed to calculate margin ratio"
     },
     {
       "code": 316,
       "name": "BelowInitialMarginFraction",
-      "msg": "Current zo fraction is below position initial zo fraction"
+      "msg": "Current margin fraction is below position initial margin fraction"
     },
     {
       "code": 317,
-      "name": "NoPositionToClose",
+      "name": "NoPositionToLiquidate",
       "msg": "No active positions to close"
     },
     {
@@ -4288,7 +4445,7 @@ export const IDL: Zo = {
     },
     {
       "code": 331,
-      "name": "OracleCacheAtCapacity",
+      "name": "OracleCacheFull",
       "msg": "Oracle cache is at full capacity"
     },
     {
@@ -4380,6 +4537,21 @@ export const IDL: Zo = {
       "code": 349,
       "name": "InvalidOracleSymbol",
       "msg": "The oracle symbol is invalid"
+    },
+    {
+      "code": 350,
+      "name": "UnliquidatedActivePositions",
+      "msg": "There are active positions that have not been closed"
+    },
+    {
+      "code": 351,
+      "name": "UnliquidatedSpotPositions",
+      "msg": "There are spot/ borrow positions that have not been liquidated"
+    },
+    {
+      "code": 352,
+      "name": "InvalidTimestamp",
+      "msg": "Timestamp is invalid"
     }
   ]
 };

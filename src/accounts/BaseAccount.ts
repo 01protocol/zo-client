@@ -3,10 +3,9 @@ import {AccountClient, Program} from '@project-serum/anchor';
 import {Wallet, Zo} from '../types';
 import {getProgram} from '../global';
 
-export default abstract class BaseAccount<T, K extends keyof Program<Zo>['account']> {
+export default abstract class BaseAccount<T> {
     protected constructor(
         public readonly pubkey: PublicKey,
-        protected readonly accountClientName: K,
         public data: Readonly<T>
     ) {
     }
@@ -41,10 +40,6 @@ export default abstract class BaseAccount<T, K extends keyof Program<Zo>['accoun
 
     get wallet() {
         return BaseAccount.wallet;
-    }
-
-    get accountClient(): AccountClient {
-        return this.program.account[this.accountClientName]!;
     }
 
     abstract refresh(): Promise<void>;

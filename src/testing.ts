@@ -56,6 +56,7 @@ export async function testSetup(): Promise<[State, Margin]> {
     optimalUtil: 7000,
     optimalRate: 1000,
     maxRate: 10_000,
+    liqFee: 20,
   });
 
   await st.addCollateral({
@@ -66,6 +67,7 @@ export async function testSetup(): Promise<[State, Margin]> {
     optimalUtil: 7000,
     optimalRate: 1000,
     maxRate: 10_000,
+    liqFee: 20,
   });
 
   await st.initPerpMarket({

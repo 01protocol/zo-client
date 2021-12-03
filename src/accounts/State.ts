@@ -47,15 +47,14 @@ interface Schema extends Omit<StateSchema, "perpMarkets" | "collaterals"> {
   collaterals: CollateralInfo[];
 }
 
-export default class State extends BaseAccount<Schema, "state"> {
+export default class State extends BaseAccount<Schema> {
   private constructor(
     pubkey: PublicKey,
-    accClient: "state",
     data: Readonly<Schema>,
     public readonly signer: PublicKey,
     public readonly cache: Cache,
   ) {
-    super(pubkey, accClient, data);
+    super(pubkey, data);
   }
 
   static async getSigner(stateKey: PublicKey): Promise<[PublicKey, number]> {
@@ -68,31 +67,21 @@ export default class State extends BaseAccount<Schema, "state"> {
   static async fetch(k: PublicKey): Promise<Schema> {
     const data = (await this.program.account["state"].fetch(k)) as StateSchema;
 
-    const collatEnd = findIndexOf(data.collaterals, (c) =>
-      c.mint.equals(PublicKey.default),
-    );
-
     // Convert StateSchema to Schema.
     return {
       ...data,
-      vaults: data.vaults.slice(0, collatEnd),
-      collaterals: data.collaterals.slice(0, collatEnd).map((x) => ({
-        ...x,
-        oracleSymbol: loadSymbol(x.oracleSymbol),
-      })),
-      perpMarkets: data.perpMarkets
-        // Remove null PerpMarkets.
-        .slice(
-          0,
-          findIndexOf(data.perpMarkets, (p) =>
-            p.dexMarket.equals(PublicKey.default),
-          ),
-        )
+      vaults: data.vaults.slice(0, data.totalCollaterals),
+      collaterals: data.collaterals
+        .slice(0, data.totalCollaterals)
         .map((x) => ({
           ...x,
-          symbol: loadSymbol(x.symbol),
           oracleSymbol: loadSymbol(x.oracleSymbol),
         })),
+      perpMarkets: data.perpMarkets.slice(0, data.totalMarkets).map((x) => ({
+        ...x,
+        symbol: loadSymbol(x.symbol),
+        oracleSymbol: loadSymbol(x.oracleSymbol),
+      })),
     };
   }
 
@@ -103,7 +92,7 @@ export default class State extends BaseAccount<Schema, "state"> {
       throw Error("Invalid state signer nonce");
     }
     const cache = await Cache.load(data.cache);
-    return new this(k, "state", data, signer, cache);
+    return new this(k, data, signer, cache);
   }
 
   static async init(): Promise<State> {
@@ -217,6 +206,7 @@ export default class State extends BaseAccount<Schema, "state"> {
     optimalUtil,
     optimalRate,
     maxRate,
+    liqFee,
   }: Readonly<{
     weight: number;
     mint: PublicKey;
@@ -225,6 +215,7 @@ export default class State extends BaseAccount<Schema, "state"> {
     optimalUtil: number;
     optimalRate: number;
     maxRate: number;
+    liqFee: number;
   }>) {
     const vault = Keypair.generate();
     await this.program.rpc.addCollateral(
@@ -234,6 +225,7 @@ export default class State extends BaseAccount<Schema, "state"> {
       optimalUtil,
       optimalRate,
       maxRate,
+      liqFee,
       {
         accounts: {
           admin: this.data.admin,
@@ -493,5 +485,15 @@ export default class State extends BaseAccount<Schema, "state"> {
           })),
       },
     );
+  }
+
+  async cacheInterestRates(start: number, end: number) {
+    await this.program.rpc.cacheInterestRates(start, end, {
+      accounts: {
+        signer: this.wallet.publicKey,
+        state: this.pubkey,
+        cache: this.data.cache,
+      },
+    });
   }
 }

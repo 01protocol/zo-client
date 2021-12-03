@@ -40,7 +40,7 @@ type Schema = Omit<CacheSchema, "oracles" | "marks" | "borrowCache"> & {
   borrowCache: BorrowCache[];
 };
 
-export default class Cache extends BaseAccount<Schema, "cache"> {
+export default class Cache extends BaseAccount<Schema> {
   static async fetch(k: PublicKey): Promise<Schema> {
     const data = (await this.program.account["cache"].fetch(k)) as CacheSchema;
     return {
@@ -82,6 +82,6 @@ export default class Cache extends BaseAccount<Schema, "cache"> {
   }
 
   static async load(k: PublicKey) {
-    return new this(k, "cache", await Cache.fetch(k));
+    return new this(k, await Cache.fetch(k));
   }
 }
