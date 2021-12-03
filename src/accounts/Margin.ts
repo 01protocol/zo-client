@@ -6,6 +6,7 @@ import {
   SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
 import { BN } from "@project-serum/anchor";
+import { Buffer } from "buffer";
 import BaseAccount from "./BaseAccount";
 import State from "./State";
 import Control from "./Control";
