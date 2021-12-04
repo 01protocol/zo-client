@@ -8,7 +8,7 @@ export default class Num {
   public constructor(
     n: BN | Decimal | number,
     public readonly decimals: number,
-    public readonly mint: Readonly<PublicKey> | null,
+    public readonly mint: Readonly<PublicKey> | null = null,
   ) {
     if (!Number.isInteger(decimals)) {
       throw TypeError(`Invalid number of decimals ${decimals}`);
