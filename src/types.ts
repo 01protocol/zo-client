@@ -34,10 +34,17 @@ type Symbol = { data: number[] };
 type OracleSource = IdlTypes<Zo>["OracleSource"] & {
   ty: OracleType;
 };
-type CollateralInfo = IdlTypes<Zo>["CollateralInfo"] & {
+type CollateralInfo = Omit<
+  IdlTypes<Zo>["CollateralInfo"],
+  "oracleSymbol" | "isBorrowable"
+> & {
   oracleSymbol: Symbol;
+  isBorrowable: boolean;
 };
-type PerpMarketInfo = IdlTypes<Zo>["PerpMarketInfo"] & {
+type PerpMarketInfo = Omit<
+  IdlTypes<Zo>["PerpMarketInfo"],
+  "symbol" | "oracleSymbol" | "perpType"
+> & {
   symbol: Symbol;
   oracleSymbol: Symbol;
   perpType: PerpType;
@@ -74,11 +81,7 @@ export type StateSchema = IdlAccounts<Zo>["state"] & {
   collaterals: CollateralInfo[];
   perpMarkets: PerpMarketInfo[];
 };
-export type MarginSchema = Omit<
-  IdlAccounts<Zo>["margin"],
-  "isBeingLiquidated" | "collateral"
-> & {
-  isBeingLiquidated: boolean;
+export type MarginSchema = Omit<IdlAccounts<Zo>["margin"], "collateral"> & {
   collateral: WrappedI80F48[];
 };
 export type CacheSchema = IdlAccounts<Zo>["cache"] & {

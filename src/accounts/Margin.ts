@@ -6,6 +6,7 @@ import {
   SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
 import { BN } from "@project-serum/anchor";
+import { Buffer } from "buffer";
 import BaseAccount from "./BaseAccount";
 import State from "./State";
 import Control from "./Control";
@@ -18,15 +19,14 @@ interface Schema extends Omit<MarginSchema, "collateral"> {
   collateral: Num[];
 }
 
-export default class Margin extends BaseAccount<Schema, "margin"> {
+export default class Margin extends BaseAccount<Schema> {
   private constructor(
     pubkey: PublicKey,
-    accClient: "margin",
     data: Schema,
     public readonly control: Control,
     public readonly state: State,
   ) {
-    super(pubkey, accClient, data);
+    super(pubkey, data);
   }
 
   private static async fetch(k: PublicKey, st: State): Promise<Schema> {
@@ -44,10 +44,9 @@ export default class Margin extends BaseAccount<Schema, "margin"> {
 
   static async load(st: State): Promise<Margin> {
     const [key, _nonce] = await this.getPda(st, this.wallet.publicKey);
-    const clientName = "margin";
     let data = await this.fetch(key, st);
     let control = await Control.load(data.control);
-    return new this(key, clientName, data, control, st);
+    return new this(key, data, control, st);
   }
 
   static async create(st: State): Promise<Margin> {

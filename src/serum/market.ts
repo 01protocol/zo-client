@@ -29,38 +29,28 @@ export const MARKET_STATE_LAYOUT_V3 = struct([
 
   publicKeyLayout("ownAddress"),
 
-  u64("baseDepositsTotal"),
-  u64("baseFeesAccrued"),
-
-  u64("quoteDepositsTotal"),
   u64("quoteFeesAccrued"),
 
   publicKeyLayout("requestQueue"),
   publicKeyLayout("eventQueue"),
-
   publicKeyLayout("bids"),
   publicKeyLayout("asks"),
 
   u64("baseLotSize"),
   u64("quoteLotSize"),
-
   u64("feeRateBps"),
-
   u64("referrerRebatesAccrued"),
-
   i128("fundingIndex"),
-
   u64("lastUpdated"),
   u64("strike"),
-
   u64("perpType"),
   u64("coinDecimals"),
+  u64("openInterest"),
 
   publicKeyLayout("authority"),
   publicKeyLayout("pruneAuthority"),
 
-  blob(1016),
-
+  blob(1032),
   blob(7),
 ]);
 
