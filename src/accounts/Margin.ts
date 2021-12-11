@@ -5,7 +5,8 @@ import {
   Keypair,
   SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
-import { BN } from "@project-serum/anchor";
+import { Market as SerumMarket } from "@project-serum/serum";
+import BN from "bn.js";
 import { Buffer } from "buffer";
 import BaseAccount from "./BaseAccount";
 import State from "./State";
@@ -13,7 +14,12 @@ import Control from "./Control";
 import Num from "../Num";
 import { loadWrappedI80F48 } from "../utils";
 import { MarginSchema, OrderType } from "../types";
-import { DEX_PROGRAM_ID, CONTROL_ACCOUNT_SIZE } from "../config";
+import {
+  DEX_PROGRAM_ID,
+  CONTROL_ACCOUNT_SIZE,
+  SERUM_SPOT_PROGRAM_ID,
+  SERUM_SWAP_PROGRAM_ID,
+} from "../config";
 
 interface Schema extends Omit<MarginSchema, "collateral"> {
   collateral: Num[];
@@ -65,7 +71,7 @@ export default class Margin extends BaseAccount<Schema> {
           rent: SYSVAR_RENT_PUBKEY,
           systemProgram: SystemProgram.programId,
         },
-        instructions: [
+        preInstructions: [
           SystemProgram.createAccount({
             fromPubkey: this.wallet.publicKey,
             newAccountPubkey: control.publicKey,
@@ -244,5 +250,83 @@ export default class Margin extends BaseAccount<Schema> {
         dexProgram: DEX_PROGRAM_ID,
       },
     });
+  }
+
+  async swap({
+    direction,
+    tokenMint,
+    amount,
+    minRate,
+    allowBorrow,
+    serumMarket,
+  }: Readonly<{
+    direction: "buy" | "sell";
+    tokenMint: PublicKey;
+    amount: BN;
+    minRate: BN;
+    allowBorrow: boolean;
+    serumMarket: PublicKey;
+  }>) {
+    if (this.state.data.totalCollaterals < 1) {
+      throw new Error(
+        `<State ${this.state.pubkey.toString()}> does not have a base collateral`,
+      );
+    }
+
+    const market = await SerumMarket.load(
+      this.connection,
+      serumMarket,
+      {},
+      SERUM_SPOT_PROGRAM_ID,
+    );
+
+    const colIdx = this.state.getCollateralIndex(tokenMint);
+    const stateQuoteMint = this.state.data.collaterals[0]!.mint;
+
+    if (
+      market.baseMintAddress !== tokenMint ||
+      market.quoteMintAddress !== stateQuoteMint
+    ) {
+      throw new Error(
+        `Invalid <SerumSpotMarket ${serumMarket}> for swap:\n` +
+          `  swap wants:   base=${tokenMint}, quote=${stateQuoteMint}\n` +
+          `  market wants: base=${market.baseMintAddress}, quote=${market.quoteMintAddress}`,
+      );
+    }
+
+    return await this.program.rpc.swap(
+      direction === "buy",
+      allowBorrow,
+      amount,
+      minRate,
+      {
+        accounts: {
+          authority: this.wallet.publicKey,
+          state: this.state.pubkey,
+          stateSigner: this.state.signer,
+          cache: this.state.data.cache,
+          margin: this.pubkey,
+          control: this.data.control,
+          quoteMint: stateQuoteMint,
+          quoteVault: this.state.data.vaults[0]!,
+          assetMint: tokenMint,
+          assetVault: this.data.collateral[colIdx]!,
+          swapFeeVault: this.state.data.swapFeeVault,
+          serumOpenOrders: this.state.data.collaterals[colIdx]!.serumOpenOrders,
+          serumMarket,
+          serumRequestQueue: market.decoded.requestQueue,
+          serumEventQueue: market.decoded.eventQueue,
+          serumBids: market.bidsAddress,
+          serumAsks: market.asksAddress,
+          serumCoinVault: market.decoded.baseVault,
+          serumPcVault: market.decoded.quoteVault,
+          serumVaultSigner: market.decoded.vaultSignerNonce,
+          srmSpotProgram: SERUM_SPOT_PROGRAM_ID,
+          srmSwapProgram: SERUM_SWAP_PROGRAM_ID,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          rent: SYSVAR_RENT_PUBKEY,
+        },
+      },
+    );
   }
 }

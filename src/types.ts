@@ -34,12 +34,8 @@ type Symbol = { data: number[] };
 type OracleSource = IdlTypes<Zo>["OracleSource"] & {
   ty: OracleType;
 };
-type CollateralInfo = Omit<
-  IdlTypes<Zo>["CollateralInfo"],
-  "oracleSymbol" | "isBorrowable"
-> & {
+type CollateralInfo = Omit<IdlTypes<Zo>["CollateralInfo"], "oracleSymbol"> & {
   oracleSymbol: Symbol;
-  isBorrowable: boolean;
 };
 type PerpMarketInfo = Omit<
   IdlTypes<Zo>["PerpMarketInfo"],
@@ -87,7 +83,6 @@ export type MarginSchema = Omit<IdlAccounts<Zo>["margin"], "collateral"> & {
 export type CacheSchema = IdlAccounts<Zo>["cache"] & {
   oracles: OracleCache[];
   marks: MarkCache[];
-  fundingCache: BN[];
   borrowCache: BorrowCache[];
 };
 export type ControlSchema = IdlAccounts<Zo>["control"] & {
