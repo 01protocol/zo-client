@@ -108,12 +108,17 @@ export default class Margin extends BaseAccount<Schema> {
 
   async getSymbolOpenOrders(
     symbol: string,
-  ): Promise<Control["data"]["openOrdersAgg"][0]> {
+    create: boolean = true
+  ): Promise<Control["data"]["openOrdersAgg"][0] | null> {
     const marketIndex = this.state.getSymbolIndex(symbol);
     let oo = this.control.data.openOrdersAgg[marketIndex];
     if (oo!.key.equals(PublicKey.default)) {
-      await this.createPerpOpenOrders(symbol);
-      oo = this.control.data.openOrdersAgg[marketIndex];
+      if(create) {
+        await this.createPerpOpenOrders(symbol);
+        oo = this.control.data.openOrdersAgg[marketIndex];
+      }else{
+        return null
+      }
     }
     return oo!;
   }
@@ -211,7 +216,7 @@ export default class Margin extends BaseAccount<Schema> {
           authority: this.wallet.publicKey,
           margin: this.pubkey,
           control: this.control.pubkey,
-          openOrders: oo.key,
+          openOrders: oo!.key,
           dexMarket: market.address,
           reqQ: market.requestQueueAddress,
           eventQ: market.eventQueueAddress,
@@ -236,7 +241,7 @@ export default class Margin extends BaseAccount<Schema> {
         authority: this.wallet.publicKey,
         margin: this.pubkey,
         control: this.control.pubkey,
-        openOrders: oo.key,
+        openOrders: oo!.key,
         dexMarket: market.address,
         marketBids: market.bidsAddress,
         marketAsks: market.asksAddress,

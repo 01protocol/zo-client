@@ -944,17 +944,17 @@ export type Zo = {
           "isSigner": false
         },
         {
-          "name": "margin",
+          "name": "liqeeMargin",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "control",
+          "name": "liqeeControl",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "openOrders",
+          "name": "liqeeOo",
           "isMut": true,
           "isSigner": false
         },
@@ -1164,7 +1164,7 @@ export type Zo = {
       "args": [
         {
           "name": "assetTransferLots",
-          "type": "i64"
+          "type": "u64"
         }
       ]
     },
@@ -1229,7 +1229,7 @@ export type Zo = {
       "accounts": [
         {
           "name": "state",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -1269,11 +1269,6 @@ export type Zo = {
         },
         {
           "name": "assetMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "quoteMint",
           "isMut": false,
           "isSigner": false
         }
@@ -3223,17 +3218,17 @@ export const IDL: Zo = {
           "isSigner": false
         },
         {
-          "name": "margin",
+          "name": "liqeeMargin",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "control",
+          "name": "liqeeControl",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "openOrders",
+          "name": "liqeeOo",
           "isMut": true,
           "isSigner": false
         },
@@ -3443,7 +3438,7 @@ export const IDL: Zo = {
       "args": [
         {
           "name": "assetTransferLots",
-          "type": "i64"
+          "type": "u64"
         }
       ]
     },
@@ -3508,7 +3503,7 @@ export const IDL: Zo = {
       "accounts": [
         {
           "name": "state",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -3548,11 +3543,6 @@ export const IDL: Zo = {
         },
         {
           "name": "assetMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "quoteMint",
           "isMut": false,
           "isSigner": false
         }
