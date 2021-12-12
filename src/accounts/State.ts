@@ -95,7 +95,11 @@ export default class State extends BaseAccount<Schema> {
     return new this(k, data, signer, cache);
   }
 
-  static async init(): Promise<State> {
+  static async init({
+    swapFeeVault,
+  }: {
+    swapFeeVault: PublicKey;
+  }): Promise<State> {
     const [state, cache, stateLamports, cacheLamports] = await Promise.all([
       Keypair.generate(),
       Keypair.generate(),
@@ -110,11 +114,12 @@ export default class State extends BaseAccount<Schema> {
         admin: this.wallet.publicKey,
         state: state.publicKey,
         stateSigner,
+        swapFeeVault,
         cache: cache.publicKey,
         rent: SYSVAR_RENT_PUBKEY,
         systemProgram: SystemProgram.programId,
       },
-      instructions: [
+      preInstructions: [
         // Accounts too big to be created in program.
         SystemProgram.createAccount({
           fromPubkey: this.wallet.publicKey,
@@ -145,15 +150,20 @@ export default class State extends BaseAccount<Schema> {
     ]);
   }
 
-  getMintVaultCollateral(
-    mint: PublicKey,
-  ): [PublicKey, Schema["collaterals"][0]] {
+  getCollateralIndex(mint: PublicKey): number {
     const i = this.data.collaterals.findIndex((x) => x.mint.equals(mint));
     if (i < 0) {
       throw RangeError(
         `Invalid mint ${mint.toBase58()} for <State ${this.pubkey.toBase58()}>`,
       );
     }
+    return i;
+  }
+
+  getMintVaultCollateral(
+    mint: PublicKey,
+  ): [PublicKey, Schema["collaterals"][0]] {
+    const i = this.getCollateralIndex(mint);
     return [
       this.data.vaults[i] as PublicKey,
       this.data.collaterals[i] as Schema["collaterals"][0],
@@ -235,7 +245,7 @@ export default class State extends BaseAccount<Schema> {
           vault: vault.publicKey,
           mint,
         },
-        instructions: [
+        preInstructions: [
           ...(await createTokenAccountIxs(
             vault,
             this.provider,
@@ -324,14 +334,26 @@ export default class State extends BaseAccount<Schema> {
     });
   }
 
-  async sweepMarketFees(sym: string) {
+  async sweepMarketFees({
+    symbol,
+    serumTokenAcc,
+    treasuryTokenAcc,
+  }: {
+    symbol: string;
+    serumTokenAcc: PublicKey;
+    treasuryTokenAcc: PublicKey;
+  }) {
     await this.program.rpc.sweepMarketFees({
       accounts: {
+        admin: this.data.admin,
         state: this.pubkey,
         stateSigner: this.signer,
-        signer: this.signer,
-        dexMarket: this.getSymbolMarketKey(sym),
+        dexMarket: this.getSymbolMarketKey(symbol),
         dexProgram: DEX_PROGRAM_ID,
+        treasuryTokenAcc,
+        srmTokenAcc: serumTokenAcc,
+        vault: this.data.vaults[0]!,
+        tokenProgram: TOKEN_PROGRAM_ID,
       },
     });
   }

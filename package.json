@@ -8,15 +8,15 @@
   "types": "lib/esm/index.d.ts",
   "scripts": {
     "build": "tsc && tsc -p tsconfig.cjs.json",
-    "sync:idl": "rm -R src/idl src/types; cp -R solana/target/types solana/target/idl src",
-    "build:idl": "cd solana && anchor run build && cd .. && npm run sync:idl",
+    "build:idl": "cd solana && anchor run build; cd ..",
+    "sync:idl": "npm run build:idl && rm -Rf src/idl src/types; cp -R solana/target/types solana/target/idl src",
     "postinstall": "npm run build"
   },
   "dependencies": {
-    "@project-serum/anchor": "^0.18.2",
-    "@project-serum/serum": "^0.13.36",
-    "@solana/spl-token": "^0.1.6",
-    "@solana/web3.js": "^1.23.0",
+    "@project-serum/anchor": "^0.19.0",
+    "@project-serum/serum": "^0.13.61",
+    "@solana/spl-token": "^0.1.8",
+    "@solana/web3.js": "^1.31.0",
     "bn.js": "^5.2.0",
     "buffer-layout": "^1.2.2",
     "decimal.js": "^10.3.1"

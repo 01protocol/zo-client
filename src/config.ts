@@ -12,7 +12,6 @@ export const EVENT_Q_ACCOUNT_SIZE = 12 + 262144;
 export const BIDS_ACCOUNT_SIZE = 12 + 65536;
 export const ASKS_ACCOUNT_SIZE = 12 + 65536;
 
-
 // == IDLs ==
 import ZERO_ONE_IDL_ from "./idl/zo.json";
 export const ZERO_ONE_IDL = ZERO_ONE_IDL_ as Idl;
@@ -23,6 +22,12 @@ export const ZERO_ONE_PROGRAM_ID = new PublicKey(
 );
 export const DEX_PROGRAM_ID = new PublicKey(
   "249z8gAKdX41bjfz7SFUxGmbAqDtSLU2tsSYzb7MkUCN",
+);
+export const SERUM_SPOT_PROGRAM_ID = new PublicKey(
+  "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
+);
+export const SERUM_SWAP_PROGRAM_ID = new PublicKey(
+  "22Y43yTVxuUkoRKdm9thyRhQ3SdgQS7c7kB6UNCiaczD",
 );
 
 // == SOLANA PROGRAM IDS ==
@@ -39,31 +44,9 @@ export const RENT_PROGRAM_ID = new PublicKey(
   "SysvarRent111111111111111111111111111111111",
 );
 
-// == PYTH PROGRAM IDS ==
-// sol
-export const PYTH_PRICE_INFO = new PublicKey(
-  "J83w4HKfqxwcq3BEMMkPFSppX3gqekLyLJBexebFVkix",
-);
-export const PYTH_PRODUCT_INFO = new PublicKey(
-  "3Mnn2fX6rQyUsyELYms1sBJyChWofzSNRoqYzvgMVz5E",
-);
-
-// btc
-// export const PYTH_PRICE_INFO = new PublicKey(
-//   "HovQMDrbAgAYPCmHVSrezcSmkMtXSSUsLDFANExrZh2J",
-// );
-// export const PYTH_PRODUCT_INFO = new PublicKey(
-//   "3m1y5h2uv7EQL3KaJZehvAJa4yDNvgc5yAdL9KPMKwvk",
-// );
-
 export const ENDPOINT = "https://psytrbhymqlkfrhudd.dev.genesysgo.net:8899/";
 
 export const SKIP_PREFLIGHT = true;
-
-//sprint: account
-export const EVERLASTING_ACCOUNT = new PublicKey(
-  "DdYzkZSRvK9EAtTZcUUMeAydYq62V5YFx6YFa5Y19FSz",
-);
 
 export const USDC_MINT_ADDRESS = new PublicKey(
   "ANPW6n3x5YEbqsAM9tGteXRuQAhFcG1XQq75gbQFajP8",
@@ -71,14 +54,6 @@ export const USDC_MINT_ADDRESS = new PublicKey(
 
 export const USDC_MINT_AUTH_ADDRESS = new PublicKey(
   "5t1Goi4tfDueXRuDqNVx6Kw5BE3fEKBFNEvHTTP1YYPc",
-);
-
-export const EVERLASTING_MARKET = new PublicKey(
-  "7htE41GPCgnom2Q1ChT4qh7wcpFWq94RfeUexBmsHjXw",
-);
-
-export const DEX_MARKET = new PublicKey(
-  "CiakMn8A53zQQPCauHUH2bGiWnTSNymGBiwzTqGwfAQt",
 );
 
 export const LOT_SIZE = 1000;

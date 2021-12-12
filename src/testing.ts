@@ -3,18 +3,26 @@ import Margin from "./accounts/Margin";
 import { PublicKey } from "@solana/web3.js";
 import { Token, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import BN from "bn.js";
+import { getProvider } from "./global";
 import { createMint, createTokenAccount, mintTo } from "./utils";
 
 export async function testSetup(): Promise<[State, Margin]> {
-  const st = await State.init();
-  const m = await Margin.create(st);
-  const usdcMint = await createMint(st.provider, st.wallet.publicKey, 6);
-  const wallet = await createTokenAccount(
-    m.provider,
+  const provider = getProvider();
+  const usdcMint = await createMint(provider, provider.wallet.publicKey, 6);
+  const swapFeeVault = await createTokenAccount(
+    provider,
     usdcMint,
-    m.wallet.publicKey,
+    provider.wallet.publicKey,
   );
-  await mintTo(st.provider, usdcMint, wallet, 500 * 1_000_000);
+  const wallet = await createTokenAccount(
+    provider,
+    usdcMint,
+    provider.wallet.publicKey,
+  );
+  await mintTo(provider, usdcMint, wallet, 500 * 1_000_000);
+
+  const st = await State.init({ swapFeeVault });
+  const m = await Margin.create(st);
 
   await st.addOracle({
     symbol: "USDC/USD",

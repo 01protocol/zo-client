@@ -24,7 +24,9 @@ export function sleep(ms: number): Promise<void> {
 }
 
 export function loadWrappedI80F48({ data }: { data: BN }): Decimal {
-  return new Decimal(`0b${data.toString(2)}p-48`);
+  return new Decimal(
+    `${data.isNeg() ? "-" : ""}0b${data.abs().toString(2)}p-48`,
+  );
 }
 
 const utf8Decoder = new TextDecoder("utf-8");
