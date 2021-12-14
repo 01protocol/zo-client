@@ -1,5 +1,6 @@
 import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
-import { Idl } from "@project-serum/anchor";
+
+export { IDL } from "./types/zo";
 
 // == ACCOUNT SIZES ==
 export const STATE_ACCOUNT_SIZE = 8 + 16085;
@@ -11,10 +12,6 @@ export const REQ_Q_ACCOUNT_SIZE = 12 + 5120;
 export const EVENT_Q_ACCOUNT_SIZE = 12 + 262144;
 export const BIDS_ACCOUNT_SIZE = 12 + 65536;
 export const ASKS_ACCOUNT_SIZE = 12 + 65536;
-
-// == IDLs ==
-import ZERO_ONE_IDL_ from "./idl/zo.json";
-export const ZERO_ONE_IDL = ZERO_ONE_IDL_ as Idl;
 
 // == 01 PROGRAM IDS ==
 export const ZERO_ONE_PROGRAM_ID = new PublicKey(
@@ -63,10 +60,70 @@ export const FEE = 0.2;
 export const PC_STARTING_BUFFER = 100_000_000;
 
 export const USDC_PRIVATE_KEY_ADDRESS = [
-  103, 128, 86, 103, 226, 250, 41, 119, 109, 55, 1, 204, 42, 182, 8, 253, 152,
-  47, 133, 62, 240, 19, 203, 149, 90, 22, 193, 88, 115, 169, 254, 207, 72, 127,
-  173, 85, 214, 147, 203, 179, 171, 26, 220, 48, 115, 8, 61, 71, 179, 142, 75,
-  221, 231, 10, 195, 130, 150, 145, 18, 58, 223, 132, 196, 147,
+  103,
+  128,
+  86,
+  103,
+  226,
+  250,
+  41,
+  119,
+  109,
+  55,
+  1,
+  204,
+  42,
+  182,
+  8,
+  253,
+  152,
+  47,
+  133,
+  62,
+  240,
+  19,
+  203,
+  149,
+  90,
+  22,
+  193,
+  88,
+  115,
+  169,
+  254,
+  207,
+  72,
+  127,
+  173,
+  85,
+  214,
+  147,
+  203,
+  179,
+  171,
+  26,
+  220,
+  48,
+  115,
+  8,
+  61,
+  71,
+  179,
+  142,
+  75,
+  221,
+  231,
+  10,
+  195,
+  130,
+  150,
+  145,
+  18,
+  58,
+  223,
+  132,
+  196,
+  147,
 ];
 
 export const BOP_DURATION = 60 * 30;
