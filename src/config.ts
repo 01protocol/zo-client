@@ -12,10 +12,6 @@ export const EVENT_Q_ACCOUNT_SIZE = 12 + 262144;
 export const BIDS_ACCOUNT_SIZE = 12 + 65536;
 export const ASKS_ACCOUNT_SIZE = 12 + 65536;
 
-// == IDLs ==
-import ZERO_ONE_IDL_ from "./idl/zo.json";
-export const ZERO_ONE_IDL = ZERO_ONE_IDL_ as Idl;
-
 // == 01 PROGRAM IDS ==
 export const ZERO_ONE_PROGRAM_ID = new PublicKey(
   "AjGXinumkbrDGkAPmSEPGEQ8jC89ExXArbF6uEioEZS5",
