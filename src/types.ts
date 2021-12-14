@@ -2,7 +2,7 @@
 import { PublicKey, Transaction } from "@solana/web3.js";
 import { IdlTypes, IdlAccounts } from "@project-serum/anchor";
 import BN from "bn.js";
-import {Zo} from './types/idl'
+import {Zo} from './types/zo'
 
 // TODO: DEPRECATE
 export interface MarketInfo {

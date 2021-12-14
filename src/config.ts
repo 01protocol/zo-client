@@ -1,7 +1,4 @@
 import {Keypair, PublicKey, Transaction} from '@solana/web3.js';
-import {Idl} from '@project-serum/anchor';
-// == IDLs ==
-import ZERO_ONE_IDL_ from './idl/zo.json';
 
 // == ACCOUNT SIZES ==
 export const STATE_ACCOUNT_SIZE = 8 + 16085;
@@ -14,7 +11,6 @@ export const EVENT_Q_ACCOUNT_SIZE = 12 + 262144;
 export const BIDS_ACCOUNT_SIZE = 12 + 65536;
 export const ASKS_ACCOUNT_SIZE = 12 + 65536;
 
-export const ZERO_ONE_IDL = ZERO_ONE_IDL_ as Idl;
 // == 01 PROGRAM IDS ==
 export const ZERO_ONE_PROGRAM_ID = new PublicKey(
     'dYjxzVFb7xm4sobkrT3GGmDkZ6YANNy1VY3tEwwCPmm'
@@ -51,7 +47,7 @@ export const USDC_MINT_ADDRESS = new PublicKey(
     'ANPW6n3x5YEbqsAM9tGteXRuQAhFcG1XQq75gbQFajP8'
 );
 
-export const USDC_SYMBOL = "USDC"
+export const USDC_SYMBOL = 'USDC'
 export const USDC_DECIMALS = 6
 
 export const USDC_MINT_AUTH_ADDRESS = new PublicKey(
