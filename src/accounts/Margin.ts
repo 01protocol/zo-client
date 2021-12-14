@@ -114,16 +114,16 @@ export default class Margin extends BaseAccount<Schema> {
 
   async getSymbolOpenOrders(
     symbol: string,
-    create: boolean = true
+    create: boolean = true,
   ): Promise<Control["data"]["openOrdersAgg"][0] | null> {
     const marketIndex = this.state.getSymbolIndex(symbol);
     let oo = this.control.data.openOrdersAgg[marketIndex];
     if (oo!.key.equals(PublicKey.default)) {
-      if(create) {
+      if (create) {
         await this.createPerpOpenOrders(symbol);
         oo = this.control.data.openOrdersAgg[marketIndex];
-      }else{
-        return null
+      } else {
+        return null;
       }
     }
     return oo!;
@@ -134,8 +134,8 @@ export default class Margin extends BaseAccount<Schema> {
     vault: PublicKey,
     amount: BN,
     repayOnly: boolean,
-  ): Promise<void> {
-    await this.program.rpc.deposit!(repayOnly, amount, {
+  ) {
+    return await this.program.rpc.deposit(repayOnly, amount, {
       accounts: {
         state: this.state.pubkey,
         stateSigner: this.state.signer,
@@ -147,15 +147,10 @@ export default class Margin extends BaseAccount<Schema> {
         tokenProgram: TOKEN_PROGRAM_ID,
       },
     });
-    await this.refresh();
   }
 
-  async withdraw(
-    tokenAccount: PublicKey,
-    vault: PublicKey,
-    amount: BN,
-  ): Promise<void> {
-    await this.program.rpc.withdraw!(amount, {
+  async withdraw(tokenAccount: PublicKey, vault: PublicKey, amount: BN) {
+    return await this.program.rpc.withdraw(amount, {
       accounts: {
         state: this.state.pubkey,
         stateSigner: this.state.signer,
@@ -168,12 +163,11 @@ export default class Margin extends BaseAccount<Schema> {
         tokenProgram: TOKEN_PROGRAM_ID,
       },
     });
-    await this.refresh();
   }
 
   async createPerpOpenOrders(symbol: string) {
     const [ooKey, _] = await this.getOpenOrdersKey(symbol);
-    await this.program.rpc.createPerpOpenOrders({
+    return await this.program.rpc.createPerpOpenOrders({
       accounts: {
         state: this.state.pubkey,
         stateSigner: this.state.signer,
@@ -187,7 +181,6 @@ export default class Margin extends BaseAccount<Schema> {
         systemProgram: SystemProgram.programId,
       },
     });
-    await this.refresh();
   }
 
   async placePerpOrder({
@@ -208,7 +201,7 @@ export default class Margin extends BaseAccount<Schema> {
     const market = await this.state.getSymbolMarket(symbol);
     const oo = await this.getSymbolOpenOrders(symbol);
 
-    await this.program.rpc.placePerpOrder(
+    return await this.program.rpc.placePerpOrder(
       isLong,
       limitPrice,
       maxBaseQty,
@@ -233,14 +226,13 @@ export default class Margin extends BaseAccount<Schema> {
         },
       },
     );
-    await this.refresh();
   }
 
   async cancelPerpOrder(symbol: string, isLong: boolean, orderId: BN) {
     const market = await this.state.getSymbolMarket(symbol);
     const oo = await this.getSymbolOpenOrders(symbol);
 
-    await this.program.rpc.cancelPerpOrder(orderId, isLong, {
+    return await this.program.rpc.cancelPerpOrder(orderId, isLong, {
       accounts: {
         state: this.state.pubkey,
         cache: this.state.cache.pubkey,

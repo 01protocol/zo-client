@@ -199,7 +199,7 @@ export default class State extends BaseAccount<Schema> {
   }
 
   async changeAdmin(newAdmin: PublicKey) {
-    await this.program.rpc.changeAdmin({
+    return await this.program.rpc.changeAdmin({
       accounts: {
         state: this.pubkey,
         admin: this.wallet.publicKey,
@@ -228,7 +228,7 @@ export default class State extends BaseAccount<Schema> {
     liqFee: number;
   }>) {
     const vault = Keypair.generate();
-    await this.program.rpc.addCollateral(
+    return await this.program.rpc.addCollateral(
       oracleSymbol,
       weight,
       isBorrowable,
@@ -267,7 +267,7 @@ export default class State extends BaseAccount<Schema> {
     oracleSymbol: string | null;
     mint: PublicKey;
   }>) {
-    await this.program.rpc.updateCollateral(weight, oracleSymbol, {
+    return await this.program.rpc.updateCollateral(weight, oracleSymbol, {
       accounts: {
         admin: this.data.admin,
         state: this.pubkey,
@@ -288,7 +288,7 @@ export default class State extends BaseAccount<Schema> {
     quoteDecimals: number;
     oracles: [OracleType, PublicKey][];
   }>) {
-    await this.program.rpc.addOracle(
+    return await this.program.rpc.addOracle(
       symbol,
       baseDecimals,
       quoteDecimals,
@@ -309,7 +309,7 @@ export default class State extends BaseAccount<Schema> {
   }
 
   async addInsurance(x: BN, tokenAccount: PublicKey, vault: PublicKey) {
-    await this.program.rpc.addInsurance(x, {
+    return await this.program.rpc.addInsurance(x, {
       accounts: {
         state: this.pubkey,
         stateSigner: this.signer,
@@ -322,7 +322,7 @@ export default class State extends BaseAccount<Schema> {
   }
 
   async reduceInsurance(x: BN, tokenAccount: PublicKey, vault: PublicKey) {
-    await this.program.rpc.reduceInsurance(x, {
+    return await this.program.rpc.reduceInsurance(x, {
       accounts: {
         state: this.pubkey,
         stateSigner: this.signer,
@@ -343,7 +343,7 @@ export default class State extends BaseAccount<Schema> {
     serumTokenAcc: PublicKey;
     treasuryTokenAcc: PublicKey;
   }) {
-    await this.program.rpc.sweepMarketFees({
+    return await this.program.rpc.sweepMarketFees({
       accounts: {
         admin: this.data.admin,
         state: this.pubkey,
@@ -443,7 +443,7 @@ export default class State extends BaseAccount<Schema> {
       await this.provider.send(tx, [dexMarket, reqQ, eventQ, bids, asks]),
     );
 
-    await this.program.rpc.initPerpMarket(
+    return await this.program.rpc.initPerpMarket(
       symbol,
       oracleSymbol,
       perpType,
@@ -475,7 +475,7 @@ export default class State extends BaseAccount<Schema> {
 
   async updatePerpFunding(symbol: string) {
     const market = await this.getSymbolMarket(symbol);
-    await this.program.rpc.updatePerpFunding({
+    return await this.program.rpc.updatePerpFunding({
       accounts: {
         state: this.pubkey,
         stateSigner: this.signer,
@@ -490,7 +490,7 @@ export default class State extends BaseAccount<Schema> {
 
   async cacheOracle() {
     const oracles = this.cache.data.oracles;
-    await this.program.rpc.cacheOracle(
+    return await this.program.rpc.cacheOracle(
       oracles.map((x) => x.symbol),
       null,
       {
@@ -510,7 +510,7 @@ export default class State extends BaseAccount<Schema> {
   }
 
   async cacheInterestRates(start: number, end: number) {
-    await this.program.rpc.cacheInterestRates(start, end, {
+    return await this.program.rpc.cacheInterestRates(start, end, {
       accounts: {
         signer: this.wallet.publicKey,
         state: this.pubkey,
