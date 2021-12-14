@@ -17,7 +17,7 @@ import {
 } from "../utils";
 import BaseAccount from "./BaseAccount";
 import Cache from "./Cache";
-import { Market } from "../serum/market";
+import { ZoMarket } from "../serum/zoMarket";
 import { StateSchema, PerpType, OracleType } from "../types";
 import {
   DEX_PROGRAM_ID,
@@ -185,17 +185,17 @@ export default class State extends BaseAccount<Schema> {
       ?.dexMarket as PublicKey;
   }
 
-  _getSymbolMarket: { [k: string]: Market } = {};
-  async getSymbolMarket(sym: string): Promise<Market> {
+  _getSymbolMarket: { [k: string]: ZoMarket } = {};
+  async getSymbolMarket(sym: string): Promise<ZoMarket> {
     if (!this._getSymbolMarket[sym]) {
-      this._getSymbolMarket[sym] = await Market.load(
+      this._getSymbolMarket[sym] = await ZoMarket.load(
         this.connection,
         this.getSymbolMarketKey(sym),
         this.provider.opts,
         DEX_PROGRAM_ID,
       );
     }
-    return this._getSymbolMarket[sym] as Market;
+    return this._getSymbolMarket[sym] as ZoMarket;
   }
 
   async changeAdmin(newAdmin: PublicKey) {

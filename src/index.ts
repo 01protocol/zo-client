@@ -14,5 +14,5 @@ export { default as Margin } from "./accounts/Margin";
 export { default as Cache } from "./accounts/Cache";
 export { default as Control } from "./accounts/Control";
 
-export { Market, Orderbook } from "./serum/market";
+export { ZoMarket, Orderbook } from "./serum/zoMarket";
 export {  decodeEventsSince } from "./serum/queue";

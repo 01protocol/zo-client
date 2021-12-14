@@ -47,7 +47,7 @@ export const MARKET_STATE_LAYOUT_V3 = struct([
     blob(7)
 ])
 
-export class Market {
+export class ZoMarket {
     private readonly _decoded: any
     private readonly _baseSplTokenDecimals: number
     private readonly _quoteSplTokenDecimals: number
@@ -114,7 +114,7 @@ export class Market {
             },
             {
                 memcmp: {
-                    offset: Market.getLayout(programId).offsetOf('quoteMint'),
+                    offset: ZoMarket.getLayout(programId).offsetOf('quoteMint'),
                     bytes: quoteMintAddress.toBase58()
                 }
             }
@@ -153,7 +153,7 @@ export class Market {
         ) {
             throw new Error('Invalid market')
         }
-        return new Market(
+        return new ZoMarket(
             decoded,
             decoded.coinDecimals,
             6,
@@ -760,11 +760,11 @@ export const ORDERBOOK_LAYOUT = struct([
 ])
 
 export class Orderbook {
-    market: Market
+    market: ZoMarket
     isBids: boolean
     slab: Slab
 
-    constructor(market: Market, accountFlags, slab: Slab) {
+    constructor(market: ZoMarket, accountFlags, slab: Slab) {
         if (!accountFlags.initialized || !(accountFlags.bids ^ accountFlags.asks)) {
             throw new Error('Invalid orderbook')
         }
@@ -777,7 +777,7 @@ export class Orderbook {
         return ORDERBOOK_LAYOUT
     }
 
-    static decode(market: Market, buffer: Buffer) {
+    static decode(market: ZoMarket, buffer: Buffer) {
         const {accountFlags, slab} = ORDERBOOK_LAYOUT.decode(buffer)
         return new Orderbook(market, accountFlags, slab)
     }
