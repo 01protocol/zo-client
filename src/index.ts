@@ -15,4 +15,4 @@ export { default as Cache } from "./accounts/Cache";
 export { default as Control } from "./accounts/Control";
 
 export { Market, Orderbook } from "./serum/market";
-export { EVENT_QUEUE_HEADER, decodeEventsSince } from "./serum/queue";
+export {  decodeEventsSince } from "./serum/queue";

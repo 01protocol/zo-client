@@ -3,8 +3,8 @@ import {
   Keypair,
   SystemProgram,
   Transaction,
-  TransactionInstruction,
-} from "@solana/web3.js";
+  TransactionInstruction, Connection
+} from '@solana/web3.js';
 import {
   TOKEN_PROGRAM_ID,
   Token,
@@ -16,6 +16,8 @@ import {
 import { Provider } from "@project-serum/anchor";
 import BN from "bn.js";
 import Decimal from "decimal.js";
+import {WRAPPED_SOL_MINT} from '../serum/token-instructions'
+import {blob, struct, u8} from 'buffer-layout'
 
 export * from "./web3";
 
@@ -187,4 +189,28 @@ export async function mintTo(
   const tx = new Transaction();
   tx.add(...createMintToIxs(mint, dest, provider.wallet.publicKey, amount));
   await provider.send(tx, []);
+}
+
+export function throwIfNull<T>(value: T | null, message = "account not found"): T {
+  if (value === null) {
+    throw new Error(message)
+  }
+  return value
+}
+
+const MINT_LAYOUT = struct([blob(44), u8('decimals'), blob(37)])
+
+export async function getMintDecimals(
+    connection: Connection,
+    mint: PublicKey,
+): Promise<number> {
+  if (mint.equals(WRAPPED_SOL_MINT)) {
+    return 9
+  }
+  const { data } = throwIfNull(
+      await connection.getAccountInfo(mint),
+      "mint not found",
+  )
+  const { decimals } = MINT_LAYOUT.decode(data)
+  return decimals
 }

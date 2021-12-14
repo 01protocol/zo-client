@@ -1,6 +1,5 @@
 import {PublicKey} from '@solana/web3.js';
-import {AccountClient, Program} from '@project-serum/anchor';
-import {Wallet, Zo} from '../types';
+import {Wallet} from '../types';
 import {getProgram} from '../global';
 
 export default abstract class BaseAccount<T> {

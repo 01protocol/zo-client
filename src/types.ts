@@ -1,7 +1,8 @@
-import { Zo } from "./types/zo";
+
 import { PublicKey, Transaction } from "@solana/web3.js";
 import { IdlTypes, IdlAccounts } from "@project-serum/anchor";
 import BN from "bn.js";
+import {Zo} from './types/idl'
 
 // TODO: DEPRECATE
 export interface MarketInfo {
@@ -17,7 +18,6 @@ export interface Wallet {
   signAllTransactions(txs: Transaction[]): Promise<Transaction[]>;
 }
 
-export { Zo } from "./types/zo";
 
 // NOTE: These intersection types are a temporary workaround,
 // as anchor's type inference isn't complete yet.

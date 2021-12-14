@@ -258,14 +258,14 @@ export default class Margin extends BaseAccount<Schema> {
   }
 
   async swap({
-    direction,
+    buy,
     tokenMint,
     amount,
     minRate,
     allowBorrow,
     serumMarket,
   }: Readonly<{
-    direction: "buy" | "sell";
+    buy: boolean;
     tokenMint: PublicKey;
     amount: BN;
     minRate: BN;
@@ -300,7 +300,7 @@ export default class Margin extends BaseAccount<Schema> {
     }
 
     return await this.program.rpc.swap(
-      direction === "buy",
+      buy,
       allowBorrow,
       amount,
       minRate,
