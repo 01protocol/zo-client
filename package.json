@@ -8,8 +8,6 @@
   "types": "lib/esm/index.d.ts",
   "scripts": {
     "build": "tsc && tsc -p tsconfig.cjs.json",
-    "build:idl": "cd solana && anchor run build; cd ..",
-    "sync:idl": "npm run build:idl && rm -Rf src/idl src/types; cp -R solana/target/types solana/target/idl src",
     "postinstall": "npm run build"
   },
   "dependencies": {
