@@ -54,7 +54,6 @@ export default class Cache extends BaseAccount<Schema> {
           twap: loadWrappedI80F48(c.twap),
         })),
       marks: data.marks
-        .filter((c) => !c.lastUpdated.isZero())
         .map((c) => ({
           ...c,
           price: loadWrappedI80F48(c.price),
