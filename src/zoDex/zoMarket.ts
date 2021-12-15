@@ -74,7 +74,7 @@ export class ZoMarket {
   private readonly _commitment: Commitment;
   private readonly _programId: PublicKey;
   private readonly _openOrdersAccountsCache: {
-    [publicKey: string]: { accounts: OpenOrders[]; ts: number };
+    [publicKey: string]: { accounts: ZoOpenOrders[]; ts: number };
   };
   private _layoutOverride?: any;
 
@@ -308,7 +308,7 @@ export class ZoMarket {
     connection: Connection,
     ownerAddress: PublicKey,
     cacheDurationMs = 0,
-  ): Promise<OpenOrders[]> {
+  ): Promise<ZoOpenOrders[]> {
     const strOwner = ownerAddress.toBase58();
     const now = new Date().getTime();
     if (
@@ -317,7 +317,7 @@ export class ZoMarket {
     ) {
       return this._openOrdersAccountsCache[strOwner]!.accounts;
     }
-    const openOrdersAccountsForOwner = await OpenOrders.findForMarketAndOwner(
+    const openOrdersAccountsForOwner = await ZoOpenOrders.findForMarketAndOwner(
       connection,
       this.address,
       ownerAddress,
@@ -645,7 +645,7 @@ export const _OPEN_ORDERS_LAYOUT_V2 = struct([
   blob(7),
 ]);
 
-export class OpenOrders {
+export class ZoOpenOrders {
   private _programId: PublicKey;
 
   address: PublicKey;
@@ -699,7 +699,7 @@ export class OpenOrders {
       filters,
     );
     return accounts.map(({ publicKey, accountInfo }) =>
-      OpenOrders.fromAccountInfo(publicKey, accountInfo, programId),
+      ZoOpenOrders.fromAccountInfo(publicKey, accountInfo, programId),
     );
   }
 
@@ -732,7 +732,7 @@ export class OpenOrders {
       filters,
     );
     return accounts.map(({ publicKey, accountInfo }) =>
-      OpenOrders.fromAccountInfo(publicKey, accountInfo, programId),
+      ZoOpenOrders.fromAccountInfo(publicKey, accountInfo, programId),
     );
   }
 
@@ -745,7 +745,7 @@ export class OpenOrders {
     if (accountInfo === null) {
       throw new Error("Open orders account not found");
     }
-    return OpenOrders.fromAccountInfo(address, accountInfo, programId);
+    return ZoOpenOrders.fromAccountInfo(address, accountInfo, programId);
   }
 
   static fromAccountInfo(
@@ -761,7 +761,7 @@ export class OpenOrders {
     if (!decoded.accountFlags.initialized || !decoded.accountFlags.openOrders) {
       throw new Error("Invalid open orders account");
     }
-    return new OpenOrders(address, decoded, programId);
+    return new ZoOpenOrders(address, decoded, programId);
   }
 
   get publicKey() {
