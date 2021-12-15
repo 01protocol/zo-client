@@ -51,7 +51,6 @@ export default class Margin extends BaseAccount<Schema> {
             ),
             c.decimals,
             c.mint,
-            8,
           ),
       ),
     };
@@ -300,39 +299,33 @@ export default class Margin extends BaseAccount<Schema> {
       );
     }
 
-    return await this.program.rpc.swap(
-      buy,
-      allowBorrow,
-      amount,
-      minRate,
-      {
-        accounts: {
-          authority: this.wallet.publicKey,
-          state: this.state.pubkey,
-          stateSigner: this.state.signer,
-          cache: this.state.data.cache,
-          margin: this.pubkey,
-          control: this.data.control,
-          quoteMint: stateQuoteMint,
-          quoteVault: this.state.data.vaults[0]!,
-          assetMint: tokenMint,
-          assetVault: this.data.collateral[colIdx]!,
-          swapFeeVault: this.state.data.swapFeeVault,
-          serumOpenOrders: this.state.data.collaterals[colIdx]!.serumOpenOrders,
-          serumMarket,
-          serumRequestQueue: market.decoded.requestQueue,
-          serumEventQueue: market.decoded.eventQueue,
-          serumBids: market.bidsAddress,
-          serumAsks: market.asksAddress,
-          serumCoinVault: market.decoded.baseVault,
-          serumPcVault: market.decoded.quoteVault,
-          serumVaultSigner: market.decoded.vaultSignerNonce,
-          srmSpotProgram: SERUM_SPOT_PROGRAM_ID,
-          srmSwapProgram: SERUM_SWAP_PROGRAM_ID,
-          tokenProgram: TOKEN_PROGRAM_ID,
-          rent: SYSVAR_RENT_PUBKEY,
-        },
+    return await this.program.rpc.swap(buy, allowBorrow, amount, minRate, {
+      accounts: {
+        authority: this.wallet.publicKey,
+        state: this.state.pubkey,
+        stateSigner: this.state.signer,
+        cache: this.state.data.cache,
+        margin: this.pubkey,
+        control: this.data.control,
+        quoteMint: stateQuoteMint,
+        quoteVault: this.state.data.vaults[0]!,
+        assetMint: tokenMint,
+        assetVault: this.data.collateral[colIdx]!,
+        swapFeeVault: this.state.data.swapFeeVault,
+        serumOpenOrders: this.state.data.collaterals[colIdx]!.serumOpenOrders,
+        serumMarket,
+        serumRequestQueue: market.decoded.requestQueue,
+        serumEventQueue: market.decoded.eventQueue,
+        serumBids: market.bidsAddress,
+        serumAsks: market.asksAddress,
+        serumCoinVault: market.decoded.baseVault,
+        serumPcVault: market.decoded.quoteVault,
+        serumVaultSigner: market.decoded.vaultSignerNonce,
+        srmSpotProgram: SERUM_SPOT_PROGRAM_ID,
+        srmSwapProgram: SERUM_SWAP_PROGRAM_ID,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        rent: SYSVAR_RENT_PUBKEY,
       },
-    );
+    });
   }
 }

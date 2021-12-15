@@ -11,10 +11,5 @@ export { default as Margin } from "./accounts/Margin";
 export { default as Cache } from "./accounts/Cache";
 export { default as Control } from "./accounts/Control";
 
-<<<<<<< HEAD
-export { ZoMarket, Orderbook } from "./serum/zoMarket";
-export {  decodeEventsSince } from "./serum/queue";
-=======
 export { ZoMarket, Orderbook, ZoOpenOrders } from "./zoDex/zoMarket";
 export { EVENT_QUEUE_HEADER, decodeEventsSince } from "./zoDex/queue";
->>>>>>> 7819db03385cac0969cba5132914d44d0b7ed578

@@ -5,6 +5,7 @@ import Cache from "./Cache";
 import { ZoMarket } from "../zoDex/zoMarket";
 import { StateSchema } from "../types";
 import { DEX_PROGRAM_ID } from "../config";
+import { BN } from "@project-serum/anchor";
 
 type CollateralInfo = Omit<StateSchema["collaterals"][0], "oracleSymbol"> & {
   oracleSymbol: string;
@@ -142,11 +143,11 @@ export default class State extends BaseAccount<Schema> {
     });
   }
 
-  async cacheOracle() {
+  async cacheOracle(mockPrices?: BN[]) {
     const oracles = this.cache.data.oracles;
     return await this.program.rpc.cacheOracle(
       oracles.map((x) => x.symbol),
-      null,
+      mockPrices,
       {
         accounts: {
           signer: this.wallet.publicKey,
