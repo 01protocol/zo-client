@@ -2,7 +2,7 @@ import { PublicKey } from "@solana/web3.js";
 import Decimal from "decimal.js";
 import BaseAccount from "./BaseAccount";
 import { CacheSchema } from "../types";
-import { loadSymbol, loadWrappedI80F48 } from "../utils";
+import { loadSymbol, loadWI80F48 } from "../utils";
 
 type OracleCache = Omit<
   CacheSchema["oracles"][0],
@@ -50,28 +50,27 @@ export default class Cache extends BaseAccount<Schema> {
         .map((c) => ({
           ...c,
           symbol: loadSymbol(c.symbol),
-          price: loadWrappedI80F48(c.price),
-          twap: loadWrappedI80F48(c.twap),
+          price: loadWI80F48(c.price),
+          twap: loadWI80F48(c.twap),
         })),
-      marks: data.marks
-        .map((c) => ({
-          ...c,
-          price: loadWrappedI80F48(c.price),
-          twap: c.twap.map((x) => ({
-            ...x,
-            startTime: new Date(x.startTime.toNumber()),
-            open: loadWrappedI80F48(x.open),
-            low: loadWrappedI80F48(x.low),
-            high: loadWrappedI80F48(x.high),
-            close: loadWrappedI80F48(x.close),
-          })),
+      marks: data.marks.map((c) => ({
+        ...c,
+        price: loadWI80F48(c.price),
+        twap: c.twap.map((x) => ({
+          ...x,
+          startTime: new Date(x.startTime.toNumber()),
+          open: loadWI80F48(x.open),
+          low: loadWI80F48(x.low),
+          high: loadWI80F48(x.high),
+          close: loadWI80F48(x.close),
         })),
+      })),
       borrowCache: data.borrowCache.map((c) => ({
         ...c,
-        supply: loadWrappedI80F48(c.supply),
-        borrows: loadWrappedI80F48(c.borrows),
-        supplyMultiplier: loadWrappedI80F48(c.supplyMultiplier),
-        borrowMultiplier: loadWrappedI80F48(c.borrowMultiplier),
+        supply: loadWI80F48(c.supply),
+        borrows: loadWI80F48(c.borrows),
+        supplyMultiplier: loadWI80F48(c.supplyMultiplier),
+        borrowMultiplier: loadWI80F48(c.borrowMultiplier),
       })),
     };
   }

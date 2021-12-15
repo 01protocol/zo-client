@@ -3,8 +3,9 @@ import {
   Keypair,
   SystemProgram,
   Transaction,
-  TransactionInstruction, Connection
-} from '@solana/web3.js';
+  TransactionInstruction,
+  Connection,
+} from "@solana/web3.js";
 import {
   TOKEN_PROGRAM_ID,
   Token,
@@ -16,16 +17,17 @@ import {
 import { Provider } from "@project-serum/anchor";
 import BN from "bn.js";
 import Decimal from "decimal.js";
-import {WRAPPED_SOL_MINT} from '../serum/token-instructions'
-import {blob, struct, u8} from 'buffer-layout'
+import { blob, struct, u8 } from "buffer-layout";
+import { WRAPPED_SOL_MINT } from "../zoDex/token-instructions";
 
-export * from "./web3";
+export * from "./rpc";
+export * from "./units";
 
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function loadWrappedI80F48({ data }: { data: BN }): Decimal {
+export function loadWI80F48({ data }: { data: BN }): Decimal {
   return new Decimal(
     `${data.isNeg() ? "-" : ""}0b${data.abs().toString(2)}p-48`,
   );
@@ -191,26 +193,29 @@ export async function mintTo(
   await provider.send(tx, []);
 }
 
-export function throwIfNull<T>(value: T | null, message = "account not found"): T {
+export function throwIfNull<T>(
+  value: T | null,
+  message = "account not found",
+): T {
   if (value === null) {
-    throw new Error(message)
+    throw new Error(message);
   }
-  return value
+  return value;
 }
 
-const MINT_LAYOUT = struct([blob(44), u8('decimals'), blob(37)])
+const MINT_LAYOUT = struct([blob(44), u8("decimals"), blob(37)]);
 
 export async function getMintDecimals(
-    connection: Connection,
-    mint: PublicKey,
+  connection: Connection,
+  mint: PublicKey,
 ): Promise<number> {
   if (mint.equals(WRAPPED_SOL_MINT)) {
-    return 9
+    return 9;
   }
   const { data } = throwIfNull(
-      await connection.getAccountInfo(mint),
-      "mint not found",
-  )
-  const { decimals } = MINT_LAYOUT.decode(data)
-  return decimals
+    await connection.getAccountInfo(mint),
+    "mint not found",
+  );
+  const { decimals } = MINT_LAYOUT.decode(data);
+  return decimals;
 }

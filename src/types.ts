@@ -4,14 +4,6 @@ import { IdlTypes, IdlAccounts } from "@project-serum/anchor";
 import BN from "bn.js";
 import {Zo} from './types/zo'
 
-// TODO: DEPRECATE
-export interface MarketInfo {
-  name: string;
-  address: PublicKey;
-  programId: PublicKey;
-}
-
-// TODO: DEPRECATE
 export interface Wallet {
   publicKey: PublicKey;
   signTransaction(tx: Transaction): Promise<Transaction>;

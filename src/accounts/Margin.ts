@@ -1,8 +1,8 @@
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
+  Keypair,
   PublicKey,
   SystemProgram,
-  Keypair,
   SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
 import { Market as SerumMarket } from "@project-serum/serum";
@@ -12,14 +12,15 @@ import BaseAccount from "./BaseAccount";
 import State from "./State";
 import Control from "./Control";
 import Num from "../Num";
-import { loadWrappedI80F48 } from "../utils";
+import { loadWI80F48 } from "../utils";
 import { MarginSchema, OrderType } from "../types";
 import {
-  DEX_PROGRAM_ID,
   CONTROL_ACCOUNT_SIZE,
+  DEX_PROGRAM_ID,
   SERUM_SPOT_PROGRAM_ID,
   SERUM_SWAP_PROGRAM_ID,
 } from "../config";
+import Decimal from "decimal.js";
 
 interface Schema extends Omit<MarginSchema, "collateral"> {
   collateral: Num[];
@@ -43,7 +44,15 @@ export default class Margin extends BaseAccount<Schema> {
       ...data,
       collateral: st.data.collaterals.map(
         (c, i) =>
-          new Num(loadWrappedI80F48(data.collateral[i]!), c.decimals, c.mint),
+          new Num(
+            // converting to Big Decimal, because Num assumes Decimals are bigs
+            loadWI80F48(data.collateral[i]!).div(
+              new Decimal(10).toPower(c.decimals),
+            ),
+            c.decimals,
+            c.mint,
+            8,
+          ),
       ),
     };
   }
@@ -61,7 +70,7 @@ export default class Margin extends BaseAccount<Schema> {
       Keypair.generate(),
       this.connection.getMinimumBalanceForRentExemption(CONTROL_ACCOUNT_SIZE),
     ]);
-    this.connection.confirmTransaction(
+    await this.connection.confirmTransaction(
       await this.program.rpc.createMargin!(nonce, {
         accounts: {
           state: st.pubkey,
@@ -165,7 +174,7 @@ export default class Margin extends BaseAccount<Schema> {
     });
   }
 
-  async createPerpOpenOrders(symbol: string) {
+  async createPerpOpenOrders(symbol: string): Promise<string> {
     const [ooKey, _] = await this.getOpenOrdersKey(symbol);
     return await this.program.rpc.createPerpOpenOrders({
       accounts: {
