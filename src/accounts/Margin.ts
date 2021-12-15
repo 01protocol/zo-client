@@ -13,7 +13,7 @@ import State from "./State";
 import Control from "./Control";
 import Num from "../Num";
 import { loadWI80F48 } from "../utils";
-import { MarginSchema, OrderType } from "../types";
+import { MarginSchema, OrderType, TransactionId } from "../types";
 import {
   CONTROL_ACCOUNT_SIZE,
   DEX_PROGRAM_ID,
@@ -21,9 +21,11 @@ import {
   SERUM_SWAP_PROGRAM_ID,
 } from "../config";
 import Decimal from "decimal.js";
+import Cache from "./Cache";
 
 interface Schema extends Omit<MarginSchema, "collateral"> {
-  collateral: Num[];
+  rawCollateral: Decimal[];
+  actualCollateral: Num[];
 }
 
 export default class Margin extends BaseAccount<Schema> {
@@ -36,18 +38,33 @@ export default class Margin extends BaseAccount<Schema> {
     super(pubkey, data);
   }
 
-  private static async fetch(k: PublicKey, st: State): Promise<Schema> {
+  private static async fetch(
+    k: PublicKey,
+    st: State,
+    ch: Cache,
+  ): Promise<Schema> {
     const data = (await this.program.account["margin"].fetch(
       k,
     )) as MarginSchema;
+    let rawCollateral = data.collateral.map((c) => loadWI80F48(c!));
     return {
       ...data,
-      collateral: st.data.collaterals.map(
+      rawCollateral,
+      actualCollateral: st.data.collaterals.map(
         (c, i) =>
           new Num(
-            // converting to Big Decimal, because Num assumes Decimals are bigs
-            loadWI80F48(data.collateral[i]!).div(
-              new Decimal(10).toPower(c.decimals),
+            new BN(
+              rawCollateral[i]!.isPos()
+                ? rawCollateral[i]!.times(
+                    ch.data.borrowCache[i]!.supplyMultiplier,
+                  )
+                    .floor()
+                    .toString()
+                : rawCollateral[i]!.times(
+                    ch.data.borrowCache[i]!.borrowMultiplier,
+                  )
+                    .floor()
+                    .toString(),
             ),
             c.decimals,
             c.mint,
@@ -56,9 +73,9 @@ export default class Margin extends BaseAccount<Schema> {
     };
   }
 
-  static async load(st: State): Promise<Margin> {
+  static async load(st: State, ch: Cache): Promise<Margin> {
     const [key, _nonce] = await this.getPda(st, this.wallet.publicKey);
-    let data = await this.fetch(key, st);
+    let data = await this.fetch(key, st, ch);
     let control = await Control.load(data.control);
     return new this(key, data, control, st);
   }
@@ -91,7 +108,7 @@ export default class Margin extends BaseAccount<Schema> {
         signers: [control],
       }),
     );
-    return await Margin.load(st);
+    return await Margin.load(st, st.cache);
   }
 
   static async getPda(
@@ -106,7 +123,7 @@ export default class Margin extends BaseAccount<Schema> {
 
   async refresh(): Promise<void> {
     [this.data] = await Promise.all([
-      Margin.fetch(this.pubkey, this.state),
+      Margin.fetch(this.pubkey, this.state, this.state.cache),
       this.control.refresh(),
       this.state.refresh(),
     ]);
@@ -205,7 +222,7 @@ export default class Margin extends BaseAccount<Schema> {
     limitPrice: BN;
     maxBaseQty: BN;
     maxQuoteQty: BN;
-  }>) {
+  }>): Promise<TransactionId> {
     const market = await this.state.getSymbolMarket(symbol);
     const oo = await this.getSymbolOpenOrders(symbol);
 
@@ -310,7 +327,7 @@ export default class Margin extends BaseAccount<Schema> {
         quoteMint: stateQuoteMint,
         quoteVault: this.state.data.vaults[0]!,
         assetMint: tokenMint,
-        assetVault: this.data.collateral[colIdx]!,
+        assetVault: this.data.rawCollateral[colIdx]!,
         swapFeeVault: this.state.data.swapFeeVault,
         serumOpenOrders: this.state.data.collaterals[colIdx]!.serumOpenOrders,
         serumMarket,

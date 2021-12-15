@@ -1,8 +1,7 @@
-
 import { PublicKey, Transaction } from "@solana/web3.js";
 import { IdlTypes, IdlAccounts } from "@project-serum/anchor";
 import BN from "bn.js";
-import {Zo} from './types/zo'
+import { Zo } from "./types/zo";
 
 export interface Wallet {
   publicKey: PublicKey;
@@ -10,6 +9,7 @@ export interface Wallet {
   signAllTransactions(txs: Transaction[]): Promise<Transaction[]>;
 }
 
+export type TransactionId = string;
 
 // NOTE: These intersection types are a temporary workaround,
 // as anchor's type inference isn't complete yet.

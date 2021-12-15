@@ -75,6 +75,16 @@ export default class Cache extends BaseAccount<Schema> {
     };
   }
 
+  getOracleBySymbol(sym: string): OracleCache {
+    const i = this.data.oracles.findIndex((x) => x.symbol === sym);
+    if (i < 0) {
+      throw RangeError(
+        `Invalid symbol ${sym} for <Cache ${this.pubkey.toBase58()}>`,
+      );
+    }
+    return this.data.oracles[i]!;
+  }
+
   async refresh(): Promise<void> {
     this.data = await Cache.fetch(this.pubkey);
   }
