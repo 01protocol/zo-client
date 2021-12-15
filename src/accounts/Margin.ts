@@ -50,8 +50,7 @@ export default class Margin extends BaseAccount<Schema> {
               new Decimal(10).toPower(c.decimals),
             ),
             c.decimals,
-            c.mint,
-            8,
+            c.mint
           ),
       ),
     };
