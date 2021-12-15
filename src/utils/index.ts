@@ -17,13 +17,14 @@ import { Provider } from "@project-serum/anchor";
 import BN from "bn.js";
 import Decimal from "decimal.js";
 
-export * from "./web3";
+export * from "./rpc";
+export * from "./units";
 
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function loadWrappedI80F48({ data }: { data: BN }): Decimal {
+export function loadWI80F48({ data }: { data: BN }): Decimal {
   return new Decimal(
     `${data.isNeg() ? "-" : ""}0b${data.abs().toString(2)}p-48`,
   );
