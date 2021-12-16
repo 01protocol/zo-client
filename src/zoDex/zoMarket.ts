@@ -28,7 +28,7 @@ import {
 } from "./token-instructions";
 import { throwIfNull } from "../utils";
 import { TransactionId } from "../types";
-import { DEX_PROGRAM_ID, ZERO_ONE_PROGRAM_ID } from "../config";
+import { ZO_DEX_PROGRAM_ID, ZERO_ONE_PROGRAM_ID } from "../config";
 import { Program } from "@project-serum/anchor";
 import { State } from "../index";
 
@@ -613,7 +613,7 @@ export class ZoMarket {
       accounts: {
         state: st.pubkey,
         stateSigner: signer,
-        dexProgram: DEX_PROGRAM_ID,
+        dexProgram: ZO_DEX_PROGRAM_ID,
         market: this.address,
         eventQueue: this.eventQueueAddress,
       },
@@ -646,7 +646,7 @@ export class ZoMarket {
         state: st.pubkey,
         stateSigner: signer,
         cache: st.cache.pubkey,
-        dexProgram: DEX_PROGRAM_ID,
+        dexProgram: ZO_DEX_PROGRAM_ID,
         market: this.address,
       },
       remainingAccounts: ra,

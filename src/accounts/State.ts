@@ -5,7 +5,7 @@ import BaseAccount from "./BaseAccount";
 import Cache from "./Cache";
 import { ZoMarket } from "../zoDex/zoMarket";
 import { Zo, StateSchema } from "../types";
-import { DEX_PROGRAM_ID } from "../config";
+import { ZO_DEX_PROGRAM_ID } from "../config";
 
 type CollateralInfo = Omit<StateSchema["collaterals"][0], "oracleSymbol"> & {
   oracleSymbol: string;
@@ -126,7 +126,7 @@ export default class State extends BaseAccount<Schema> {
         this.connection,
         this.getMarketKeyBySymbol(sym),
         this.provider.opts,
-        DEX_PROGRAM_ID,
+        ZO_DEX_PROGRAM_ID,
       );
     }
     return this._getMarketBySymbol[sym] as ZoMarket;
@@ -142,7 +142,7 @@ export default class State extends BaseAccount<Schema> {
         dexMarket: market.address,
         marketBids: market.bidsAddress,
         marketAsks: market.asksAddress,
-        dexProgram: DEX_PROGRAM_ID,
+        dexProgram: ZO_DEX_PROGRAM_ID,
       },
     });
   }

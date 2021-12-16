@@ -17,7 +17,7 @@ import { loadWI80F48 } from "../utils";
 import { Zo, MarginSchema, OrderType, TransactionId } from "../types";
 import {
   CONTROL_ACCOUNT_SIZE,
-  DEX_PROGRAM_ID,
+  ZO_DEX_PROGRAM_ID,
   SERUM_SPOT_PROGRAM_ID,
   SERUM_SWAP_PROGRAM_ID,
 } from "../config";
@@ -149,7 +149,7 @@ export default class Margin extends BaseAccount<Schema> {
     const dexMarket = this.state.getMarketKeyBySymbol(symbol);
     return await PublicKey.findProgramAddress(
       [this.data.control.toBuffer(), dexMarket.toBuffer()],
-      DEX_PROGRAM_ID,
+      ZO_DEX_PROGRAM_ID,
     );
   }
 
@@ -222,7 +222,7 @@ export default class Margin extends BaseAccount<Schema> {
         control: this.data.control,
         openOrders: ooKey,
         dexMarket: this.state.getMarketKeyBySymbol(symbol),
-        dexProgram: DEX_PROGRAM_ID,
+        dexProgram: ZO_DEX_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
         systemProgram: SystemProgram.programId,
       },
@@ -267,7 +267,7 @@ export default class Margin extends BaseAccount<Schema> {
           eventQ: market.eventQueueAddress,
           marketBids: market.bidsAddress,
           marketAsks: market.asksAddress,
-          dexProgram: DEX_PROGRAM_ID,
+          dexProgram: ZO_DEX_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         },
       },
@@ -290,7 +290,7 @@ export default class Margin extends BaseAccount<Schema> {
         marketBids: market.bidsAddress,
         marketAsks: market.asksAddress,
         eventQ: market.eventQueueAddress,
-        dexProgram: DEX_PROGRAM_ID,
+        dexProgram: ZO_DEX_PROGRAM_ID,
       },
     });
   }
@@ -381,7 +381,7 @@ export default class Margin extends BaseAccount<Schema> {
         control: this.data.control,
         openOrders: oo!.key,
         dexMarket: market.address,
-        dexProgram: DEX_PROGRAM_ID,
+        dexProgram: ZO_DEX_PROGRAM_ID,
       },
     });
   }

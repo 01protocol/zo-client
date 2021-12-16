@@ -1,4 +1,4 @@
-import { Keypair, PublicKey, Transaction } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 
 export { IDL } from "./types/zo";
 
@@ -17,7 +17,7 @@ export const ASKS_ACCOUNT_SIZE = 12 + 65536;
 export const ZERO_ONE_PROGRAM_ID = new PublicKey(
   "AjGXinumkbrDGkAPmSEPGEQ8jC89ExXArbF6uEioEZS5",
 );
-export const DEX_PROGRAM_ID = new PublicKey(
+export const ZO_DEX_PROGRAM_ID = new PublicKey(
   "249z8gAKdX41bjfz7SFUxGmbAqDtSLU2tsSYzb7MkUCN",
 );
 export const SERUM_SPOT_PROGRAM_ID = new PublicKey(
@@ -41,40 +41,5 @@ export const RENT_PROGRAM_ID = new PublicKey(
   "SysvarRent111111111111111111111111111111111",
 );
 
-export const ENDPOINT = "https://psytrbhymqlkfrhudd.dev.genesysgo.net:8899/";
-
-export const SKIP_PREFLIGHT = true;
-
-export const USDC_MINT_ADDRESS = new PublicKey(
-  "ANPW6n3x5YEbqsAM9tGteXRuQAhFcG1XQq75gbQFajP8",
-);
-
-export const USDC_SYMBOL = "USDC";
-export const USDC_DECIMALS = 6;
-
-export const USDC_MINT_AUTH_ADDRESS = new PublicKey(
-  "5t1Goi4tfDueXRuDqNVx6Kw5BE3fEKBFNEvHTTP1YYPc",
-);
-
-export const LOT_SIZE = 1000;
-
-export const FEE = 0.2;
-
-export const PC_STARTING_BUFFER = 100_000_000;
-
-export const USDC_PRIVATE_KEY_ADDRESS = [
-  103, 128, 86, 103, 226, 250, 41, 119, 109, 55, 1, 204, 42, 182, 8, 253, 152,
-  47, 133, 62, 240, 19, 203, 149, 90, 22, 193, 88, 115, 169, 254, 207, 72, 127,
-  173, 85, 214, 147, 203, 179, 171, 26, 220, 48, 115, 8, 61, 71, 179, 142, 75,
-  221, 231, 10, 195, 130, 150, 145, 18, 58, 223, 132, 196, 147,
-];
-
-export const BOP_DURATION = 60 * 30;
-
-export const DUMMY_WALLET: any = {
-  // @ts-ignore
-  payer: new Keypair(),
-  signTransaction: async (tx: Transaction) => tx,
-  signAllTransactions: async (txs: Transaction[]) => txs,
-  publicKey: new PublicKey("11111111111111111111111111111111"),
-};
+// == CLUSTERS ==
+export const DEV_ENDPOINT = "https://api.devnet.solana.com";
