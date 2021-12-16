@@ -1,43 +1,28 @@
 import { PublicKey } from "@solana/web3.js";
-import { Wallet } from "../types";
-import { getProgram } from "../global";
+import { Program } from '@project-serum/anchor';
+import { Wallet, Zo } from "../types";
 
 export default abstract class BaseAccount<T> {
   protected constructor(
+    private _program: Program<Zo>,
     public readonly pubkey: PublicKey,
     public data: Readonly<T>,
   ) {}
 
-  static get program() {
-    return getProgram();
-  }
-
-  static get provider() {
-    return this.program.provider;
-  }
-
-  static get connection() {
-    return this.provider.connection;
-  }
-
-  static get wallet(): Wallet {
-    return this.provider.wallet;
-  }
-
   get program() {
-    return BaseAccount.program;
+    return this._program;
   }
 
   get provider() {
-    return BaseAccount.provider;
+    return this.program.provider;
   }
 
   get connection() {
-    return BaseAccount.connection;
+    return this.provider.connection;
   }
 
   get wallet() {
-    return BaseAccount.wallet;
+    return this.provider.wallet;
   }
 
   abstract refresh(): Promise<void>;

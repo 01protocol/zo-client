@@ -1,11 +1,11 @@
 import { PublicKey } from "@solana/web3.js";
+import { Program, BN } from "@project-serum/anchor";
 import { loadSymbol } from "../utils";
 import BaseAccount from "./BaseAccount";
 import Cache from "./Cache";
 import { ZoMarket } from "../zoDex/zoMarket";
-import { StateSchema } from "../types";
+import { Zo, StateSchema } from "../types";
 import { DEX_PROGRAM_ID } from "../config";
-import { BN } from "@project-serum/anchor";
 
 type CollateralInfo = Omit<StateSchema["collaterals"][0], "oracleSymbol"> & {
   oracleSymbol: string;
@@ -26,23 +26,24 @@ interface Schema extends Omit<StateSchema, "perpMarkets" | "collaterals"> {
 
 export default class State extends BaseAccount<Schema> {
   private constructor(
+    program: Program<Zo>,
     pubkey: PublicKey,
     data: Readonly<Schema>,
     public readonly signer: PublicKey,
     public readonly cache: Cache,
   ) {
-    super(pubkey, data);
+    super(program, pubkey, data);
   }
 
-  static async getSigner(stateKey: PublicKey): Promise<[PublicKey, number]> {
-    return await PublicKey.findProgramAddress(
-      [stateKey.toBuffer()],
-      this.program.programId,
-    );
+  static async getSigner(
+    stateKey: PublicKey,
+    programId: PublicKey,
+  ): Promise<[PublicKey, number]> {
+    return await PublicKey.findProgramAddress([stateKey.toBuffer()], programId);
   }
 
-  static async fetch(k: PublicKey): Promise<Schema> {
-    const data = (await this.program.account["state"].fetch(k)) as StateSchema;
+  static async fetch(program: Program<Zo>, k: PublicKey): Promise<Schema> {
+    const data = (await program.account["state"].fetch(k)) as StateSchema;
 
     // Convert StateSchema to Schema.
     return {
@@ -62,20 +63,20 @@ export default class State extends BaseAccount<Schema> {
     };
   }
 
-  static async load(k: PublicKey): Promise<State> {
-    const data = await this.fetch(k);
-    const [signer, signerNonce] = await this.getSigner(k);
+  static async load(program: Program<Zo>, k: PublicKey): Promise<State> {
+    const data = await this.fetch(program, k);
+    const [signer, signerNonce] = await this.getSigner(k, program.programId);
     if (signerNonce !== data.signerNonce) {
       throw Error("Invalid state signer nonce");
     }
-    const cache = await Cache.load(data.cache);
-    return new this(k, data, signer, cache);
+    const cache = await Cache.load(program, data.cache);
+    return new this(program, k, data, signer, cache);
   }
 
   async refresh(): Promise<void> {
     this._getSymbolMarket = {};
     [this.data] = await Promise.all([
-      State.fetch(this.pubkey),
+      State.fetch(this.program, this.pubkey),
       this.cache.refresh(),
     ]);
   }

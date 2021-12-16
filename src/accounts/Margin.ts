@@ -5,6 +5,7 @@ import {
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
 } from "@solana/web3.js";
+import { Program } from "@project-serum/anchor";
 import { Market as SerumMarket } from "@project-serum/serum";
 import BN from "bn.js";
 import { Buffer } from "buffer";
@@ -13,7 +14,7 @@ import State from "./State";
 import Control from "./Control";
 import Num from "../Num";
 import { loadWI80F48 } from "../utils";
-import { MarginSchema, OrderType, TransactionId } from "../types";
+import { Zo, MarginSchema, OrderType, TransactionId } from "../types";
 import {
   CONTROL_ACCOUNT_SIZE,
   DEX_PROGRAM_ID,
@@ -30,20 +31,22 @@ interface Schema extends Omit<MarginSchema, "collateral"> {
 
 export default class Margin extends BaseAccount<Schema> {
   private constructor(
+    program: Program<Zo>,
     pubkey: PublicKey,
     data: Schema,
     public readonly control: Control,
     public readonly state: State,
   ) {
-    super(pubkey, data);
+    super(program, pubkey, data);
   }
 
   private static async fetch(
+    program: Program<Zo>,
     k: PublicKey,
     st: State,
     ch: Cache,
   ): Promise<Schema> {
-    const data = (await this.program.account["margin"].fetch(
+    const data = (await program.account["margin"].fetch(
       k,
     )) as MarginSchema;
     let rawCollateral = data.collateral.map((c) => loadWI80F48(c!));
@@ -73,24 +76,25 @@ export default class Margin extends BaseAccount<Schema> {
     };
   }
 
-  static async load(st: State, ch: Cache): Promise<Margin> {
-    const [key, _nonce] = await this.getPda(st, this.wallet.publicKey);
-    let data = await this.fetch(key, st, ch);
-    let control = await Control.load(data.control);
-    return new this(key, data, control, st);
+  static async load(program: Program<Zo>, st: State, ch: Cache): Promise<Margin> {
+    const [key, _nonce] = await this.getPda(st, program.provider.wallet.publicKey, program.programId);
+    let data = await this.fetch(program, key, st, ch);
+    let control = await Control.load(program, data.control);
+    return new this(program, key, data, control, st);
   }
 
-  static async create(st: State): Promise<Margin> {
+  static async create(program: Program<Zo>, st: State): Promise<Margin> {
+    const conn = program.provider.connection;
     const [[key, nonce], control, controlLamports] = await Promise.all([
-      this.getPda(st, this.wallet.publicKey),
+      this.getPda(st, program.provider.wallet.publicKey, program.programId),
       Keypair.generate(),
-      this.connection.getMinimumBalanceForRentExemption(CONTROL_ACCOUNT_SIZE),
+      conn.getMinimumBalanceForRentExemption(CONTROL_ACCOUNT_SIZE),
     ]);
-    await this.connection.confirmTransaction(
-      await this.program.rpc.createMargin!(nonce, {
+    await conn.confirmTransaction(
+      await program.rpc.createMargin(nonce, {
         accounts: {
           state: st.pubkey,
-          authority: this.wallet.publicKey,
+          authority: program.provider.wallet.publicKey,
           margin: key,
           control: control.publicKey,
           rent: SYSVAR_RENT_PUBKEY,
@@ -98,32 +102,33 @@ export default class Margin extends BaseAccount<Schema> {
         },
         preInstructions: [
           SystemProgram.createAccount({
-            fromPubkey: this.wallet.publicKey,
+            fromPubkey: program.provider.wallet.publicKey,
             newAccountPubkey: control.publicKey,
             lamports: controlLamports,
             space: CONTROL_ACCOUNT_SIZE,
-            programId: this.program.programId,
+            programId: program.programId,
           }),
         ],
         signers: [control],
       }),
     );
-    return await Margin.load(st, st.cache);
+    return await Margin.load(program, st, st.cache);
   }
 
   static async getPda(
     st: State,
     traderKey: PublicKey,
+    programId: PublicKey,
   ): Promise<[PublicKey, number]> {
     return await PublicKey.findProgramAddress(
       [traderKey.toBuffer(), st.pubkey.toBuffer(), Buffer.from("marginv1")],
-      this.program.programId,
+      programId,
     );
   }
 
   async refresh(): Promise<void> {
     [this.data] = await Promise.all([
-      Margin.fetch(this.pubkey, this.state, this.state.cache),
+      Margin.fetch(this.program, this.pubkey, this.state, this.state.cache),
       this.control.refresh(),
       this.state.refresh(),
     ]);

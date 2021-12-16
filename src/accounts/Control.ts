@@ -1,31 +1,26 @@
-import {PublicKey} from '@solana/web3.js';
-import BaseAccount from './BaseAccount';
-import {ControlSchema as Schema} from '../types';
+import { PublicKey } from "@solana/web3.js";
+import { Program } from "@project-serum/anchor";
+import BaseAccount from "./BaseAccount";
+import { Zo, ControlSchema as Schema } from "../types";
 
 export default class Control extends BaseAccount<Schema> {
-    private static async fetch(k: PublicKey): Promise<Schema> {
-        const data = (await this.program.account['control'].fetch(
-            k
-        )) as unknown as Schema;
-        return {
-            ...data
-        };
-    }
+  private static async fetch(
+    program: Program<Zo>,
+    k: PublicKey,
+  ): Promise<Schema> {
+    const data = ((await program.account["control"].fetch(
+      k,
+    )) as unknown) as Schema;
+    return {
+      ...data,
+    };
+  }
 
-    static async load(k: PublicKey) {
-        return new this(k, await Control.fetch(k));
-    }
+  static async load(program: Program<Zo>, k: PublicKey) {
+    return new this(program, k, await Control.fetch(program, k));
+  }
 
-    async refresh(): Promise<void> {
-        this.data = await Control.fetch(this.pubkey);
-    }
-
-    static async exists(k: PublicKey) {
-        try {
-            await this.fetch(k)
-            return true
-        } catch (e) {
-            return false
-        }
-    }
+  async refresh(): Promise<void> {
+    this.data = await Control.fetch(this.program, this.pubkey);
+  }
 }

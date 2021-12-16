@@ -14,10 +14,12 @@ import {
   MintInfo,
   u64,
 } from "@solana/spl-token";
-import { Provider } from "@project-serum/anchor";
+import { Program, Provider } from "@project-serum/anchor";
 import BN from "bn.js";
 import Decimal from "decimal.js";
 import { blob, struct, u8 } from "buffer-layout";
+import { Zo } from "../types";
+import { IDL, ZERO_ONE_PROGRAM_ID } from "../config";
 import { WRAPPED_SOL_MINT } from "../zoDex/token-instructions";
 
 export * from "./rpc";
@@ -25,6 +27,10 @@ export * from "./units";
 
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export function createProgram(provider: Provider): Program<Zo> {
+  return new Program<Zo>(IDL, ZERO_ONE_PROGRAM_ID, provider);
 }
 
 export function loadWI80F48({ data }: { data: BN }): Decimal {
