@@ -3,14 +3,17 @@ import { Program } from "@project-serum/anchor";
 import BaseAccount from "./BaseAccount";
 import { Zo, ControlSchema as Schema } from "../types";
 
+/**
+ * The Control account tracks a user's open orders and positions across all markets.
+ */
 export default class Control extends BaseAccount<Schema> {
   private static async fetch(
     program: Program<Zo>,
     k: PublicKey,
   ): Promise<Schema> {
-    const data = ((await program.account["control"].fetch(
+    const data = (await program.account["control"].fetch(
       k,
-    )) as unknown) as Schema;
+    )) as unknown as Schema;
     return {
       ...data,
     };

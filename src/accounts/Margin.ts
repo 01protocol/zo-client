@@ -29,6 +29,9 @@ interface Schema extends Omit<MarginSchema, "collateral"> {
   actualCollateral: Num[];
 }
 
+/**
+ * The margin account is a PDA generated using ```seeds=[userWalletKey, stateKey, "marginv1"]```.
+ */
 export default class Margin extends BaseAccount<Schema> {
   private constructor(
     program: Program<Zo>,

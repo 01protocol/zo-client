@@ -24,6 +24,9 @@ interface Schema extends Omit<StateSchema, "perpMarkets" | "collaterals"> {
   collaterals: CollateralInfo[];
 }
 
+/**
+ * The state account defines program-level parameters, and tracks listed markets and supported collaterals.
+ */
 export default class State extends BaseAccount<Schema> {
   private constructor(
     program: Program<Zo>,

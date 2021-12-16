@@ -1,5 +1,5 @@
 import { PublicKey } from "@solana/web3.js";
-import { Program } from '@project-serum/anchor';
+import { Program } from "@project-serum/anchor";
 import Decimal from "decimal.js";
 import BaseAccount from "./BaseAccount";
 import { Zo, CacheSchema } from "../types";
@@ -41,6 +41,9 @@ type Schema = Omit<CacheSchema, "oracles" | "marks" | "borrowCache"> & {
   borrowCache: BorrowCache[];
 };
 
+/**
+ * The Cache account stores and tracks oracle prices, mark prices, funding and borrow lending multipliers.
+ */
 export default class Cache extends BaseAccount<Schema> {
   static async fetch(program: Program<Zo>, k: PublicKey): Promise<Schema> {
     const data = (await program.account["cache"].fetch(k)) as CacheSchema;

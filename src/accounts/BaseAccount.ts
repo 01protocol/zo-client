@@ -1,7 +1,10 @@
 import { PublicKey } from "@solana/web3.js";
-import { Program } from '@project-serum/anchor';
+import { Program } from "@project-serum/anchor";
 import { Wallet, Zo } from "../types";
 
+/**
+ * Base implementation for account classes.
+ */
 export default abstract class BaseAccount<T> {
   protected constructor(
     private _program: Program<Zo>,
