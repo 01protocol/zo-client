@@ -45,7 +45,7 @@ export default class State extends BaseAccount<Schema> {
     return await PublicKey.findProgramAddress([stateKey.toBuffer()], programId);
   }
 
-  static async fetch(program: Program<Zo>, k: PublicKey): Promise<Schema> {
+  private static async fetch(program: Program<Zo>, k: PublicKey): Promise<Schema> {
     const data = (await program.account["state"].fetch(k)) as StateSchema;
 
     // Convert StateSchema to Schema.

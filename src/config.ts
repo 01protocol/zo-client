@@ -3,31 +3,23 @@ import { PublicKey } from "@solana/web3.js";
 export { IDL } from "./types/zo";
 
 // == ACCOUNT SIZES ==
-export const STATE_ACCOUNT_SIZE = 8 + 16085;
-export const CACHE_ACCOUNT_SIZE = 8 + 107200;
 export const CONTROL_ACCOUNT_SIZE = 8 + 8932;
-
-export const DEX_MARKET_ACCOUNT_SIZE = 12 + 1360;
-export const REQ_Q_ACCOUNT_SIZE = 12 + 5120;
-export const EVENT_Q_ACCOUNT_SIZE = 12 + 262144;
-export const BIDS_ACCOUNT_SIZE = 12 + 65536;
-export const ASKS_ACCOUNT_SIZE = 12 + 65536;
 
 // == PARAMS ==
 export const ZO_TAKER_FEE = 0.001; // 10bps
 
 // == 01 PROGRAM IDS ==
 export const ZERO_ONE_PROGRAM_ID = new PublicKey(
-  "AjGXinumkbrDGkAPmSEPGEQ8jC89ExXArbF6uEioEZS5",
+  "97w3k9mPvtGtU9BYjhbHRrwJr3U4Zk8mF9gNraJJ85vH",
 );
 export const ZO_DEX_PROGRAM_ID = new PublicKey(
-  "249z8gAKdX41bjfz7SFUxGmbAqDtSLU2tsSYzb7MkUCN",
+  "HFhHrACeKGYdfsDaCNUryRJvPqWzi3PPNXxXCdofZ2L6",
 );
 export const SERUM_SPOT_PROGRAM_ID = new PublicKey(
-  "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
+  "DESVgJVGajEgKGXhb6XmqDHGz3VjdgP7rEVESBgxmroY",
 );
 export const SERUM_SWAP_PROGRAM_ID = new PublicKey(
-  "22Y43yTVxuUkoRKdm9thyRhQ3SdgQS7c7kB6UNCiaczD",
+  "BiUikS42eRsdmkGBu3qXDy8Tu4cuWYYnuFVZzKzjVEET",
 );
 
 // == SOLANA PROGRAM IDS ==

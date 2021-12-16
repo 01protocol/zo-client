@@ -45,7 +45,33 @@ type Schema = Omit<CacheSchema, "oracles" | "marks" | "borrowCache"> & {
  * The Cache account stores and tracks oracle prices, mark prices, funding and borrow lending multipliers.
  */
 export default class Cache extends BaseAccount<Schema> {
-  static async fetch(program: Program<Zo>, k: PublicKey): Promise<Schema> {
+  /**
+   * Loads a new Cache object from its public key.
+   * @param k The cache account's public key.
+   */
+  static async load(program: Program<Zo>, k: PublicKey) {
+    return new this(program, k, await Cache.fetch(program, k));
+  }
+
+  async refresh(): Promise<void> {
+    this.data = await Cache.fetch(this.program, this.pubkey);
+  }
+
+  /**
+   * @param sym The collateral symbol. Ex: ("BTC")
+   * @returns The oracle cache for the given collateral.
+   */
+  getOracleBySymbol(sym: string): OracleCache {
+    const i = this.data.oracles.findIndex((x) => x.symbol === sym);
+    if (i < 0) {
+      throw RangeError(
+        `Invalid symbol ${sym} for <Cache ${this.pubkey.toBase58()}>`,
+      );
+    }
+    return this.data.oracles[i]!;
+  }
+
+  private static async fetch(program: Program<Zo>, k: PublicKey): Promise<Schema> {
     const data = (await program.account["cache"].fetch(k)) as CacheSchema;
     return {
       ...data,
@@ -77,23 +103,5 @@ export default class Cache extends BaseAccount<Schema> {
         borrowMultiplier: loadWI80F48(c.borrowMultiplier),
       })),
     };
-  }
-
-  getOracleBySymbol(sym: string): OracleCache {
-    const i = this.data.oracles.findIndex((x) => x.symbol === sym);
-    if (i < 0) {
-      throw RangeError(
-        `Invalid symbol ${sym} for <Cache ${this.pubkey.toBase58()}>`,
-      );
-    }
-    return this.data.oracles[i]!;
-  }
-
-  async refresh(): Promise<void> {
-    this.data = await Cache.fetch(this.program, this.pubkey);
-  }
-
-  static async load(program: Program<Zo>, k: PublicKey) {
-    return new this(program, k, await Cache.fetch(program, k));
   }
 }

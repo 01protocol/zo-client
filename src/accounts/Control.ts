@@ -19,6 +19,10 @@ export default class Control extends BaseAccount<Schema> {
     };
   }
 
+  /**
+   * Loads a new Control object from its public key.
+   * @param k The control account's public key.
+   */
   static async load(program: Program<Zo>, k: PublicKey) {
     return new this(program, k, await Control.fetch(program, k));
   }

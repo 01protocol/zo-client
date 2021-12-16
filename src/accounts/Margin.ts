@@ -30,7 +30,10 @@ interface Schema extends Omit<MarginSchema, "collateral"> {
 }
 
 /**
- * The margin account is a PDA generated using ```seeds=[userWalletKey, stateKey, "marginv1"]```.
+ * The margin account is a PDA generated using
+ * ```javascript
+ * seeds=[userWalletKey, stateKey, "marginv1"]
+ * ```.
  */
 export default class Margin extends BaseAccount<Schema> {
   private constructor(
@@ -50,7 +53,7 @@ export default class Margin extends BaseAccount<Schema> {
     ch: Cache,
   ): Promise<Schema> {
     const data = (await program.account["margin"].fetch(k)) as MarginSchema;
-    let rawCollateral = data.collateral
+    const rawCollateral = data.collateral
       .map((c) => loadWI80F48(c!))
       .slice(0, st.data.totalCollaterals);
     return {
@@ -79,6 +82,9 @@ export default class Margin extends BaseAccount<Schema> {
     };
   }
 
+  /**
+   * Loads a new Margin object.
+   */
   static async load(
     program: Program<Zo>,
     st: State,
@@ -89,8 +95,8 @@ export default class Margin extends BaseAccount<Schema> {
       program.provider.wallet.publicKey,
       program.programId,
     );
-    let data = await this.fetch(program, key, st, ch);
-    let control = await Control.load(program, data.control);
+    const data = await this.fetch(program, key, st, ch);
+    const control = await Control.load(program, data.control);
     return new this(program, key, data, control, st);
   }
 
@@ -126,6 +132,10 @@ export default class Margin extends BaseAccount<Schema> {
     return await Margin.load(program, st, st.cache);
   }
 
+  /**
+   * Gets the Margin account's PDA and bump.
+   * @returns An array consisting of [PDA, bump]
+   */
   static async getPda(
     st: State,
     traderKey: PublicKey,
@@ -145,7 +155,11 @@ export default class Margin extends BaseAccount<Schema> {
     ]);
   }
 
-  async getOpenOrdersKey(symbol: string): Promise<[PublicKey, number]> {
+  /**
+   * @param symbol The market symbol. Ex: ("BTC-PERP")
+   * @returns The OpenOrders account key for the given market.
+   */
+  async getOpenOrdersKeyBySymbol(symbol: string): Promise<[PublicKey, number]> {
     const dexMarket = this.state.getMarketKeyBySymbol(symbol);
     return await PublicKey.findProgramAddress(
       [this.data.control.toBuffer(), dexMarket.toBuffer()],
@@ -153,9 +167,14 @@ export default class Margin extends BaseAccount<Schema> {
     );
   }
 
-  async getOpenOrdersBySymbol(
+  /**
+   * @param symbol The market symbol. Ex: ("BTC-PERP")
+   * @param create If true, creates the OpenOrders account if it doesn't exist.
+   * @returns The OpenOrdersInfo for the given market.
+   */
+  async getOpenOrdersInfoBySymbol(
     symbol: string,
-    create: boolean = true,
+    create = true,
   ): Promise<Control["data"]["openOrdersAgg"][0] | null> {
     const marketIndex = this.state.getSymbolIndex(symbol);
     let oo = this.control.data.openOrdersAgg[marketIndex];
@@ -170,6 +189,13 @@ export default class Margin extends BaseAccount<Schema> {
     return oo!;
   }
 
+  /**
+   * Deposits a given amount of collateral into the Margin account.
+   * @param tokenAccount The user's token account where tokens will be subtracted from.
+   * @param vault The state vault where tokens will be deposited into.
+   * @param amount The amount of tokens to deposit, in native quantity. (ex: lamports for SOL, satoshis for BTC)
+   * @param repayOnly If true, will only deposit up to the amount borrowed. If true, amount parameter can be set to an arbitrarily large number to ensure that any outstanding borrow is fully repaid.
+   */
   async deposit(
     tokenAccount: PublicKey,
     vault: PublicKey,
@@ -190,6 +216,13 @@ export default class Margin extends BaseAccount<Schema> {
     });
   }
 
+  /**
+   * Withdraws a given amount of collateral from the Margin account. If withdrawing more than the amount deposited, then account will be borrowing.
+   * @param tokenAccount The user's token account where tokens will be withdrawn to.
+   * @param vault The state vault where tokens will be withdrawn from.
+   * @param amount The amount of tokens to withdraw, in native quantity. (ex: lamports for SOL, satoshis for BTC)
+   * @param allowBorrow If false, will only be able to withdraw up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully withdrawn.
+   */
   async withdraw(
     tokenAccount: PublicKey,
     vault: PublicKey,
@@ -211,8 +244,12 @@ export default class Margin extends BaseAccount<Schema> {
     });
   }
 
+  /**
+   * User must create a perp OpenOrders account for every perpetual market(future and or options) they intend to trade on.
+   * @param symbol The market symbol. Ex: ("BTC-PERP")
+   */
   async createPerpOpenOrders(symbol: string): Promise<string> {
-    const [ooKey, _] = await this.getOpenOrdersKey(symbol);
+    const [ooKey, _] = await this.getOpenOrdersKeyBySymbol(symbol);
     return await this.program.rpc.createPerpOpenOrders({
       accounts: {
         state: this.state.pubkey,
@@ -229,6 +266,15 @@ export default class Margin extends BaseAccount<Schema> {
     });
   }
 
+  /**
+   * Places an order on the orderbook for a given market.
+   * @param symbol The market symbol. Ex: ("BTC-PERP")
+   * @param orderType The order type. Either limit, immediateOrCancel, or postOnly.
+   * @param isLong True if buy, false if sell.
+   * @param limitPrice The limit price in base lots per quote lots.
+   * @param maxBaseQty The maximum amount of base lots to buy or sell.
+   * @param maxQuoteQty The maximum amount of native quote, including fees, to pay or receive.
+   */
   async placePerpOrder({
     symbol,
     orderType,
@@ -245,7 +291,7 @@ export default class Margin extends BaseAccount<Schema> {
     maxQuoteQty: BN;
   }>): Promise<TransactionId> {
     const market = await this.state.getMarketBySymbol(symbol);
-    const oo = await this.getOpenOrdersBySymbol(symbol);
+    const oo = await this.getOpenOrdersInfoBySymbol(symbol);
 
     return await this.program.rpc.placePerpOrder(
       isLong,
@@ -276,7 +322,7 @@ export default class Margin extends BaseAccount<Schema> {
 
   async cancelPerpOrder(symbol: string, isLong: boolean, orderId: BN) {
     const market = await this.state.getMarketBySymbol(symbol);
-    const oo = await this.getOpenOrdersBySymbol(symbol);
+    const oo = await this.getOpenOrdersInfoBySymbol(symbol);
 
     return await this.program.rpc.cancelPerpOrder(orderId, isLong, {
       accounts: {
@@ -369,7 +415,7 @@ export default class Margin extends BaseAccount<Schema> {
 
   async settleFunds(symbol: string) {
     const market = await this.state.getMarketBySymbol(symbol);
-    const oo = await this.getOpenOrdersBySymbol(symbol);
+    const oo = await this.getOpenOrdersInfoBySymbol(symbol);
 
     return await this.program.rpc.settleFunds({
       accounts: {

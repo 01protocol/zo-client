@@ -1,4 +1,4 @@
-# 01 Client Library
+# 01 TypeScript Client API
 
 TypeScript API for interacting with the 01 Solana program.
 
