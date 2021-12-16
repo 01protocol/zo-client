@@ -12,6 +12,7 @@ jobs:
 
       - name: Build 🔧
         run: |
+          npm i
           npm run build-docs
 
       - name: Deploy 🚀
