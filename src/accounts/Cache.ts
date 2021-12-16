@@ -1,7 +1,8 @@
 import { PublicKey } from "@solana/web3.js";
+import { Program } from '@project-serum/anchor';
 import Decimal from "decimal.js";
 import BaseAccount from "./BaseAccount";
-import { CacheSchema } from "../types";
+import { Zo, CacheSchema } from "../types";
 import { loadSymbol, loadWI80F48 } from "../utils";
 
 type OracleCache = Omit<
@@ -41,8 +42,8 @@ type Schema = Omit<CacheSchema, "oracles" | "marks" | "borrowCache"> & {
 };
 
 export default class Cache extends BaseAccount<Schema> {
-  static async fetch(k: PublicKey): Promise<Schema> {
-    const data = (await this.program.account["cache"].fetch(k)) as CacheSchema;
+  static async fetch(program: Program<Zo>, k: PublicKey): Promise<Schema> {
+    const data = (await program.account["cache"].fetch(k)) as CacheSchema;
     return {
       ...data,
       oracles: data.oracles
@@ -86,10 +87,10 @@ export default class Cache extends BaseAccount<Schema> {
   }
 
   async refresh(): Promise<void> {
-    this.data = await Cache.fetch(this.pubkey);
+    this.data = await Cache.fetch(this.program, this.pubkey);
   }
 
-  static async load(k: PublicKey) {
-    return new this(k, await Cache.fetch(k));
+  static async load(program: Program<Zo>, k: PublicKey) {
+    return new this(program, k, await Cache.fetch(program, k));
   }
 }

@@ -1,7 +1,6 @@
 export * from "./types";
 export * from "./config";
 export * from "./utils";
-export * from "./global";
 export * from "./associatedToken";
 
 export { default as Num } from "./Num";

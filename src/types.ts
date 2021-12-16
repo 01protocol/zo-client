@@ -14,6 +14,8 @@ export type TransactionId = string;
 // NOTE: These intersection types are a temporary workaround,
 // as anchor's type inference isn't complete yet.
 
+export { Zo } from "./types/zo";
+
 export type OracleType = { pyth: {} } | { switchboard: {} };
 export type PerpType = { future: {} } | { callOption: {} } | { putOption: {} };
 export type OrderType =
