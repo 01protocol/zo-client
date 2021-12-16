@@ -117,7 +117,7 @@ export default class State extends BaseAccount<Schema> {
   }
 
   _getSymbolMarket: { [k: string]: ZoMarket } = {};
-  async getSymbolMarket(sym: string): Promise<ZoMarket> {
+  async getMarketBySymbol(sym: string): Promise<ZoMarket> {
     if (!this._getSymbolMarket[sym]) {
       this._getSymbolMarket[sym] = await ZoMarket.load(
         this.connection,
@@ -130,7 +130,7 @@ export default class State extends BaseAccount<Schema> {
   }
 
   async updatePerpFunding(symbol: string) {
-    const market = await this.getSymbolMarket(symbol);
+    const market = await this.getMarketBySymbol(symbol);
     return await this.program.rpc.updatePerpFunding({
       accounts: {
         state: this.pubkey,

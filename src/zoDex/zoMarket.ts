@@ -28,7 +28,7 @@ import {
 } from "./token-instructions";
 import { throwIfNull } from "../utils";
 import { TransactionId } from "../types";
-import { DEX_PROGRAM_ID } from "../config";
+import { DEX_PROGRAM_ID, ZERO_ONE_PROGRAM_ID } from "../config";
 import { Program, Provider } from "@project-serum/anchor";
 import { State } from "../index";
 
@@ -608,7 +608,7 @@ export class ZoMarket {
     let eq = await this.loadEventQueue(program.provider.connection);
     //console.log(eq);
 
-    const signer = (await State.getSigner(st.pubkey))[0];
+    const signer = (await State.getSigner(st.pubkey, ZERO_ONE_PROGRAM_ID))[0];
     return await program.rpc.consumeEvents!(limit, {
       accounts: {
         state: st.pubkey,

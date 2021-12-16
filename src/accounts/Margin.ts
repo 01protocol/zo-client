@@ -46,9 +46,7 @@ export default class Margin extends BaseAccount<Schema> {
     st: State,
     ch: Cache,
   ): Promise<Schema> {
-    const data = (await program.account["margin"].fetch(
-      k,
-    )) as MarginSchema;
+    const data = (await program.account["margin"].fetch(k)) as MarginSchema;
     let rawCollateral = data.collateral.map((c) => loadWI80F48(c!));
     return {
       ...data,
@@ -76,8 +74,16 @@ export default class Margin extends BaseAccount<Schema> {
     };
   }
 
-  static async load(program: Program<Zo>, st: State, ch: Cache): Promise<Margin> {
-    const [key, _nonce] = await this.getPda(st, program.provider.wallet.publicKey, program.programId);
+  static async load(
+    program: Program<Zo>,
+    st: State,
+    ch: Cache,
+  ): Promise<Margin> {
+    const [key, _nonce] = await this.getPda(
+      st,
+      program.provider.wallet.publicKey,
+      program.programId,
+    );
     let data = await this.fetch(program, key, st, ch);
     let control = await Control.load(program, data.control);
     return new this(program, key, data, control, st);
@@ -142,7 +148,7 @@ export default class Margin extends BaseAccount<Schema> {
     );
   }
 
-  async getSymbolOpenOrders(
+  async getOpenOrdersBySymbol(
     symbol: string,
     create: boolean = true,
   ): Promise<Control["data"]["openOrdersAgg"][0] | null> {
@@ -228,8 +234,8 @@ export default class Margin extends BaseAccount<Schema> {
     maxBaseQty: BN;
     maxQuoteQty: BN;
   }>): Promise<TransactionId> {
-    const market = await this.state.getSymbolMarket(symbol);
-    const oo = await this.getSymbolOpenOrders(symbol);
+    const market = await this.state.getMarketBySymbol(symbol);
+    const oo = await this.getOpenOrdersBySymbol(symbol);
 
     return await this.program.rpc.placePerpOrder(
       isLong,
@@ -259,8 +265,8 @@ export default class Margin extends BaseAccount<Schema> {
   }
 
   async cancelPerpOrder(symbol: string, isLong: boolean, orderId: BN) {
-    const market = await this.state.getSymbolMarket(symbol);
-    const oo = await this.getSymbolOpenOrders(symbol);
+    const market = await this.state.getMarketBySymbol(symbol);
+    const oo = await this.getOpenOrdersBySymbol(symbol);
 
     return await this.program.rpc.cancelPerpOrder(orderId, isLong, {
       accounts: {
@@ -347,6 +353,25 @@ export default class Margin extends BaseAccount<Schema> {
         srmSwapProgram: SERUM_SWAP_PROGRAM_ID,
         tokenProgram: TOKEN_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
+      },
+    });
+  }
+
+  async settleFunds(symbol: string) {
+    const market = await this.state.getMarketBySymbol(symbol);
+    const oo = await this.getOpenOrdersBySymbol(symbol);
+
+    return await this.program.rpc.settleFunds({
+      accounts: {
+        authority: this.wallet.publicKey,
+        state: this.state.pubkey,
+        stateSigner: this.state.signer,
+        cache: this.state.data.cache,
+        margin: this.pubkey,
+        control: this.data.control,
+        openOrders: oo!.key,
+        dexMarket: market.address,
+        dexProgram: DEX_PROGRAM_ID,
       },
     });
   }
