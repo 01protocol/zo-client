@@ -47,7 +47,9 @@ export default class Margin extends BaseAccount<Schema> {
     ch: Cache,
   ): Promise<Schema> {
     const data = (await program.account["margin"].fetch(k)) as MarginSchema;
-    let rawCollateral = data.collateral.map((c) => loadWI80F48(c!));
+    let rawCollateral = data.collateral
+      .map((c) => loadWI80F48(c!))
+      .slice(0, st.data.totalCollaterals);
     return {
       ...data,
       rawCollateral,
@@ -141,7 +143,7 @@ export default class Margin extends BaseAccount<Schema> {
   }
 
   async getOpenOrdersKey(symbol: string): Promise<[PublicKey, number]> {
-    const dexMarket = this.state.getSymbolMarketKey(symbol);
+    const dexMarket = this.state.getMarketKeyBySymbol(symbol);
     return await PublicKey.findProgramAddress(
       [this.data.control.toBuffer(), dexMarket.toBuffer()],
       DEX_PROGRAM_ID,
@@ -216,7 +218,7 @@ export default class Margin extends BaseAccount<Schema> {
         margin: this.pubkey,
         control: this.data.control,
         openOrders: ooKey,
-        dexMarket: this.state.getSymbolMarketKey(symbol),
+        dexMarket: this.state.getMarketKeyBySymbol(symbol),
         dexProgram: DEX_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
         systemProgram: SystemProgram.programId,
@@ -304,7 +306,7 @@ export default class Margin extends BaseAccount<Schema> {
     minRate: BN;
     allowBorrow: boolean;
     serumMarket: PublicKey;
-  }>) {
+  }>): Promise<TransactionId> {
     if (this.state.data.totalCollaterals < 1) {
       throw new Error(
         `<State ${this.state.pubkey.toString()}> does not have a base collateral`,
@@ -322,8 +324,8 @@ export default class Margin extends BaseAccount<Schema> {
     const stateQuoteMint = this.state.data.collaterals[0]!.mint;
 
     if (
-      market.baseMintAddress !== tokenMint ||
-      market.quoteMintAddress !== stateQuoteMint
+      !market.baseMintAddress.equals(tokenMint) ||
+      !market.quoteMintAddress.equals(stateQuoteMint)
     ) {
       throw new Error(
         `Invalid <SerumSpotMarket ${serumMarket}> for swap:\n` +
@@ -343,7 +345,7 @@ export default class Margin extends BaseAccount<Schema> {
         quoteMint: stateQuoteMint,
         quoteVault: this.state.data.vaults[0]!,
         assetMint: tokenMint,
-        assetVault: this.data.rawCollateral[colIdx]!,
+        assetVault: this.state.getVaultCollateralByMint(tokenMint)[0],
         swapFeeVault: this.state.data.swapFeeVault,
         serumOpenOrders: this.state.data.collaterals[colIdx]!.serumOpenOrders,
         serumMarket,

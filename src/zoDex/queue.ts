@@ -67,7 +67,7 @@ const EVENT = struct([
   u64("nativeQuantityPaid"), // Amount the user paid
   u64("nativeFeeOrRebate"),
   u128("orderId"),
-  publicKeyLayout("openOrders"),
+  publicKeyLayout("control"),
   u64("clientOrderId"),
 ]);
 

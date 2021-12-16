@@ -74,7 +74,7 @@ export default class State extends BaseAccount<Schema> {
   }
 
   async refresh(): Promise<void> {
-    this._getSymbolMarket = {};
+    this._getMarketBySymbol = {};
     [this.data] = await Promise.all([
       State.fetch(this.program, this.pubkey),
       this.cache.refresh(),
@@ -91,7 +91,7 @@ export default class State extends BaseAccount<Schema> {
     return i;
   }
 
-  getMintVaultCollateral(
+  getVaultCollateralByMint(
     mint: PublicKey,
   ): [PublicKey, Schema["collaterals"][0]] {
     const i = this.getCollateralIndex(mint);
@@ -111,22 +111,22 @@ export default class State extends BaseAccount<Schema> {
     return i;
   }
 
-  getSymbolMarketKey(sym: string): PublicKey {
+  getMarketKeyBySymbol(sym: string): PublicKey {
     return this.data.perpMarkets[this.getSymbolIndex(sym)]
       ?.dexMarket as PublicKey;
   }
 
-  _getSymbolMarket: { [k: string]: ZoMarket } = {};
+  _getMarketBySymbol: { [k: string]: ZoMarket } = {};
   async getMarketBySymbol(sym: string): Promise<ZoMarket> {
-    if (!this._getSymbolMarket[sym]) {
-      this._getSymbolMarket[sym] = await ZoMarket.load(
+    if (!this._getMarketBySymbol[sym]) {
+      this._getMarketBySymbol[sym] = await ZoMarket.load(
         this.connection,
-        this.getSymbolMarketKey(sym),
+        this.getMarketKeyBySymbol(sym),
         this.provider.opts,
         DEX_PROGRAM_ID,
       );
     }
-    return this._getSymbolMarket[sym] as ZoMarket;
+    return this._getMarketBySymbol[sym] as ZoMarket;
   }
 
   async updatePerpFunding(symbol: string) {
@@ -148,7 +148,7 @@ export default class State extends BaseAccount<Schema> {
     const oracles = this.cache.data.oracles;
     return await this.program.rpc.cacheOracle(
       oracles.map((x) => x.symbol),
-      mockPrices,
+      mockPrices ?? null,
       {
         accounts: {
           signer: this.wallet.publicKey,

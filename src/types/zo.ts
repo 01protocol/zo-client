@@ -1769,6 +1769,16 @@ export type Zo = {
       "name": "consumeEvents",
       "accounts": [
         {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "dexProgram",
           "isMut": false,
           "isSigner": false
@@ -1780,16 +1790,6 @@ export type Zo = {
         },
         {
           "name": "eventQueue",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "coinFeeReceivableAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "pcFeeReceivableAccount",
           "isMut": true,
           "isSigner": false
         }
@@ -4539,6 +4539,16 @@ export const IDL: Zo = {
       "name": "consumeEvents",
       "accounts": [
         {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "dexProgram",
           "isMut": false,
           "isSigner": false
@@ -4550,16 +4560,6 @@ export const IDL: Zo = {
         },
         {
           "name": "eventQueue",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "coinFeeReceivableAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "pcFeeReceivableAccount",
           "isMut": true,
           "isSigner": false
         }
