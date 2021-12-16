@@ -25,7 +25,9 @@ import Decimal from "decimal.js";
 import Cache from "./Cache";
 
 interface Schema extends Omit<MarginSchema, "collateral"> {
+  /** The deposit amount divided by the entry supply or borrow multiplier */
   rawCollateral: Decimal[];
+  /** The collateral value after applying supply/ borrow APY (i.e. the raw collateral multiplied by the current supply or borrow multiplier). */
   actualCollateral: Num[];
 }
 
@@ -176,7 +178,7 @@ export default class Margin extends BaseAccount<Schema> {
     symbol: string,
     create = true,
   ): Promise<Control["data"]["openOrdersAgg"][0] | null> {
-    const marketIndex = this.state.getSymbolIndex(symbol);
+    const marketIndex = this.state.getMarketIndexBySymbol(symbol);
     let oo = this.control.data.openOrdersAgg[marketIndex];
     if (oo!.key.equals(PublicKey.default)) {
       if (create) {
@@ -320,6 +322,12 @@ export default class Margin extends BaseAccount<Schema> {
     );
   }
 
+  /**
+   * Cancels an order on the orderbook for a given market.
+   * @param symbol The market symbol. Ex: ("BTC-PERP")
+   * @param isLong True if the order being cancelled is a buy order, false if sell order.
+   * @param orderId The order id of the order to cancel. To get order id, call loadOrdersForOwner through the market.
+   */
   async cancelPerpOrder(symbol: string, isLong: boolean, orderId: BN) {
     const market = await this.state.getMarketBySymbol(symbol);
     const oo = await this.getOpenOrdersInfoBySymbol(symbol);
@@ -341,6 +349,16 @@ export default class Margin extends BaseAccount<Schema> {
     });
   }
 
+  /**
+   * Swaps between USDC and a given Token B (or vice versa) on the Serum Spot DEX. This is a direct IOC trade that instantly settles.
+   * Note that the token B needs to be swappable, as enabled by the program.
+   * @param buy If true, the swapping USDC for Token B. If false, the swapping Token B for USDC.
+   * @param tokenMint The mint public key of Token B.
+   * @param amount The native amount of tokens to swap *from*. If buy, this is USDC. If not buy, this is Token B.
+   * @param minRate The exchange rate to use when determining whether the transaction should abort.
+   * @param allowBorrow If false, will only be able to swap up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully swapped.
+   * @param serumMarket The market public key of the Serum Spot DEX.
+   */
   async swap({
     buy,
     tokenMint,
@@ -413,6 +431,10 @@ export default class Margin extends BaseAccount<Schema> {
     });
   }
 
+  /**
+   * Settles unrealized funding and realized PnL into the margin account for a given market.
+   * @param symbol
+   */
   async settleFunds(symbol: string) {
     const market = await this.state.getMarketBySymbol(symbol);
     const oo = await this.getOpenOrdersInfoBySymbol(symbol);

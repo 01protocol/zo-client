@@ -38,6 +38,10 @@ export default class State extends BaseAccount<Schema> {
     super(program, pubkey, data);
   }
 
+  /**
+   * Gets the state signer's pda account and bump.
+   * @returns An array consisting of the state signer pda and bump.
+   */
   static async getSigner(
     stateKey: PublicKey,
     programId: PublicKey,
@@ -66,6 +70,9 @@ export default class State extends BaseAccount<Schema> {
     };
   }
 
+  /**
+   * @param k The state's public key.
+   */
   static async load(program: Program<Zo>, k: PublicKey): Promise<State> {
     const data = await this.fetch(program, k);
     const [signer, signerNonce] = await this.getSigner(k, program.programId);
@@ -84,6 +91,10 @@ export default class State extends BaseAccount<Schema> {
     ]);
   }
 
+  /**
+   * Get the index of the collateral in the State's collaterals list using the mint public key.
+   * @param mint The mint's public key.
+   */
   getCollateralIndex(mint: PublicKey): number {
     const i = this.data.collaterals.findIndex((x) => x.mint.equals(mint));
     if (i < 0) {
@@ -94,6 +105,11 @@ export default class State extends BaseAccount<Schema> {
     return i;
   }
 
+  /**
+   * Get the vault public key and the CollateralInfo object for a collateral using the mint public key.
+   * @param mint The mint's public key.
+   * @returns The vault public key and the CollateralInfo object.
+   */
   getVaultCollateralByMint(
     mint: PublicKey,
   ): [PublicKey, Schema["collaterals"][0]] {
@@ -104,7 +120,11 @@ export default class State extends BaseAccount<Schema> {
     ];
   }
 
-  getSymbolIndex(sym: string): number {
+  /**
+   * Get the index of a market in the State's PerpMarkets list using the market symbol.
+   * @param sym The market symbol. Ex:("BTC-PERP")
+   */
+  getMarketIndexBySymbol(sym: string): number {
     const i = this.data.perpMarkets.findIndex((x) => x.symbol === sym);
     if (i < 0) {
       throw RangeError(
@@ -115,7 +135,7 @@ export default class State extends BaseAccount<Schema> {
   }
 
   getMarketKeyBySymbol(sym: string): PublicKey {
-    return this.data.perpMarkets[this.getSymbolIndex(sym)]
+    return this.data.perpMarkets[this.getMarketIndexBySymbol(sym)]
       ?.dexMarket as PublicKey;
   }
 
@@ -132,6 +152,10 @@ export default class State extends BaseAccount<Schema> {
     return this._getMarketBySymbol[sym] as ZoMarket;
   }
 
+  /**
+   * Called by the keepers every hour to update the funding on each market.
+   * @param symbol The market symbol. Ex:("BTC-PERP")
+   */
   async updatePerpFunding(symbol: string) {
     const market = await this.getMarketBySymbol(symbol);
     return await this.program.rpc.updatePerpFunding({
@@ -147,6 +171,10 @@ export default class State extends BaseAccount<Schema> {
     });
   }
 
+  /**
+   * Called by the keepers regularly to cache the oracle prices.
+   * @param mockPrices Only used for testing purposes. An array of user-set prices.
+   */
   async cacheOracle(mockPrices?: BN[]) {
     const oracles = this.cache.data.oracles;
     return await this.program.rpc.cacheOracle(
@@ -168,6 +196,11 @@ export default class State extends BaseAccount<Schema> {
     );
   }
 
+  /**
+   * Called by the keepers to update the borrow and supply multipliers.
+   * @param start The inclusive start index of the collateral array.
+   * @param end The exclusive end index of the collateral array.
+   */
   async cacheInterestRates(start: number, end: number) {
     return await this.program.rpc.cacheInterestRates(start, end, {
       accounts: {
