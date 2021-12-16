@@ -3,3 +3,4 @@ lib/
 *.log
 *.tsbuildinfo
 .idea
+docs/
