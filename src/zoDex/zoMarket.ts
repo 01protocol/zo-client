@@ -30,6 +30,7 @@ import { throwIfNull } from "../utils";
 import { TransactionId } from "../types";
 import { DEX_PROGRAM_ID } from "../config";
 import { Program, Provider } from "@project-serum/anchor";
+import { State } from "../index";
 
 export const MARKET_STATE_LAYOUT_V3 = struct([
   blob(5),
@@ -598,6 +599,7 @@ export class ZoMarket {
 
   public async consumeEvents(
     program: Program,
+    st: State,
     controlAccs: PublicKey[], // make sure the indexes match
     openOrdersAccs: PublicKey[],
   ): Promise<TransactionId> {
@@ -606,13 +608,14 @@ export class ZoMarket {
     let eq = await this.loadEventQueue(program.provider.connection);
     //console.log(eq);
 
+    const signer = (await State.getSigner(st.pubkey))[0];
     return await program.rpc.consumeEvents!(limit, {
       accounts: {
+        state: st.pubkey,
+        stateSigner: signer,
         dexProgram: DEX_PROGRAM_ID,
         market: this.address,
         eventQueue: this.eventQueueAddress,
-        coinFeeReceivableAccount: program.provider.wallet.publicKey,
-        pcFeeReceivableAccount: program.provider.wallet.publicKey,
       },
       remainingAccounts: doubleSort(controlAccs, openOrdersAccs),
     });
