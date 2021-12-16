@@ -185,8 +185,13 @@ export default class Margin extends BaseAccount<Schema> {
     });
   }
 
-  async withdraw(tokenAccount: PublicKey, vault: PublicKey, amount: BN) {
-    return await this.program.rpc.withdraw(amount, {
+  async withdraw(
+    tokenAccount: PublicKey,
+    vault: PublicKey,
+    amount: BN,
+    allowBorrow: boolean,
+  ) {
+    return await this.program.rpc.withdraw(allowBorrow, amount, {
       accounts: {
         state: this.state.pubkey,
         stateSigner: this.state.signer,

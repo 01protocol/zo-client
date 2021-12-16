@@ -11,10 +11,10 @@ import { Slab, SLAB_LAYOUT } from "./slab";
 import BN from "bn.js";
 import {
   AccountInfo,
+  AccountMeta,
   Commitment,
   Connection,
   PublicKey,
-  TransactionInstruction,
 } from "@solana/web3.js";
 import { decodeEventQueue, decodeRequestQueue } from "./queue";
 import { Buffer } from "buffer";
@@ -29,7 +29,7 @@ import {
 import { throwIfNull } from "../utils";
 import { TransactionId } from "../types";
 import { DEX_PROGRAM_ID, ZERO_ONE_PROGRAM_ID } from "../config";
-import { Program, Provider } from "@project-serum/anchor";
+import { Program } from "@project-serum/anchor";
 import { State } from "../index";
 
 export const MARKET_STATE_LAYOUT_V3 = struct([
@@ -343,119 +343,119 @@ export class ZoMarket {
     );
   }
 
-  get supportsSrmFeeDiscounts() {
-    return supportsSrmFeeDiscounts(this._programId);
-  }
-
-  async findFeeDiscountKeys(
-    connection: Connection,
-    ownerAddress: PublicKey,
-    cacheDurationMs = 0,
-  ): Promise<
-    Array<{
-      pubkey: PublicKey;
-      feeTier: number;
-      balance: number;
-      mint: PublicKey;
-    }>
-  > {
-    let sortedAccounts: Array<{
-      balance: number;
-      mint: PublicKey;
-      pubkey: PublicKey;
-      feeTier: number;
-    }> = [];
-    const now = new Date().getTime();
-    const strOwner = ownerAddress.toBase58();
-    if (
-      strOwner in this._feeDiscountKeysCache &&
-      now - this._feeDiscountKeysCache[strOwner]!.ts < cacheDurationMs
-    ) {
-      return this._feeDiscountKeysCache[strOwner]!.accounts;
-    }
-
-    if (this.supportsSrmFeeDiscounts) {
-      // Fee discounts based on (M)SRM holdings supported in newer versions
-      const msrmAccounts = (
-        await this.getTokenAccountsByOwnerForMint(
-          connection,
-          ownerAddress,
-          MSRM_MINT,
-        )
-      ).map(({ pubkey, account }) => {
-        const balance = this.getSplTokenBalanceFromAccountInfo(
-          account,
-          MSRM_DECIMALS,
-        );
-        return {
-          pubkey,
-          mint: MSRM_MINT,
-          balance,
-          feeTier: getFeeTier(balance, 0),
-        };
-      });
-      const srmAccounts = (
-        await this.getTokenAccountsByOwnerForMint(
-          connection,
-          ownerAddress,
-          SRM_MINT,
-        )
-      ).map(({ pubkey, account }) => {
-        const balance = this.getSplTokenBalanceFromAccountInfo(
-          account,
-          SRM_DECIMALS,
-        );
-        return {
-          pubkey,
-          mint: SRM_MINT,
-          balance,
-          feeTier: getFeeTier(0, balance),
-        };
-      });
-      sortedAccounts = msrmAccounts.concat(srmAccounts).sort((a, b) => {
-        if (a.feeTier > b.feeTier) {
-          return -1;
-        } else if (a.feeTier < b.feeTier) {
-          return 1;
-        } else {
-          if (a.balance > b.balance) {
-            return -1;
-          } else if (a.balance < b.balance) {
-            return 1;
-          } else {
-            return 0;
-          }
-        }
-      });
-    }
-    this._feeDiscountKeysCache[strOwner] = {
-      accounts: sortedAccounts,
-      ts: now,
-    };
-    return sortedAccounts;
-  }
-
-  async findBestFeeDiscountKey(
-    connection: Connection,
-    ownerAddress: PublicKey,
-    cacheDurationMs = 30000,
-  ): Promise<{ pubkey: PublicKey | null; feeTier: number }> {
-    const accounts = await this.findFeeDiscountKeys(
-      connection,
-      ownerAddress,
-      cacheDurationMs,
-    );
-    if (accounts.length > 0) {
-      return {
-        pubkey: accounts[0]!.pubkey,
-        feeTier: accounts[0]!.feeTier,
-      };
-    }
-    return {
-      pubkey: null,
-      feeTier: 0,
-    };
-  }
+  // get supportsSrmFeeDiscounts() {
+  //   return supportsSrmFeeDiscounts(this._programId);
+  // }
+  //
+  // async findFeeDiscountKeys(
+  //   connection: Connection,
+  //   ownerAddress: PublicKey,
+  //   cacheDurationMs = 0,
+  // ): Promise<
+  //   Array<{
+  //     pubkey: PublicKey;
+  //     feeTier: number;
+  //     balance: number;
+  //     mint: PublicKey;
+  //   }>
+  // > {
+  //   let sortedAccounts: Array<{
+  //     balance: number;
+  //     mint: PublicKey;
+  //     pubkey: PublicKey;
+  //     feeTier: number;
+  //   }> = [];
+  //   const now = new Date().getTime();
+  //   const strOwner = ownerAddress.toBase58();
+  //   if (
+  //     strOwner in this._feeDiscountKeysCache &&
+  //     now - this._feeDiscountKeysCache[strOwner]!.ts < cacheDurationMs
+  //   ) {
+  //     return this._feeDiscountKeysCache[strOwner]!.accounts;
+  //   }
+  //
+  //   if (this.supportsSrmFeeDiscounts) {
+  //     // Fee discounts based on (M)SRM holdings supported in newer versions
+  //     const msrmAccounts = (
+  //       await this.getTokenAccountsByOwnerForMint(
+  //         connection,
+  //         ownerAddress,
+  //         MSRM_MINT,
+  //       )
+  //     ).map(({ pubkey, account }) => {
+  //       const balance = this.getSplTokenBalanceFromAccountInfo(
+  //         account,
+  //         MSRM_DECIMALS,
+  //       );
+  //       return {
+  //         pubkey,
+  //         mint: MSRM_MINT,
+  //         balance,
+  //         feeTier: getFeeTier(balance, 0),
+  //       };
+  //     });
+  //     const srmAccounts = (
+  //       await this.getTokenAccountsByOwnerForMint(
+  //         connection,
+  //         ownerAddress,
+  //         SRM_MINT,
+  //       )
+  //     ).map(({ pubkey, account }) => {
+  //       const balance = this.getSplTokenBalanceFromAccountInfo(
+  //         account,
+  //         SRM_DECIMALS,
+  //       );
+  //       return {
+  //         pubkey,
+  //         mint: SRM_MINT,
+  //         balance,
+  //         feeTier: getFeeTier(0, balance),
+  //       };
+  //     });
+  //     sortedAccounts = msrmAccounts.concat(srmAccounts).sort((a, b) => {
+  //       if (a.feeTier > b.feeTier) {
+  //         return -1;
+  //       } else if (a.feeTier < b.feeTier) {
+  //         return 1;
+  //       } else {
+  //         if (a.balance > b.balance) {
+  //           return -1;
+  //         } else if (a.balance < b.balance) {
+  //           return 1;
+  //         } else {
+  //           return 0;
+  //         }
+  //       }
+  //     });
+  //   }
+  //   this._feeDiscountKeysCache[strOwner] = {
+  //     accounts: sortedAccounts,
+  //     ts: now,
+  //   };
+  //   return sortedAccounts;
+  // }
+  //
+  // async findBestFeeDiscountKey(
+  //   connection: Connection,
+  //   ownerAddress: PublicKey,
+  //   cacheDurationMs = 30000,
+  // ): Promise<{ pubkey: PublicKey | null; feeTier: number }> {
+  //   const accounts = await this.findFeeDiscountKeys(
+  //     connection,
+  //     ownerAddress,
+  //     cacheDurationMs,
+  //   );
+  //   if (accounts.length > 0) {
+  //     return {
+  //       pubkey: accounts[0]!.pubkey,
+  //       feeTier: accounts[0]!.feeTier,
+  //     };
+  //   }
+  //   return {
+  //     pubkey: null,
+  //     feeTier: 0,
+  //   };
+  // }
 
   async loadRequestQueue(connection: Connection) {
     const { data } = throwIfNull(
@@ -618,6 +618,38 @@ export class ZoMarket {
         eventQueue: this.eventQueueAddress,
       },
       remainingAccounts: doubleSort(controlAccs, openOrdersAccs),
+    });
+  }
+
+  // make sure account arrays have same order of user accounts
+  public async crankPnl(
+    program: Program,
+    st: State,
+    controlAccs: PublicKey[],
+    openOrdersAccs: PublicKey[],
+    marginAccs: PublicKey[],
+  ): Promise<TransactionId> {
+    let ra: AccountMeta[] = [];
+    controlAccs.forEach((c, i) => {
+      ra.push({ isSigner: false, isWritable: true, pubkey: c });
+    });
+    openOrdersAccs.forEach((c) => {
+      ra.push({ isSigner: false, isWritable: true, pubkey: c });
+    });
+    marginAccs.forEach((c) => {
+      ra.push({ isSigner: false, isWritable: true, pubkey: c });
+    });
+
+    const signer = (await State.getSigner(st.pubkey, ZERO_ONE_PROGRAM_ID))[0];
+    return await program.rpc.crankPnl!({
+      accounts: {
+        state: st.pubkey,
+        stateSigner: signer,
+        cache: st.cache.pubkey,
+        dexProgram: DEX_PROGRAM_ID,
+        market: this.address,
+      },
+      remainingAccounts: ra,
     });
   }
 }
