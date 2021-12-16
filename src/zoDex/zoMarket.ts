@@ -26,8 +26,10 @@ import {
   SRM_MINT,
   WRAPPED_SOL_MINT,
 } from "./token-instructions";
-import { DexInstructions } from "./instructions";
 import { throwIfNull } from "../utils";
+import { TransactionId } from "../types";
+import { DEX_PROGRAM_ID } from "../config";
+import { Program, Provider } from "@project-serum/anchor";
 
 export const MARKET_STATE_LAYOUT_V3 = struct([
   blob(5),
@@ -594,18 +596,25 @@ export class ZoMarket {
     return this.priceLotsToNumber(new BN(1));
   }
 
-  public makeConsumeEventsInstruction(
-    openOrdersAccounts: Array<PublicKey>,
-    limit: number,
-  ): TransactionInstruction {
-    return DexInstructions.consumeEvents({
-      market: this.address,
-      eventQueue: this._decoded.eventQueue,
-      coinFee: this._decoded.eventQueue,
-      pcFee: this._decoded.eventQueue,
-      openOrdersAccounts,
-      limit,
-      programId: this._programId,
+  public async consumeEvents(
+    program: Program,
+    controlAccs: PublicKey[], // make sure the indexes match
+    openOrdersAccs: PublicKey[],
+  ): Promise<TransactionId> {
+    const limit: number = 32;
+
+    let eq = await this.loadEventQueue(program.provider.connection);
+    //console.log(eq);
+
+    return await program.rpc.consumeEvents!(limit, {
+      accounts: {
+        dexProgram: DEX_PROGRAM_ID,
+        market: this.address,
+        eventQueue: this.eventQueueAddress,
+        coinFeeReceivableAccount: program.provider.wallet.publicKey,
+        pcFeeReceivableAccount: program.provider.wallet.publicKey,
+      },
+      remainingAccounts: doubleSort(controlAccs, openOrdersAccs),
     });
   }
 }
@@ -902,4 +911,34 @@ async function getFilteredProgramAccounts(
       },
     }),
   );
+}
+
+export function doubleSort(a: PublicKey[], b: PublicKey[]): any[] {
+  let together: Array<PublicKey[]> = [];
+  if (a.length !== b.length) {
+    throw new Error("Arrays don't have same length");
+  }
+
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== undefined && b[i] !== undefined) {
+      let slice: PublicKey[] = [a[i]!, b[i]!];
+      together.push(slice);
+    }
+  }
+
+  together.sort((a, b) => {
+    return a[0]!.toBuffer().swap64().compare(b[0]!.toBuffer().swap64());
+  });
+
+  let flattened: any[] = [];
+
+  for (let pair of together) {
+    flattened.push({ isSigner: false, isWritable: true, pubkey: pair[0]! });
+  }
+
+  for (let pair of together) {
+    flattened.push({ isSigner: false, isWritable: true, pubkey: pair[1]! });
+  }
+
+  return flattened;
 }
