@@ -2,6 +2,8 @@ import { PublicKey } from "@solana/web3.js";
 import { Program } from "@project-serum/anchor";
 import Decimal from "decimal.js";
 import BaseAccount from "./BaseAccount";
+import { Schema as StateSchema } from "./State";
+import Num from "../Num";
 import { Zo, CacheSchema } from "../types";
 import { loadSymbol, loadWI80F48 } from "../utils";
 
@@ -10,18 +12,18 @@ type OracleCache = Omit<
   "symbol" | "price" | "twap"
 > & {
   symbol: string;
-  price: Decimal;
-  twap: Decimal;
+  price: Num;
+  twap: Num;
 };
 
 type MarkCache = Omit<CacheSchema["marks"][0], "price" | "twap"> & {
-  price: Decimal;
+  price: Num;
   twap: {
     startTime: Date;
-    open: Decimal;
-    low: Decimal;
-    high: Decimal;
-    close: Decimal;
+    open: Num;
+    low: Num;
+    high: Num;
+    close: Num;
   }[];
 };
 
@@ -29,8 +31,8 @@ type BorrowCache = Omit<
   CacheSchema["borrowCache"][0],
   "supply" | "borrows" | "supplyMultiplier" | "borrowMultiplier"
 > & {
-  supply: Decimal;
-  borrows: Decimal;
+  supply: Num;
+  borrows: Num;
   supplyMultiplier: Decimal;
   borrowMultiplier: Decimal;
 };
@@ -45,16 +47,25 @@ type Schema = Omit<CacheSchema, "oracles" | "marks" | "borrowCache"> & {
  * The Cache account stores and tracks oracle prices, mark prices, funding and borrow lending multipliers.
  */
 export default class Cache extends BaseAccount<Schema> {
+  private constructor(
+    program: Program<Zo>,
+    k: PublicKey,
+    data: Schema,
+    private readonly _st: StateSchema,
+  ) {
+    super(program, k, data);
+  }
+
   /**
    * Loads a new Cache object from its public key.
    * @param k The cache account's public key.
    */
-  static async load(program: Program<Zo>, k: PublicKey) {
-    return new this(program, k, await Cache.fetch(program, k));
+  static async load(program: Program<Zo>, k: PublicKey, st: StateSchema) {
+    return new this(program, k, await Cache.fetch(program, k, st), st);
   }
 
   async refresh(): Promise<void> {
-    this.data = await Cache.fetch(this.program, this.pubkey);
+    this.data = await Cache.fetch(this.program, this.pubkey, this._st);
   }
 
   /**
@@ -74,37 +85,49 @@ export default class Cache extends BaseAccount<Schema> {
   private static async fetch(
     program: Program<Zo>,
     k: PublicKey,
+    st: StateSchema,
   ): Promise<Schema> {
     const data = (await program.account["cache"].fetch(k)) as CacheSchema;
     return {
       ...data,
       oracles: data.oracles
         .filter((c) => !c.symbol.data.every((x) => x === 0))
-        .map((c) => ({
+        .map((c, i) => {
+          const decimals = c.baseDecimals - c.quoteDecimals;
+          return {
+            ...c,
+            symbol: loadSymbol(c.symbol),
+            price: Num.fromWI80F48(c.price, decimals),
+            twap: Num.fromWI80F48(c.twap, decimals),
+          };
+        }),
+      marks: st.perpMarkets.map((m, i) => {
+        const decimals = m.assetDecimals;
+        const c = data.marks[i]!;
+        return {
           ...c,
-          symbol: loadSymbol(c.symbol),
-          price: loadWI80F48(c.price),
-          twap: loadWI80F48(c.twap),
-        })),
-      marks: data.marks.map((c) => ({
-        ...c,
-        price: loadWI80F48(c.price),
-        twap: c.twap.map((x) => ({
-          ...x,
-          startTime: new Date(x.startTime.toNumber()),
-          open: loadWI80F48(x.open),
-          low: loadWI80F48(x.low),
-          high: loadWI80F48(x.high),
-          close: loadWI80F48(x.close),
-        })),
-      })),
-      borrowCache: data.borrowCache.map((c) => ({
-        ...c,
-        supply: loadWI80F48(c.supply),
-        borrows: loadWI80F48(c.borrows),
-        supplyMultiplier: loadWI80F48(c.supplyMultiplier),
-        borrowMultiplier: loadWI80F48(c.borrowMultiplier),
-      })),
+          price: Num.fromWI80F48(c.price, decimals),
+          twap: c.twap.map((x) => ({
+            ...x,
+            startTime: new Date(x.startTime.toNumber()),
+            open: Num.fromWI80F48(x.open, decimals),
+            low: Num.fromWI80F48(x.low, decimals),
+            high: Num.fromWI80F48(x.high, decimals),
+            close: Num.fromWI80F48(x.close, decimals),
+          })),
+        };
+      }),
+      borrowCache: st.collaterals.map((col, i) => {
+        const decimals = col.decimals;
+        const c = data.borrowCache[i]!;
+        return {
+          ...c,
+          supply: Num.fromWI80F48(c.supply, decimals),
+          borrows: Num.fromWI80F48(c.borrows, decimals),
+          supplyMultiplier: loadWI80F48(c.supplyMultiplier),
+          borrowMultiplier: loadWI80F48(c.borrowMultiplier),
+        };
+      }),
     };
   }
 }

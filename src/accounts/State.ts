@@ -19,7 +19,8 @@ type PerpMarket = Omit<
   oracleSymbol: string;
 };
 
-interface Schema extends Omit<StateSchema, "perpMarkets" | "collaterals"> {
+export interface Schema
+  extends Omit<StateSchema, "perpMarkets" | "collaterals"> {
   perpMarkets: PerpMarket[];
   collaterals: CollateralInfo[];
 }
@@ -82,7 +83,7 @@ export default class State extends BaseAccount<Schema> {
     if (signerNonce !== data.signerNonce) {
       throw Error("Invalid state signer nonce");
     }
-    const cache = await Cache.load(program, data.cache);
+    const cache = await Cache.load(program, data.cache, data);
     return new this(program, k, data, signer, cache);
   }
 

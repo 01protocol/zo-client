@@ -7,15 +7,11 @@ export default class Num {
   public readonly n: Readonly<BN>;
   private precisionDecimals = 0;
 
-  static fromWI80F48(
-    data: { data: BN },
-    decimals: number,
-    mint: Readonly<PublicKey> | null = null,
-  ) {
+  static fromWI80F48(data: { data: BN }, decimals: number) {
     const decimal = loadWI80F48(data);
     const precisionDecimals = decimal.decimalPlaces();
     const ogDecimal = new BN(decimal.toString().replace(".", ""));
-    const num = new Num(ogDecimal, decimals, mint);
+    const num = new Num(ogDecimal, decimals);
     num.precisionDecimals = precisionDecimals;
     return num;
   }
@@ -23,7 +19,6 @@ export default class Num {
   public constructor(
     n: BN | Decimal | number,
     public readonly decimals: number,
-    public readonly mint: Readonly<PublicKey> | null = null,
   ) {
     if (!Number.isInteger(decimals)) {
       throw TypeError(`Invalid number of decimals ${decimals}`);

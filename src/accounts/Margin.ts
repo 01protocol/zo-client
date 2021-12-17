@@ -78,7 +78,6 @@ export default class Margin extends BaseAccount<Schema> {
                     .toString(),
             ),
             c.decimals,
-            c.mint,
           ),
       ),
     };
