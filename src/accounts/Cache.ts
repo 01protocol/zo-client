@@ -71,7 +71,10 @@ export default class Cache extends BaseAccount<Schema> {
     return this.data.oracles[i]!;
   }
 
-  private static async fetch(program: Program<Zo>, k: PublicKey): Promise<Schema> {
+  private static async fetch(
+    program: Program<Zo>,
+    k: PublicKey,
+  ): Promise<Schema> {
     const data = (await program.account["cache"].fetch(k)) as CacheSchema;
     return {
       ...data,

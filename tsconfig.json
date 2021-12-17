@@ -3,7 +3,7 @@
     "target": "es6",
     "module": "esnext",
     "moduleResolution": "node",
-    "outDir": "./lib/esm",
+    "outDir": "./dist/esm",
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
@@ -21,9 +21,5 @@
     "entryPoints": ["src/index.ts"],
     "out": "docs"
   },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.js",
-    "src/**/*.json",
-  ]
+  "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.json"]
 }
