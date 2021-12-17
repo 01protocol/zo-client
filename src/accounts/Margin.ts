@@ -14,12 +14,12 @@ import State from "./State";
 import Control from "./Control";
 import Num from "../Num";
 import { loadWI80F48 } from "../utils";
-import { Zo, MarginSchema, OrderType, TransactionId } from "../types";
+import { MarginSchema, OrderType, TransactionId, Zo } from "../types";
 import {
   CONTROL_ACCOUNT_SIZE,
-  ZO_DEX_PROGRAM_ID,
   SERUM_SPOT_PROGRAM_ID,
   SERUM_SWAP_PROGRAM_ID,
+  ZO_DEX_PROGRAM_ID,
 } from "../config";
 import Decimal from "decimal.js";
 import Cache from "./Cache";
@@ -276,6 +276,7 @@ export default class Margin extends BaseAccount<Schema> {
    * @param maxBaseQty The maximum amount of base lots to buy or sell.
    * @param maxQuoteQty The maximum amount of native quote, including fees, to pay or receive.
    */
+
   async placePerpOrder({
     symbol,
     orderType,
@@ -317,6 +318,67 @@ export default class Margin extends BaseAccount<Schema> {
           dexProgram: ZO_DEX_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         },
+      },
+    );
+  }
+
+  async placePerpOrderAndCreateOo({
+    symbol,
+    orderType,
+    isLong,
+    limitPrice,
+    maxBaseQty,
+    maxQuoteQty,
+  }: Readonly<{
+    symbol: string;
+    orderType: OrderType;
+    isLong: boolean;
+    limitPrice: BN;
+    maxBaseQty: BN;
+    maxQuoteQty: BN;
+  }>): Promise<TransactionId> {
+    const market = await this.state.getMarketBySymbol(symbol);
+    const oo = await this.getOpenOrdersInfoBySymbol(symbol);
+
+    return await this.program.rpc.placePerpOrder(
+      isLong,
+      limitPrice,
+      maxBaseQty,
+      maxQuoteQty,
+      orderType,
+      {
+        accounts: {
+          state: this.state.pubkey,
+          stateSigner: this.state.signer,
+          cache: this.state.cache.pubkey,
+          authority: this.wallet.publicKey,
+          margin: this.pubkey,
+          control: this.control.pubkey,
+          openOrders: oo!.key,
+          dexMarket: market.address,
+          reqQ: market.requestQueueAddress,
+          eventQ: market.eventQueueAddress,
+          marketBids: market.bidsAddress,
+          marketAsks: market.asksAddress,
+          dexProgram: ZO_DEX_PROGRAM_ID,
+          rent: SYSVAR_RENT_PUBKEY,
+        },
+        preInstructions: [
+          this.program.instruction.createPerpOpenOrders({
+            accounts: {
+              state: this.state.pubkey,
+              stateSigner: this.state.signer,
+              authority: this.wallet.publicKey,
+              margin: this.pubkey,
+              control: this.data.control,
+              openOrders: oo!.key,
+              dexMarket: this.state.getMarketKeyBySymbol(symbol),
+              dexProgram: ZO_DEX_PROGRAM_ID,
+              rent: SYSVAR_RENT_PUBKEY,
+              systemProgram: SystemProgram.programId,
+            },
+          }),
+        ],
       },
     );
   }
