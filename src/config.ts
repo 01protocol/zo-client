@@ -10,10 +10,10 @@ export const ZO_TAKER_FEE = 0.001; // 10bps
 
 // == 01 PROGRAM IDS ==
 export const ZERO_ONE_PROGRAM_ID = new PublicKey(
-  "97w3k9mPvtGtU9BYjhbHRrwJr3U4Zk8mF9gNraJJ85vH",
+  "DuSPvazsfthvWRuJ8TUs984VXCeUfJ1qbzd8NwkRLEpd",
 );
 export const ZO_DEX_PROGRAM_ID = new PublicKey(
-  "HFhHrACeKGYdfsDaCNUryRJvPqWzi3PPNXxXCdofZ2L6",
+  "CX8xiCu9uBrLX5v3DSeHX5SEvGT36PSExES2LmzVcyJd",
 );
 export const SERUM_SPOT_PROGRAM_ID = new PublicKey(
   "DESVgJVGajEgKGXhb6XmqDHGz3VjdgP7rEVESBgxmroY",
