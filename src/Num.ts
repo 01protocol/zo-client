@@ -1,4 +1,3 @@
-import { PublicKey } from "@solana/web3.js";
 import BN from "bn.js";
 import Decimal from "decimal.js";
 import { loadWI80F48 } from "./utils";
@@ -67,5 +66,12 @@ export default class Num {
 
   get number(): number {
     return Number.parseFloat(this.decimal.toString());
+  }
+
+  /** Returns the number in smol Decimal (i.e. smallest units). */
+  get smolDecimal(): Decimal {
+    return new Decimal(this.toString()).div(
+      new Decimal(10).toPower(this.precisionDecimals - this.decimals),
+    );
   }
 }

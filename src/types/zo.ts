@@ -1846,7 +1846,7 @@ export type Zo = {
                 {
                   "defined": "OracleCache"
                 },
-                100
+                25
               ]
             }
           },
@@ -1857,7 +1857,7 @@ export type Zo = {
                 {
                   "defined": "MarkCache"
                 },
-                100
+                50
               ]
             }
           },
@@ -1866,7 +1866,7 @@ export type Zo = {
             "type": {
               "array": [
                 "i128",
-                100
+                50
               ]
             }
           },
@@ -1877,7 +1877,7 @@ export type Zo = {
                 {
                   "defined": "BorrowCache"
                 },
-                50
+                25
               ]
             }
           }
@@ -1900,7 +1900,7 @@ export type Zo = {
                 {
                   "defined": "OpenOrdersInfo"
                 },
-                100
+                50
               ]
             }
           }
@@ -1927,7 +1927,7 @@ export type Zo = {
                 {
                   "defined": "WrappedI80F48"
                 },
-                50
+                25
               ]
             }
           },
@@ -1968,7 +1968,7 @@ export type Zo = {
             "type": {
               "array": [
                 "u64",
-                50
+                25
               ]
             }
           },
@@ -1977,7 +1977,7 @@ export type Zo = {
             "type": {
               "array": [
                 "publicKey",
-                50
+                25
               ]
             }
           },
@@ -1988,7 +1988,7 @@ export type Zo = {
                 {
                   "defined": "CollateralInfo"
                 },
-                50
+                25
               ]
             }
           },
@@ -1999,7 +1999,7 @@ export type Zo = {
                 {
                   "defined": "PerpMarketInfo"
                 },
-                100
+                50
               ]
             }
           },
@@ -2115,34 +2115,25 @@ export type Zo = {
           {
             "name": "twap",
             "type": {
-              "array": [
-                {
-                  "defined": "Olhc"
-                },
-                12
-              ]
+              "defined": "TwapInfo"
             }
           }
         ]
       }
     },
     {
-      "name": "Olhc",
+      "name": "TwapInfo",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "startTime",
-            "type": "u64"
-          },
-          {
-            "name": "open",
+            "name": "cumulAvg",
             "type": {
               "defined": "WrappedI80F48"
             }
           },
           {
-            "name": "low",
+            "name": "open",
             "type": {
               "defined": "WrappedI80F48"
             }
@@ -2154,10 +2145,20 @@ export type Zo = {
             }
           },
           {
+            "name": "low",
+            "type": {
+              "defined": "WrappedI80F48"
+            }
+          },
+          {
             "name": "close",
             "type": {
               "defined": "WrappedI80F48"
             }
+          },
+          {
+            "name": "lastSampleStartTime",
+            "type": "u64"
           }
         ]
       }
@@ -2762,7 +2763,7 @@ export type Zo = {
     },
     {
       "code": 6059,
-      "name": "OracleNotRecentlyUpdated",
+      "name": "OracleCacheStale",
       "msg": "Oracle has not been recently updated"
     }
   ]
@@ -4616,7 +4617,7 @@ export const IDL: Zo = {
                 {
                   "defined": "OracleCache"
                 },
-                100
+                25
               ]
             }
           },
@@ -4627,7 +4628,7 @@ export const IDL: Zo = {
                 {
                   "defined": "MarkCache"
                 },
-                100
+                50
               ]
             }
           },
@@ -4636,7 +4637,7 @@ export const IDL: Zo = {
             "type": {
               "array": [
                 "i128",
-                100
+                50
               ]
             }
           },
@@ -4647,7 +4648,7 @@ export const IDL: Zo = {
                 {
                   "defined": "BorrowCache"
                 },
-                50
+                25
               ]
             }
           }
@@ -4670,7 +4671,7 @@ export const IDL: Zo = {
                 {
                   "defined": "OpenOrdersInfo"
                 },
-                100
+                50
               ]
             }
           }
@@ -4697,7 +4698,7 @@ export const IDL: Zo = {
                 {
                   "defined": "WrappedI80F48"
                 },
-                50
+                25
               ]
             }
           },
@@ -4738,7 +4739,7 @@ export const IDL: Zo = {
             "type": {
               "array": [
                 "u64",
-                50
+                25
               ]
             }
           },
@@ -4747,7 +4748,7 @@ export const IDL: Zo = {
             "type": {
               "array": [
                 "publicKey",
-                50
+                25
               ]
             }
           },
@@ -4758,7 +4759,7 @@ export const IDL: Zo = {
                 {
                   "defined": "CollateralInfo"
                 },
-                50
+                25
               ]
             }
           },
@@ -4769,7 +4770,7 @@ export const IDL: Zo = {
                 {
                   "defined": "PerpMarketInfo"
                 },
-                100
+                50
               ]
             }
           },
@@ -4885,34 +4886,25 @@ export const IDL: Zo = {
           {
             "name": "twap",
             "type": {
-              "array": [
-                {
-                  "defined": "Olhc"
-                },
-                12
-              ]
+              "defined": "TwapInfo"
             }
           }
         ]
       }
     },
     {
-      "name": "Olhc",
+      "name": "TwapInfo",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "startTime",
-            "type": "u64"
-          },
-          {
-            "name": "open",
+            "name": "cumulAvg",
             "type": {
               "defined": "WrappedI80F48"
             }
           },
           {
-            "name": "low",
+            "name": "open",
             "type": {
               "defined": "WrappedI80F48"
             }
@@ -4924,10 +4916,20 @@ export const IDL: Zo = {
             }
           },
           {
+            "name": "low",
+            "type": {
+              "defined": "WrappedI80F48"
+            }
+          },
+          {
             "name": "close",
             "type": {
               "defined": "WrappedI80F48"
             }
+          },
+          {
+            "name": "lastSampleStartTime",
+            "type": "u64"
           }
         ]
       }
@@ -5532,7 +5534,7 @@ export const IDL: Zo = {
     },
     {
       "code": 6059,
-      "name": "OracleNotRecentlyUpdated",
+      "name": "OracleCacheStale",
       "msg": "Oracle has not been recently updated"
     }
   ]

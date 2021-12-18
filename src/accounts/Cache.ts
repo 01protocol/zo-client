@@ -1,10 +1,10 @@
 import { PublicKey } from "@solana/web3.js";
-import { Program } from "@project-serum/anchor";
+import { BN, Program } from "@project-serum/anchor";
 import Decimal from "decimal.js";
 import BaseAccount from "./BaseAccount";
 import { Schema as StateSchema } from "./State";
 import Num from "../Num";
-import { Zo, CacheSchema } from "../types";
+import { CacheSchema, Zo } from "../types";
 import { loadSymbol, loadWI80F48 } from "../utils";
 
 type OracleCache = Omit<
@@ -19,20 +19,22 @@ type OracleCache = Omit<
 type MarkCache = Omit<CacheSchema["marks"][0], "price" | "twap"> & {
   price: Num;
   twap: {
-    startTime: Date;
+    cumulAvg: Num;
     open: Num;
     low: Num;
     high: Num;
     close: Num;
-  }[];
+    lastSampleStartTime: Date;
+  };
 };
 
 type BorrowCache = Omit<
   CacheSchema["borrowCache"][0],
   "supply" | "borrows" | "supplyMultiplier" | "borrowMultiplier"
 > & {
-  supply: Num;
-  borrows: Num;
+  rawSupply: Decimal;
+  actualSupply: Num;
+  actualBorrows: Num;
   supplyMultiplier: Decimal;
   borrowMultiplier: Decimal;
 };
@@ -92,7 +94,7 @@ export default class Cache extends BaseAccount<Schema> {
       ...data,
       oracles: data.oracles
         .filter((c) => !c.symbol.data.every((x) => x === 0))
-        .map((c, i) => {
+        .map((c) => {
           const decimals = c.baseDecimals - c.quoteDecimals;
           return {
             ...c,
@@ -107,25 +109,39 @@ export default class Cache extends BaseAccount<Schema> {
         return {
           ...c,
           price: Num.fromWI80F48(c.price, decimals),
-          twap: c.twap.map((x) => ({
-            ...x,
-            startTime: new Date(x.startTime.toNumber()),
-            open: Num.fromWI80F48(x.open, decimals),
-            low: Num.fromWI80F48(x.low, decimals),
-            high: Num.fromWI80F48(x.high, decimals),
-            close: Num.fromWI80F48(x.close, decimals),
-          })),
+          twap: {
+            cumulAvg: Num.fromWI80F48(c.twap.cumulAvg, decimals),
+            open: Num.fromWI80F48(c.twap.open, decimals),
+            high: Num.fromWI80F48(c.twap.high, decimals),
+            low: Num.fromWI80F48(c.twap.low, decimals),
+            close: Num.fromWI80F48(c.twap.close, decimals),
+            lastSampleStartTime: new Date(
+              c.twap.lastSampleStartTime.toNumber(),
+            ),
+          },
         };
       }),
       borrowCache: st.collaterals.map((col, i) => {
         const decimals = col.decimals;
         const c = data.borrowCache[i]!;
+        const rawSupply = loadWI80F48(c.supply);
+        const rawBorrows = loadWI80F48(c.borrows);
+        const supplyMultiplier = loadWI80F48(c.supplyMultiplier);
+        const borrowMultiplier = loadWI80F48(c.borrowMultiplier);
         return {
           ...c,
-          supply: Num.fromWI80F48(c.supply, decimals),
-          borrows: Num.fromWI80F48(c.borrows, decimals),
-          supplyMultiplier: loadWI80F48(c.supplyMultiplier),
-          borrowMultiplier: loadWI80F48(c.borrowMultiplier),
+          rawSupply,
+          actualSupply: new Num(
+            new BN(rawSupply.times(supplyMultiplier).floor().toString()),
+            decimals,
+          ),
+          rawBorrows,
+          actualBorrows: new Num(
+            new BN(rawBorrows.times(borrowMultiplier).ceil().toString()),
+            decimals,
+          ),
+          supplyMultiplier,
+          borrowMultiplier,
         };
       }),
     };

@@ -3,7 +3,7 @@ import { PublicKey } from "@solana/web3.js";
 export { IDL } from "./types/zo";
 
 // == ACCOUNT SIZES ==
-export const CONTROL_ACCOUNT_SIZE = 8 + 8932;
+export const CONTROL_ACCOUNT_SIZE = 8 + 4482;
 
 // == PARAMS ==
 export const ZO_TAKER_FEE = 0.001; // 10bps

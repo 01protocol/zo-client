@@ -40,6 +40,17 @@ type PerpMarketInfo = Omit<
   perpType: PerpType;
 };
 type OpenOrdersInfo = IdlTypes<Zo>["OpenOrdersInfo"];
+type TwapInfo = Omit<
+  IdlTypes<Zo>["TwapInfo"],
+  "cumulAvg" | "open" | "high" | "low" | "close" | "lastSampleStartTime"
+> & {
+  cumulAvg: WrappedI80F48;
+  open: WrappedI80F48;
+  high: WrappedI80F48;
+  low: WrappedI80F48;
+  close: WrappedI80F48;
+  lastSampleStartTime: BN;
+};
 
 type OracleCache = Omit<IdlTypes<Zo>["OracleCache"], "symbol"> & {
   symbol: Symbol;
@@ -47,15 +58,9 @@ type OracleCache = Omit<IdlTypes<Zo>["OracleCache"], "symbol"> & {
   price: WrappedI80F48;
   twap: WrappedI80F48;
 };
-type MarkCache = IdlTypes<Zo>["MarkCache"] & {
+type MarkCache = Omit<IdlTypes<Zo>["MarkCache"], "price" | "twap"> & {
   price: WrappedI80F48;
-  twap: {
-    startTime: BN;
-    open: WrappedI80F48;
-    low: WrappedI80F48;
-    high: WrappedI80F48;
-    close: WrappedI80F48;
-  }[];
+  twap: TwapInfo;
 };
 type BorrowCache = Omit<
   IdlTypes<Zo>["BorrowCache"],
