@@ -151,7 +151,7 @@ export class ZoMarket {
     connection: Connection,
     address: PublicKey,
     options: MarketOptions = {},
-    programId: PublicKey,
+    programId: PublicKey = ZO_DEX_PROGRAM_ID,
     layoutOverride?: any,
   ) {
     const { owner, data } = throwIfNull(
