@@ -585,6 +585,14 @@ export class ZoMarket {
     return native.div(this._decoded.quoteLotSize);
   }
 
+  quoteSizeNumberToSmoll(size: number): BN {
+    const native = new BN(
+      Math.round(size * Math.pow(10, this._quoteSplTokenDecimals)),
+    );
+    // rounds down to the nearest lot size
+    return native;
+  }
+
   get minOrderSize() {
     return this.baseSizeLotsToNumber(new BN(1));
   }
