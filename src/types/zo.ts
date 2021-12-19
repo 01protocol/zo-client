@@ -1,6 +1,93 @@
 export type Zo = {
   "version": "0.1.0",
   "name": "zo",
+  "constants": [
+    {
+      "name": "SPOT_INITIAL_MARGIN_REQ",
+      "type": "u64",
+      "value": "1_100_000"
+    },
+    {
+      "name": "SPOT_MAINT_MARGIN_REQ",
+      "type": "u64",
+      "value": "1_030_000"
+    },
+    {
+      "name": "DUST_THRESHOLD",
+      "type": "i64",
+      "value": "10_000"
+    },
+    {
+      "name": "ORACLE_STALENESS_THRESH",
+      "type": "u64",
+      "value": "5"
+    },
+    {
+      "name": "TWAP_SAMPLE_DT",
+      "type": "u64",
+      "value": "300"
+    },
+    {
+      "name": "TWAP_SAMPLES_PER_H",
+      "type": "u64",
+      "value": "12"
+    },
+    {
+      "name": "DEFAULT_IR_MULTIPLIER",
+      "type": "u64",
+      "value": "1_000_000"
+    },
+    {
+      "name": "VALID_DT",
+      "type": "u64",
+      "value": "20"
+    },
+    {
+      "name": "MAX_COLLATERALS",
+      "type": "u64",
+      "value": "25"
+    },
+    {
+      "name": "MAX_MARKETS",
+      "type": "u64",
+      "value": "50"
+    },
+    {
+      "name": "DEBUG_LOG",
+      "type": {
+        "defined": "&str"
+      },
+      "value": "\"DEBUG\""
+    },
+    {
+      "name": "NOOPS_LOG",
+      "type": {
+        "defined": "&str"
+      },
+      "value": "\"NOOPS\""
+    },
+    {
+      "name": "LIQ_LOG",
+      "type": {
+        "defined": "&str"
+      },
+      "value": "\"LIQ\""
+    },
+    {
+      "name": "BANKRUPTCY_LOG",
+      "type": {
+        "defined": "&str"
+      },
+      "value": "\"BANK\""
+    },
+    {
+      "name": "BORROW_LOG",
+      "type": {
+        "defined": "&str"
+      },
+      "value": "\"BOR\""
+    }
+  ],
   "instructions": [
     {
       "name": "initState",
@@ -2772,6 +2859,93 @@ export type Zo = {
 export const IDL: Zo = {
   "version": "0.1.0",
   "name": "zo",
+  "constants": [
+    {
+      "name": "SPOT_INITIAL_MARGIN_REQ",
+      "type": "u64",
+      "value": "1_100_000"
+    },
+    {
+      "name": "SPOT_MAINT_MARGIN_REQ",
+      "type": "u64",
+      "value": "1_030_000"
+    },
+    {
+      "name": "DUST_THRESHOLD",
+      "type": "i64",
+      "value": "10_000"
+    },
+    {
+      "name": "ORACLE_STALENESS_THRESH",
+      "type": "u64",
+      "value": "5"
+    },
+    {
+      "name": "TWAP_SAMPLE_DT",
+      "type": "u64",
+      "value": "300"
+    },
+    {
+      "name": "TWAP_SAMPLES_PER_H",
+      "type": "u64",
+      "value": "12"
+    },
+    {
+      "name": "DEFAULT_IR_MULTIPLIER",
+      "type": "u64",
+      "value": "1_000_000"
+    },
+    {
+      "name": "VALID_DT",
+      "type": "u64",
+      "value": "20"
+    },
+    {
+      "name": "MAX_COLLATERALS",
+      "type": "u64",
+      "value": "25"
+    },
+    {
+      "name": "MAX_MARKETS",
+      "type": "u64",
+      "value": "50"
+    },
+    {
+      "name": "DEBUG_LOG",
+      "type": {
+        "defined": "&str"
+      },
+      "value": "\"DEBUG\""
+    },
+    {
+      "name": "NOOPS_LOG",
+      "type": {
+        "defined": "&str"
+      },
+      "value": "\"NOOPS\""
+    },
+    {
+      "name": "LIQ_LOG",
+      "type": {
+        "defined": "&str"
+      },
+      "value": "\"LIQ\""
+    },
+    {
+      "name": "BANKRUPTCY_LOG",
+      "type": {
+        "defined": "&str"
+      },
+      "value": "\"BANK\""
+    },
+    {
+      "name": "BORROW_LOG",
+      "type": {
+        "defined": "&str"
+      },
+      "value": "\"BOR\""
+    }
+  ],
   "instructions": [
     {
       "name": "initState",
