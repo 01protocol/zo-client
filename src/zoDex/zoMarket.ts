@@ -151,7 +151,7 @@ export class ZoMarket {
     connection: Connection,
     address: PublicKey,
     options: MarketOptions = {},
-    programId: PublicKey,
+    programId: PublicKey = ZO_DEX_PROGRAM_ID,
     layoutOverride?: any,
   ) {
     const { owner, data } = throwIfNull(
@@ -583,6 +583,14 @@ export class ZoMarket {
     );
     // rounds down to the nearest lot size
     return native.div(this._decoded.quoteLotSize);
+  }
+
+  quoteSizeNumberToSmoll(size: number): BN {
+    const native = new BN(
+      Math.round(size * Math.pow(10, this._quoteSplTokenDecimals)),
+    );
+    // rounds down to the nearest lot size
+    return native;
   }
 
   get minOrderSize() {

@@ -1,10 +1,5 @@
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import {
-  Keypair,
-  PublicKey,
-  SystemProgram,
-  SYSVAR_RENT_PUBKEY,
-} from "@solana/web3.js";
+import { Keypair, PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
 import { Program } from "@project-serum/anchor";
 import { Market as SerumMarket } from "@project-serum/serum";
 import BN from "bn.js";
@@ -15,12 +10,7 @@ import Control from "./Control";
 import Num from "../Num";
 import { loadWI80F48 } from "../utils";
 import { MarginSchema, OrderType, TransactionId, Zo } from "../types";
-import {
-  CONTROL_ACCOUNT_SIZE,
-  SERUM_SPOT_PROGRAM_ID,
-  SERUM_SWAP_PROGRAM_ID,
-  ZO_DEX_PROGRAM_ID,
-} from "../config";
+import { CONTROL_ACCOUNT_SIZE, SERUM_SPOT_PROGRAM_ID, SERUM_SWAP_PROGRAM_ID, ZO_DEX_PROGRAM_ID } from "../config";
 import Decimal from "decimal.js";
 import Cache from "./Cache";
 
@@ -67,15 +57,15 @@ export default class Margin extends BaseAccount<Schema> {
             new BN(
               rawCollateral[i]!.isPos()
                 ? rawCollateral[i]!.times(
-                    ch.data.borrowCache[i]!.supplyMultiplier,
-                  )
-                    .floor()
-                    .toString()
+                  ch.data.borrowCache[i]!.supplyMultiplier,
+                )
+                  .floor()
+                  .toString()
                 : rawCollateral[i]!.times(
-                    ch.data.borrowCache[i]!.borrowMultiplier,
-                  )
-                    .floor()
-                    .toString(),
+                  ch.data.borrowCache[i]!.borrowMultiplier,
+                )
+                  .floor()
+                  .toString(),
             ),
             c.decimals,
           ),
@@ -245,6 +235,66 @@ export default class Margin extends BaseAccount<Schema> {
     });
   }
 
+
+  /**
+   * Places an order on the orderbook for a given market.
+   * @param symbol The market symbol. Ex: ("BTC-PERP")
+   * @param orderType The order type. Either limit, immediateOrCancel, or postOnly.
+   * @param isLong True if buy, false if sell.
+   * @param limitPrice The limit price in base lots per quote lots.
+   * @param maxBaseQty The maximum amount of base lots to buy or sell.
+   * @param maxQuoteQty The maximum amount of native quote, including fees, to pay or receive.
+   */
+  async placePerpOrderSimple({
+                               symbol,
+                               orderType,
+                               isLong,
+                               limitPrice,
+                               maxBaseQty,
+                               maxQuoteQty,
+                             }: Readonly<{
+    symbol: string;
+    orderType: OrderType;
+    isLong: boolean;
+    limitPrice: number;
+    maxBaseQty: number;
+    maxQuoteQty: number;
+  }>): Promise<TransactionId> {
+    const market = await this.state.getMarketBySymbol(symbol);
+    const limitPriceBn = market.priceNumberToLots(limitPrice);
+    const maxBaseQtyBn = market.baseSizeNumberToLots(maxBaseQty);
+    const maxQuoteQtyBn = market.quoteSizeNumberToSmoll(maxQuoteQty);
+
+    const oo = await this.getOpenOrdersInfoBySymbol(symbol);
+
+    return await this.program.rpc.placePerpOrder(
+      isLong,
+      limitPriceBn,
+      maxBaseQtyBn,
+      maxQuoteQtyBn,
+      orderType,
+      {
+        accounts: {
+          state: this.state.pubkey,
+          stateSigner: this.state.signer,
+          cache: this.state.cache.pubkey,
+          authority: this.wallet.publicKey,
+          margin: this.pubkey,
+          control: this.control.pubkey,
+          openOrders: oo!.key,
+          dexMarket: market.address,
+          reqQ: market.requestQueueAddress,
+          eventQ: market.eventQueueAddress,
+          marketBids: market.bidsAddress,
+          marketAsks: market.asksAddress,
+          dexProgram: ZO_DEX_PROGRAM_ID,
+          rent: SYSVAR_RENT_PUBKEY,
+        },
+      },
+    );
+  }
+
+
   /**
    * User must create a perp OpenOrders account for every perpetual market(future and or options) they intend to trade on.
    * @param symbol The market symbol. Ex: ("BTC-PERP")
@@ -278,13 +328,13 @@ export default class Margin extends BaseAccount<Schema> {
    */
 
   async placePerpOrder({
-    symbol,
-    orderType,
-    isLong,
-    limitPrice,
-    maxBaseQty,
-    maxQuoteQty,
-  }: Readonly<{
+                         symbol,
+                         orderType,
+                         isLong,
+                         limitPrice,
+                         maxBaseQty,
+                         maxQuoteQty,
+                       }: Readonly<{
     symbol: string;
     orderType: OrderType;
     isLong: boolean;
@@ -323,13 +373,13 @@ export default class Margin extends BaseAccount<Schema> {
   }
 
   async placePerpOrderAndCreateOo({
-    symbol,
-    orderType,
-    isLong,
-    limitPrice,
-    maxBaseQty,
-    maxQuoteQty,
-  }: Readonly<{
+                                    symbol,
+                                    orderType,
+                                    isLong,
+                                    limitPrice,
+                                    maxBaseQty,
+                                    maxQuoteQty,
+                                  }: Readonly<{
     symbol: string;
     orderType: OrderType;
     isLong: boolean;
@@ -421,13 +471,13 @@ export default class Margin extends BaseAccount<Schema> {
    * @param serumMarket The market public key of the Serum Spot DEX.
    */
   async swap({
-    buy,
-    tokenMint,
-    amount,
-    minRate,
-    allowBorrow,
-    serumMarket,
-  }: Readonly<{
+               buy,
+               tokenMint,
+               amount,
+               minRate,
+               allowBorrow,
+               serumMarket,
+             }: Readonly<{
     buy: boolean;
     tokenMint: PublicKey;
     amount: BN;
@@ -457,8 +507,8 @@ export default class Margin extends BaseAccount<Schema> {
     ) {
       throw new Error(
         `Invalid <SerumSpotMarket ${serumMarket}> for swap:\n` +
-          `  swap wants:   base=${tokenMint}, quote=${stateQuoteMint}\n` +
-          `  market wants: base=${market.baseMintAddress}, quote=${market.quoteMintAddress}`,
+        `  swap wants:   base=${tokenMint}, quote=${stateQuoteMint}\n` +
+        `  market wants: base=${market.baseMintAddress}, quote=${market.quoteMintAddress}`,
       );
     }
 
