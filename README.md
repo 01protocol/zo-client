@@ -79,16 +79,6 @@ The following example shows to perform trading actions.
 let price = 50_000;
 let size = 0.004;
 let isLong = true;
-
-const limitPrice: BN = priceNumberToLots(
-  price,
-  BASE_DECIMALS,
-  BASE_LOT_SIZE,
-  USDC_DECIMALS,
-  USDC_BASE_LOT_SIZE,
-);
-const maxBaseQty: BN = baseNumberToLots(size, BASE_DECIMALS, BASE_LOT_SIZE);
-const maxQuoteQty: BN = limitPrice.mul(maxBaseQty).mul(USDC_BASE_LOT_SIZE);
 const orderType: OrderType = { limit: {} };
 
 await margin.placePerpOrder({
