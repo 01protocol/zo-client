@@ -33,7 +33,7 @@
     "eslint-plugin-promise": "^5.2.0",
     "prettier": "^2.5.1",
     "typedoc": "^0.22.10",
-    "typescript": "^4.3.5"
+    "typescript": "^4.5.4"
   },
   "prettier": {
     "trailingComma": "all"
