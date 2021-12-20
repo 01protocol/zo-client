@@ -385,22 +385,24 @@ export default class Margin extends BaseAccount<Schema> {
           dexProgram: ZO_DEX_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         },
-        preInstructions: createOo ? [
-          this.program.instruction.createPerpOpenOrders({
-            accounts: {
-              state: this.state.pubkey,
-              stateSigner: this.state.signer,
-              authority: this.wallet.publicKey,
-              margin: this.pubkey,
-              control: this.data.control,
-              openOrders: ooKey,
-              dexMarket: this.state.getMarketKeyBySymbol(symbol),
-              dexProgram: ZO_DEX_PROGRAM_ID,
-              rent: SYSVAR_RENT_PUBKEY,
-              systemProgram: SystemProgram.programId,
-            },
-          }),
-        ] : undefined
+        preInstructions: createOo
+          ? [
+              this.program.instruction.createPerpOpenOrders({
+                accounts: {
+                  state: this.state.pubkey,
+                  stateSigner: this.state.signer,
+                  authority: this.wallet.publicKey,
+                  margin: this.pubkey,
+                  control: this.data.control,
+                  openOrders: ooKey,
+                  dexMarket: this.state.getMarketKeyBySymbol(symbol),
+                  dexProgram: ZO_DEX_PROGRAM_ID,
+                  rent: SYSVAR_RENT_PUBKEY,
+                  systemProgram: SystemProgram.programId,
+                },
+              }),
+            ]
+          : undefined,
       },
     );
   }

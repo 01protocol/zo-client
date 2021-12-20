@@ -11,5 +11,3 @@ export { default as Control } from "./accounts/Control";
 
 export { ZoMarket, Orderbook, ZoOpenOrders } from "./zoDex/zoMarket";
 export { EVENT_QUEUE_HEADER, decodeEventsSince } from "./zoDex/queue";
-
-export * from './setup';
