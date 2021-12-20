@@ -2,6 +2,8 @@
 
 TypeScript SDK for interacting with the 01 Solana program.
 
+[SDK Docs](https://01protocol.github.io/zo-client/)
+
 ## Installation
 
 Using npm
