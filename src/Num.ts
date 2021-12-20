@@ -33,13 +33,8 @@ export default class Num {
     }
   }
 
-  public toString(precision: number = this.decimals): string {
-    const s = this.n.toString();
-    const i = s.length - this.decimals;
-    const l = Math.max(0, i + precision - s.length);
-    return precision === 0
-      ? s.slice(0, i)
-      : `${s.slice(0, i)}.${s.slice(i, i + precision)}${"0".repeat(l)}`;
+  public toString(): string {
+    return (new Decimal(this.n.toString())).div(new Decimal(10).toPower(this.decimals)).toString()
   }
 
   _float: number | null = null;
