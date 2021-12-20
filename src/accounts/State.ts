@@ -1,10 +1,10 @@
 import { PublicKey } from "@solana/web3.js";
-import { Program, BN } from "@project-serum/anchor";
+import { BN, Program } from "@project-serum/anchor";
 import { loadSymbol } from "../utils";
 import BaseAccount from "./BaseAccount";
 import Cache from "./Cache";
 import { ZoMarket } from "../zoDex/zoMarket";
-import { Zo, StateSchema } from "../types";
+import { StateSchema, Zo } from "../types";
 import { ZO_DEX_PROGRAM_ID } from "../config";
 
 type CollateralInfo = Omit<StateSchema["collaterals"][0], "oracleSymbol"> & {
@@ -29,6 +29,8 @@ export interface Schema
  * The state account defines program-level parameters, and tracks listed markets and supported collaterals.
  */
 export default class State extends BaseAccount<Schema> {
+  _getMarketBySymbol: { [k: string]: ZoMarket } = {};
+
   private constructor(
     program: Program<Zo>,
     pubkey: PublicKey,
@@ -48,6 +50,19 @@ export default class State extends BaseAccount<Schema> {
     programId: PublicKey,
   ): Promise<[PublicKey, number]> {
     return await PublicKey.findProgramAddress([stateKey.toBuffer()], programId);
+  }
+
+  /**
+   * @param k The state's public key.
+   */
+  static async load(program: Program<Zo>, k: PublicKey): Promise<State> {
+    const data = await this.fetch(program, k);
+    const [signer, signerNonce] = await this.getSigner(k, program.programId);
+    if (signerNonce !== data.signerNonce) {
+      throw Error("Invalid state signer nonce");
+    }
+    const cache = await Cache.load(program, data.cache, data);
+    return new this(program, k, data, signer, cache);
   }
 
   private static async fetch(
@@ -72,19 +87,6 @@ export default class State extends BaseAccount<Schema> {
         oracleSymbol: loadSymbol(x.oracleSymbol),
       })),
     };
-  }
-
-  /**
-   * @param k The state's public key.
-   */
-  static async load(program: Program<Zo>, k: PublicKey): Promise<State> {
-    const data = await this.fetch(program, k);
-    const [signer, signerNonce] = await this.getSigner(k, program.programId);
-    if (signerNonce !== data.signerNonce) {
-      throw Error("Invalid state signer nonce");
-    }
-    const cache = await Cache.load(program, data.cache, data);
-    return new this(program, k, data, signer, cache);
   }
 
   async refresh(): Promise<void> {
@@ -143,7 +145,6 @@ export default class State extends BaseAccount<Schema> {
       ?.dexMarket as PublicKey;
   }
 
-  _getMarketBySymbol: { [k: string]: ZoMarket } = {};
   async getMarketBySymbol(sym: string): Promise<ZoMarket> {
     if (!this._getMarketBySymbol[sym]) {
       this._getMarketBySymbol[sym] = await ZoMarket.load(

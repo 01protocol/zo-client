@@ -6,15 +6,6 @@ export default class Num {
   public readonly n: Readonly<BN>;
   private precisionDecimals = 0;
 
-  static fromWI80F48(data: { data: BN }, decimals: number) {
-    const decimal = loadWI80F48(data);
-    const precisionDecimals = decimal.decimalPlaces();
-    const ogDecimal = new BN(decimal.toString().replace(".", ""));
-    const num = new Num(ogDecimal, decimals);
-    num.precisionDecimals = precisionDecimals;
-    return num;
-  }
-
   public constructor(
     n: BN | Decimal | number,
     public readonly decimals: number,
@@ -33,11 +24,8 @@ export default class Num {
     }
   }
 
-  public toString(): string {
-    return (new Decimal(this.n.toString())).div(new Decimal(10).toPower(this.decimals)).toString()
-  }
-
   _float: number | null = null;
+
   get float(): number {
     if (!this._float) {
       this._float = Number.parseFloat(this.toString());
@@ -46,6 +34,7 @@ export default class Num {
   }
 
   _dec: Decimal | null = null;
+
   get dec(): Decimal {
     if (!this._dec) {
       this._dec = new Decimal(this.toString());
@@ -68,5 +57,20 @@ export default class Num {
     return new Decimal(this.toString()).div(
       new Decimal(10).toPower(this.precisionDecimals - this.decimals),
     );
+  }
+
+  static fromWI80F48(data: { data: BN }, decimals: number) {
+    const decimal = loadWI80F48(data);
+    const precisionDecimals = decimal.decimalPlaces();
+    const ogDecimal = new BN(decimal.toString().replace(".", ""));
+    const num = new Num(ogDecimal, decimals);
+    num.precisionDecimals = precisionDecimals;
+    return num;
+  }
+
+  public toString(): string {
+    return new Decimal(this.n.toString())
+      .div(new Decimal(10).toPower(this.decimals))
+      .toString();
   }
 }

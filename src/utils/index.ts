@@ -1,17 +1,17 @@
 import {
-  PublicKey,
+  Connection,
   Keypair,
+  PublicKey,
   SystemProgram,
   Transaction,
   TransactionInstruction,
-  Connection,
 } from "@solana/web3.js";
 import {
-  TOKEN_PROGRAM_ID,
-  Token,
-  MintLayout,
   AccountLayout,
   MintInfo,
+  MintLayout,
+  Token,
+  TOKEN_PROGRAM_ID,
   u64,
 } from "@solana/spl-token";
 import { Program, Provider } from "@project-serum/anchor";
@@ -39,6 +39,7 @@ export function loadWI80F48({ data }: { data: BN }): Decimal {
 }
 
 const utf8Decoder = new TextDecoder("utf-8");
+
 export function loadSymbol({ data: s }: { data: number[] }): string {
   // Need to convert symbol, which is a [u8; 24], to a JS String.
   // Can't use String.fromCodePoint since that takes in u16,

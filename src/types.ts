@@ -1,11 +1,13 @@
 import { PublicKey, Transaction } from "@solana/web3.js";
-import { IdlTypes, IdlAccounts } from "@project-serum/anchor";
+import { IdlAccounts, IdlTypes } from "@project-serum/anchor";
 import BN from "bn.js";
 import { Zo } from "./types/zo";
 
 export interface Wallet {
   publicKey: PublicKey;
+
   signTransaction(tx: Transaction): Promise<Transaction>;
+
   signAllTransactions(txs: Transaction[]): Promise<Transaction[]>;
 }
 

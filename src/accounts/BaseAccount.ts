@@ -1,6 +1,6 @@
 import { PublicKey } from "@solana/web3.js";
 import { Program } from "@project-serum/anchor";
-import { Zo, Wallet } from "../types";
+import { Wallet, Zo } from "../types";
 
 /**
  * Base implementation for account classes.

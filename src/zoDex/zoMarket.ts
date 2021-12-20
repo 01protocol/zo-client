@@ -112,71 +112,12 @@ export class ZoMarket {
     this._layoutOverride = layoutOverride;
   }
 
-  static getLayout(_programId: PublicKey) {
-    return MARKET_STATE_LAYOUT_V3;
-  }
-
-  static async findAccountsByMints(
-    connection: Connection,
-    baseMintAddress: PublicKey,
-    quoteMintAddress: PublicKey,
-    programId: PublicKey,
-  ) {
-    const filters = [
-      {
-        memcmp: {
-          offset: this.getLayout(programId).offsetOf("baseMint"),
-          bytes: baseMintAddress.toBase58(),
-        },
-      },
-      {
-        memcmp: {
-          offset: ZoMarket.getLayout(programId).offsetOf("quoteMint"),
-          bytes: quoteMintAddress.toBase58(),
-        },
-      },
-    ];
-    return getFilteredProgramAccounts(connection, programId, filters);
-  }
-
   get eventQueueAddress(): PublicKey {
     return this._decoded.eventQueue;
   }
 
   get requestQueueAddress(): PublicKey {
     return this._decoded.requestQueue;
-  }
-
-  static async load(
-    connection: Connection,
-    address: PublicKey,
-    options: MarketOptions = {},
-    programId: PublicKey = ZO_DEX_PROGRAM_ID,
-    layoutOverride?: any,
-  ) {
-    const { owner, data } = throwIfNull(
-      await connection.getAccountInfo(address),
-      "Market not found",
-    );
-    if (!owner.equals(programId)) {
-      throw new Error("Address not owned by program: " + owner.toBase58());
-    }
-    const decoded = (layoutOverride ?? this.getLayout(programId)).decode(data);
-    if (
-      !decoded.accountFlags.initialized ||
-      !decoded.accountFlags.market ||
-      !decoded.ownAddress.equals(address)
-    ) {
-      throw new Error("Invalid market");
-    }
-    return new ZoMarket(
-      decoded,
-      decoded.coinDecimals,
-      6,
-      options,
-      programId,
-      layoutOverride,
-    );
   }
 
   get programId(): PublicKey {
@@ -209,6 +150,81 @@ export class ZoMarket {
 
   get decoded(): any {
     return this._decoded;
+  }
+
+  get minOrderSize() {
+    return this.baseSizeLotsToNumber(new BN(1));
+  }
+
+  get tickSize() {
+    return this.priceLotsToNumber(new BN(1));
+  }
+
+  private get _baseSplTokenMultiplier() {
+    return new BN(10).pow(new BN(this._baseSplTokenDecimals));
+  }
+
+  private get _quoteSplTokenMultiplier() {
+    return new BN(10).pow(new BN(this._quoteSplTokenDecimals));
+  }
+
+  static getLayout(_programId: PublicKey) {
+    return MARKET_STATE_LAYOUT_V3;
+  }
+
+  static async findAccountsByMints(
+    connection: Connection,
+    baseMintAddress: PublicKey,
+    quoteMintAddress: PublicKey,
+    programId: PublicKey,
+  ) {
+    const filters = [
+      {
+        memcmp: {
+          offset: this.getLayout(programId).offsetOf("baseMint"),
+          bytes: baseMintAddress.toBase58(),
+        },
+      },
+      {
+        memcmp: {
+          offset: ZoMarket.getLayout(programId).offsetOf("quoteMint"),
+          bytes: quoteMintAddress.toBase58(),
+        },
+      },
+    ];
+    return getFilteredProgramAccounts(connection, programId, filters);
+  }
+
+  static async load(
+    connection: Connection,
+    address: PublicKey,
+    options: MarketOptions = {},
+    programId: PublicKey = ZO_DEX_PROGRAM_ID,
+    layoutOverride?: any,
+  ) {
+    const { owner, data } = throwIfNull(
+      await connection.getAccountInfo(address),
+      "Market not found",
+    );
+    if (!owner.equals(programId)) {
+      throw new Error("Address not owned by program: " + owner.toBase58());
+    }
+    const decoded = (layoutOverride ?? this.getLayout(programId)).decode(data);
+    if (
+      !decoded.accountFlags.initialized ||
+      !decoded.accountFlags.market ||
+      !decoded.ownAddress.equals(address)
+    ) {
+      throw new Error("Invalid market");
+    }
+    return new ZoMarket(
+      decoded,
+      decoded.coinDecimals,
+      6,
+      options,
+      programId,
+      layoutOverride,
+    );
   }
 
   async loadBids(connection: Connection): Promise<Orderbook> {
@@ -266,76 +282,6 @@ export class ZoMarket {
       connection,
       ownerAddress,
       this.baseMintAddress,
-    );
-  }
-
-  async getTokenAccountsByOwnerForMint(
-    connection: Connection,
-    ownerAddress: PublicKey,
-    mintAddress: PublicKey,
-  ): Promise<Array<{ pubkey: PublicKey; account: AccountInfo<Buffer> }>> {
-    return (
-      await connection.getTokenAccountsByOwner(ownerAddress, {
-        mint: mintAddress,
-      })
-    ).value;
-  }
-
-  async findQuoteTokenAccountsForOwner(
-    connection: Connection,
-    ownerAddress: PublicKey,
-    includeUnwrappedSol = false,
-  ): Promise<{ pubkey: PublicKey; account: AccountInfo<Buffer> }[]> {
-    if (this.quoteMintAddress.equals(WRAPPED_SOL_MINT) && includeUnwrappedSol) {
-      const [wrapped, unwrapped] = await Promise.all([
-        this.findQuoteTokenAccountsForOwner(connection, ownerAddress, false),
-        connection.getAccountInfo(ownerAddress),
-      ]);
-      if (unwrapped !== null) {
-        return [{ pubkey: ownerAddress, account: unwrapped }, ...wrapped];
-      }
-      return wrapped;
-    }
-    return await this.getTokenAccountsByOwnerForMint(
-      connection,
-      ownerAddress,
-      this.quoteMintAddress,
-    );
-  }
-
-  async findOpenOrdersAccountsForOwner(
-    connection: Connection,
-    ownerAddress: PublicKey,
-    cacheDurationMs = 0,
-  ): Promise<ZoOpenOrders[]> {
-    const strOwner = ownerAddress.toBase58();
-    const now = new Date().getTime();
-    if (
-      strOwner in this._openOrdersAccountsCache &&
-      now - this._openOrdersAccountsCache[strOwner]!.ts < cacheDurationMs
-    ) {
-      return this._openOrdersAccountsCache[strOwner]!.accounts;
-    }
-    const openOrdersAccountsForOwner = await ZoOpenOrders.findForMarketAndOwner(
-      connection,
-      this.address,
-      ownerAddress,
-      this._programId,
-    );
-    this._openOrdersAccountsCache[strOwner] = {
-      accounts: openOrdersAccountsForOwner,
-      ts: now,
-    };
-    return openOrdersAccountsForOwner;
-  }
-
-  getSplTokenBalanceFromAccountInfo(
-    accountInfo: AccountInfo<Buffer>,
-    decimals: number,
-  ): number {
-    return divideBnToNumber(
-      new BN(accountInfo.data.slice(64, 72), 10, "le"),
-      new BN(10).pow(new BN(decimals)),
     );
   }
 
@@ -453,6 +399,76 @@ export class ZoMarket {
   //   };
   // }
 
+  async getTokenAccountsByOwnerForMint(
+    connection: Connection,
+    ownerAddress: PublicKey,
+    mintAddress: PublicKey,
+  ): Promise<Array<{ pubkey: PublicKey; account: AccountInfo<Buffer> }>> {
+    return (
+      await connection.getTokenAccountsByOwner(ownerAddress, {
+        mint: mintAddress,
+      })
+    ).value;
+  }
+
+  async findQuoteTokenAccountsForOwner(
+    connection: Connection,
+    ownerAddress: PublicKey,
+    includeUnwrappedSol = false,
+  ): Promise<{ pubkey: PublicKey; account: AccountInfo<Buffer> }[]> {
+    if (this.quoteMintAddress.equals(WRAPPED_SOL_MINT) && includeUnwrappedSol) {
+      const [wrapped, unwrapped] = await Promise.all([
+        this.findQuoteTokenAccountsForOwner(connection, ownerAddress, false),
+        connection.getAccountInfo(ownerAddress),
+      ]);
+      if (unwrapped !== null) {
+        return [{ pubkey: ownerAddress, account: unwrapped }, ...wrapped];
+      }
+      return wrapped;
+    }
+    return await this.getTokenAccountsByOwnerForMint(
+      connection,
+      ownerAddress,
+      this.quoteMintAddress,
+    );
+  }
+
+  async findOpenOrdersAccountsForOwner(
+    connection: Connection,
+    ownerAddress: PublicKey,
+    cacheDurationMs = 0,
+  ): Promise<ZoOpenOrders[]> {
+    const strOwner = ownerAddress.toBase58();
+    const now = new Date().getTime();
+    if (
+      strOwner in this._openOrdersAccountsCache &&
+      now - this._openOrdersAccountsCache[strOwner]!.ts < cacheDurationMs
+    ) {
+      return this._openOrdersAccountsCache[strOwner]!.accounts;
+    }
+    const openOrdersAccountsForOwner = await ZoOpenOrders.findForMarketAndOwner(
+      connection,
+      this.address,
+      ownerAddress,
+      this._programId,
+    );
+    this._openOrdersAccountsCache[strOwner] = {
+      accounts: openOrdersAccountsForOwner,
+      ts: now,
+    };
+    return openOrdersAccountsForOwner;
+  }
+
+  getSplTokenBalanceFromAccountInfo(
+    accountInfo: AccountInfo<Buffer>,
+    decimals: number,
+  ): number {
+    return divideBnToNumber(
+      new BN(accountInfo.data.slice(64, 72), 10, "le"),
+      new BN(10).pow(new BN(decimals)),
+    );
+  }
+
   async loadRequestQueue(connection: Connection) {
     const { data } = throwIfNull(
       await connection.getAccountInfo(this._decoded.requestQueue),
@@ -520,14 +536,6 @@ export class ZoMarket {
     };
   }
 
-  private get _baseSplTokenMultiplier() {
-    return new BN(10).pow(new BN(this._baseSplTokenDecimals));
-  }
-
-  private get _quoteSplTokenMultiplier() {
-    return new BN(10).pow(new BN(this._quoteSplTokenDecimals));
-  }
-
   priceLotsToNumber(price: BN) {
     return divideBnToNumber(
       price.mul(this._decoded.quoteLotSize).mul(this._baseSplTokenMultiplier),
@@ -591,14 +599,6 @@ export class ZoMarket {
     );
     // rounds down to the nearest lot size
     return native;
-  }
-
-  get minOrderSize() {
-    return this.baseSizeLotsToNumber(new BN(1));
-  }
-
-  get tickSize() {
-    return this.priceLotsToNumber(new BN(1));
   }
 
   public async consumeEvents(
@@ -694,31 +694,30 @@ export const _OPEN_ORDERS_LAYOUT_V2 = struct([
 ]);
 
 export class ZoOpenOrders {
-  private _programId: PublicKey;
-
   address: PublicKey;
   market!: PublicKey;
   owner!: PublicKey;
-
   baseTokenFree!: BN;
   baseTokenTotal!: BN;
   quoteTokenFree!: BN;
   quoteTokenTotal!: BN;
-
   referrerRebatesAccrued!: BN;
-
   realizedPnl!: BN;
   fundingIndex!: BN;
   coinOnBids!: BN;
   coinOnAsks!: BN;
-
   orders!: BN[];
   clientIds!: BN[];
+  private _programId: PublicKey;
 
   constructor(address: PublicKey, decoded, programId: PublicKey) {
     this.address = address;
     this._programId = programId;
     Object.assign(this, decoded);
+  }
+
+  get publicKey() {
+    return this.address;
   }
 
   static getLayout(_programId: PublicKey) {
@@ -810,10 +809,6 @@ export class ZoOpenOrders {
       throw new Error("Invalid open orders account");
     }
     return new ZoOpenOrders(address, decoded, programId);
-  }
-
-  get publicKey() {
-    return this.address;
   }
 }
 

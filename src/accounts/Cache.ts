@@ -66,24 +66,6 @@ export default class Cache extends BaseAccount<Schema> {
     return new this(program, k, await Cache.fetch(program, k, st), st);
   }
 
-  async refresh(): Promise<void> {
-    this.data = await Cache.fetch(this.program, this.pubkey, this._st);
-  }
-
-  /**
-   * @param sym The collateral symbol. Ex: ("BTC")
-   * @returns The oracle cache for the given collateral.
-   */
-  getOracleBySymbol(sym: string): OracleCache {
-    const i = this.data.oracles.findIndex((x) => x.symbol === sym);
-    if (i < 0) {
-      throw RangeError(
-        `Invalid symbol ${sym} for <Cache ${this.pubkey.toBase58()}>`,
-      );
-    }
-    return this.data.oracles[i]!;
-  }
-
   private static async fetch(
     program: Program<Zo>,
     k: PublicKey,
@@ -145,5 +127,23 @@ export default class Cache extends BaseAccount<Schema> {
         };
       }),
     };
+  }
+
+  async refresh(): Promise<void> {
+    this.data = await Cache.fetch(this.program, this.pubkey, this._st);
+  }
+
+  /**
+   * @param sym The collateral symbol. Ex: ("BTC")
+   * @returns The oracle cache for the given collateral.
+   */
+  getOracleBySymbol(sym: string): OracleCache {
+    const i = this.data.oracles.findIndex((x) => x.symbol === sym);
+    if (i < 0) {
+      throw RangeError(
+        `Invalid symbol ${sym} for <Cache ${this.pubkey.toBase58()}>`,
+      );
+    }
+    return this.data.oracles[i]!;
   }
 }

@@ -48,41 +48,6 @@ export default class Margin extends BaseAccount<Schema> {
     super(program, pubkey, data);
   }
 
-  private static async fetch(
-    program: Program<Zo>,
-    k: PublicKey,
-    st: State,
-    ch: Cache,
-  ): Promise<Schema> {
-    const data = (await program.account["margin"].fetch(k)) as MarginSchema;
-    const rawCollateral = data.collateral
-      .map((c) => loadWI80F48(c!))
-      .slice(0, st.data.totalCollaterals);
-    return {
-      ...data,
-      rawCollateral,
-      actualCollateral: st.data.collaterals.map(
-        (c, i) =>
-          new Num(
-            new BN(
-              rawCollateral[i]!.isPos()
-                ? rawCollateral[i]!.times(
-                    ch.data.borrowCache[i]!.supplyMultiplier,
-                  )
-                    .floor()
-                    .toString()
-                : rawCollateral[i]!.times(
-                    ch.data.borrowCache[i]!.borrowMultiplier,
-                  )
-                    .floor()
-                    .toString(),
-            ),
-            c.decimals,
-          ),
-      ),
-    };
-  }
-
   /**
    * Loads a new Margin object.
    */
@@ -146,6 +111,41 @@ export default class Margin extends BaseAccount<Schema> {
       [traderKey.toBuffer(), st.pubkey.toBuffer(), Buffer.from("marginv1")],
       programId,
     );
+  }
+
+  private static async fetch(
+    program: Program<Zo>,
+    k: PublicKey,
+    st: State,
+    ch: Cache,
+  ): Promise<Schema> {
+    const data = (await program.account["margin"].fetch(k)) as MarginSchema;
+    const rawCollateral = data.collateral
+      .map((c) => loadWI80F48(c!))
+      .slice(0, st.data.totalCollaterals);
+    return {
+      ...data,
+      rawCollateral,
+      actualCollateral: st.data.collaterals.map(
+        (c, i) =>
+          new Num(
+            new BN(
+              rawCollateral[i]!.isPos()
+                ? rawCollateral[i]!.times(
+                    ch.data.borrowCache[i]!.supplyMultiplier,
+                  )
+                    .floor()
+                    .toString()
+                : rawCollateral[i]!.times(
+                    ch.data.borrowCache[i]!.borrowMultiplier,
+                  )
+                    .floor()
+                    .toString(),
+            ),
+            c.decimals,
+          ),
+      ),
+    };
   }
 
   async refresh(): Promise<void> {

@@ -57,35 +57,35 @@ export type Zo = {
       type: {
         defined: "&str";
       };
-      value: '"DEBUG"';
+      value: "\"DEBUG\"";
     },
     {
       name: "NOOPS_LOG";
       type: {
         defined: "&str";
       };
-      value: '"NOOPS"';
+      value: "\"NOOPS\"";
     },
     {
       name: "LIQ_LOG";
       type: {
         defined: "&str";
       };
-      value: '"LIQ"';
+      value: "\"LIQ\"";
     },
     {
       name: "BANKRUPTCY_LOG";
       type: {
         defined: "&str";
       };
-      value: '"BANK"';
+      value: "\"BANK\"";
     },
     {
       name: "BORROW_LOG";
       type: {
         defined: "&str";
       };
-      value: '"BOR"';
+      value: "\"BOR\"";
     },
   ];
   instructions: [
@@ -2903,35 +2903,35 @@ export const IDL: Zo = {
       type: {
         defined: "&str",
       },
-      value: '"DEBUG"',
+      value: "\"DEBUG\"",
     },
     {
       name: "NOOPS_LOG",
       type: {
         defined: "&str",
       },
-      value: '"NOOPS"',
+      value: "\"NOOPS\"",
     },
     {
       name: "LIQ_LOG",
       type: {
         defined: "&str",
       },
-      value: '"LIQ"',
+      value: "\"LIQ\"",
     },
     {
       name: "BANKRUPTCY_LOG",
       type: {
         defined: "&str",
       },
-      value: '"BANK"',
+      value: "\"BANK\"",
     },
     {
       name: "BORROW_LOG",
       type: {
         defined: "&str",
       },
-      value: '"BOR"',
+      value: "\"BOR\"",
     },
   ],
   instructions: [
