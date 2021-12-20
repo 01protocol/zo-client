@@ -1,6 +1,6 @@
 import { PublicKey } from "@solana/web3.js";
 import { Program } from "@project-serum/anchor";
-import { Zo } from "../types";
+import { Zo, Wallet } from "../types";
 
 /**
  * Base implementation for account classes.
@@ -24,7 +24,7 @@ export default abstract class BaseAccount<T> {
     return this.provider.connection;
   }
 
-  get wallet() {
+  get wallet(): Wallet {
     return this.provider.wallet;
   }
 
