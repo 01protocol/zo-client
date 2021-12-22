@@ -146,7 +146,8 @@ for (const order of asks) {
 
 // Cancel an order
 const orderIsLong = true;
-await margin.cancelPerpOrder(MARKET_SYMBOL, orderIsLong);
+const orderId = orders[0]; // or whichever order that is being cancelled
+await margin.cancelPerpOrder(MARKET_SYMBOL, orderIsLong, orderId);
 
 // Settle funds
 await margin.settleFunds(MARKET_SYMBOL);
