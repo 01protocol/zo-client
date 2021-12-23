@@ -77,7 +77,7 @@ export default class Cache extends BaseAccount<Schema> {
       oracles: data.oracles
         .filter((c) => !c.symbol.data.every((x) => x === 0))
         .map((c) => {
-          const decimals = c.baseDecimals - c.quoteDecimals;
+          const decimals = c.quoteDecimals - c.baseDecimals;
           return {
             ...c,
             symbol: loadSymbol(c.symbol),
