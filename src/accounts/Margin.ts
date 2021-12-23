@@ -352,7 +352,7 @@ export default class Margin extends BaseAccount<Schema> {
     const maxQuoteQtyBn = market.quoteSizeNumberToSmoll(maxQuoteQty);
 
     let ooKey;
-    let oo = await this.getOpenOrdersInfoBySymbol(symbol);
+    const oo = await this.getOpenOrdersInfoBySymbol(symbol);
     let createOo;
     if (!oo) {
       ooKey = (await this.getOpenOrdersKeyBySymbol(symbol))[0];
@@ -485,6 +485,14 @@ export default class Margin extends BaseAccount<Schema> {
           `  market wants: base=${market.baseMintAddress}, quote=${market.quoteMintAddress}`,
       );
     }
+    
+    const vaultSigner: PublicKey = await PublicKey.createProgramAddress(
+      [
+        market.address.toBuffer(),
+        market.decoded.vaultSignerNonce.toArrayLike(Buffer, "le", 8),
+      ],
+      SERUM_SPOT_PROGRAM_ID,
+    );
 
     return await this.program.rpc.swap(buy, allowBorrow, amount, minRate, {
       accounts: {
@@ -507,7 +515,7 @@ export default class Margin extends BaseAccount<Schema> {
         serumAsks: market.asksAddress,
         serumCoinVault: market.decoded.baseVault,
         serumPcVault: market.decoded.quoteVault,
-        serumVaultSigner: market.decoded.vaultSignerNonce,
+        serumVaultSigner: vaultSigner,
         srmSpotProgram: SERUM_SPOT_PROGRAM_ID,
         srmSwapProgram: SERUM_SWAP_PROGRAM_ID,
         tokenProgram: TOKEN_PROGRAM_ID,
