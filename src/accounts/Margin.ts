@@ -4,6 +4,7 @@ import {
   PublicKey,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import { Program } from "@project-serum/anchor";
 import { Market as SerumMarket } from "@project-serum/serum";
@@ -226,24 +227,19 @@ export default class Margin extends BaseAccount<Schema> {
    * @param amount The amount of tokens to deposit, in native quantity. (ex: lamports for SOL, satoshis for BTC)
    * @param repayOnly If true, will only deposit up to the amount borrowed. If true, amount parameter can be set to an arbitrarily large number to ensure that any outstanding borrow is fully repaid.
    */
-  async deposit(mint: PublicKey, amount: BN, repayOnly: boolean) {
-    const vault = this.state.getVaultCollateralByMint(mint)[0];
+  async deposit(mint: PublicKey, amount: number, repayOnly: boolean) {
+    const [vault, collateralInfo] = this.state.getVaultCollateralByMint(mint);
     const associatedTokenAccount = await findAssociatedTokenAddress(
       this.program.provider.wallet.publicKey,
       mint,
     );
-    return await this.program.rpc.deposit(repayOnly, amount, {
-      accounts: {
-        state: this.state.pubkey,
-        stateSigner: this.state.signer,
-        cache: this.state.cache.pubkey,
-        authority: this.wallet.publicKey,
-        margin: this.pubkey,
-        tokenAccount: associatedTokenAccount,
-        vault,
-        tokenProgram: TOKEN_PROGRAM_ID,
-      },
-    });
+    const amountSmoll = new Num(amount, collateralInfo.decimals).n;
+    return await this.depositRaw(
+      associatedTokenAccount,
+      vault,
+      amountSmoll,
+      repayOnly,
+    );
   }
 
   /**
@@ -252,12 +248,14 @@ export default class Margin extends BaseAccount<Schema> {
    * @param vault The state vault where tokens will be withdrawn from.
    * @param amount The amount of tokens to withdraw, in native quantity. (ex: lamports for SOL, satoshis for BTC)
    * @param allowBorrow If false, will only be able to withdraw up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully withdrawn.
+   * @param preInstructions instructions executed before withdrawal
    */
   async withdrawRaw(
     tokenAccount: PublicKey,
     vault: PublicKey,
     amount: BN,
     allowBorrow: boolean,
+    preInstructions: TransactionInstruction[] | undefined,
   ) {
     return await this.program.rpc.withdraw(allowBorrow, amount, {
       accounts: {
@@ -271,6 +269,7 @@ export default class Margin extends BaseAccount<Schema> {
         vault,
         tokenProgram: TOKEN_PROGRAM_ID,
       },
+      preInstructions: preInstructions,
     });
   }
 
@@ -280,53 +279,38 @@ export default class Margin extends BaseAccount<Schema> {
    * @param amount The amount of tokens to withdraw, in native quantity. (ex: lamports for SOL, satoshis for BTC)
    * @param allowBorrow If false, will only be able to withdraw up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully withdrawn.
    */
-  async withdraw(mint: PublicKey, amount: BN, allowBorrow: boolean) {
-    const vault = this.state.getVaultCollateralByMint(mint)[0];
+  async withdraw(mint: PublicKey, amount: number, allowBorrow: boolean) {
+    const [vault, collateralInfo] = this.state.getVaultCollateralByMint(mint);
     const associatedTokenAccount = await findAssociatedTokenAddress(
       this.program.provider.wallet.publicKey,
       mint,
     );
-
+    const amountSmoll = new Num(amount, collateralInfo.decimals).n;
+    //optimize: can be cached
+    let associatedTokenAccountExists = false;
     if (
       await this.program.provider.connection.getAccountInfo(
         associatedTokenAccount,
       )
     ) {
-      return await this.program.rpc.withdraw(allowBorrow, amount, {
-        accounts: {
-          state: this.state.pubkey,
-          stateSigner: this.state.signer,
-          cache: this.state.cache.pubkey,
-          authority: this.wallet.publicKey,
-          margin: this.pubkey,
-          control: this.data.control,
-          tokenAccount: associatedTokenAccount,
-          vault,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        },
-      });
-    } else {
-      return await this.program.rpc.withdraw(allowBorrow, amount, {
-        accounts: {
-          state: this.state.pubkey,
-          stateSigner: this.state.signer,
-          cache: this.state.cache.pubkey,
-          authority: this.wallet.publicKey,
-          margin: this.pubkey,
-          control: this.data.control,
-          tokenAccount: associatedTokenAccount,
-          vault,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        },
-        preInstructions: [
-          getAssociatedTokenTransactionWithPayer(
-            mint,
-            associatedTokenAccount,
-            this.program.provider.wallet.publicKey,
-          ),
-        ],
-      });
+      associatedTokenAccountExists = true;
     }
+
+    return await this.withdrawRaw(
+      associatedTokenAccount,
+      vault,
+      amountSmoll,
+      allowBorrow,
+      associatedTokenAccountExists
+        ? undefined
+        : [
+            getAssociatedTokenTransactionWithPayer(
+              mint,
+              associatedTokenAccount,
+              this.program.provider.wallet.publicKey,
+            ),
+          ],
+    );
   }
 
   /**
