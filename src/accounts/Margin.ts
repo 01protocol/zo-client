@@ -19,10 +19,12 @@ import {
   CONTROL_ACCOUNT_SIZE,
   SERUM_SPOT_PROGRAM_ID,
   SERUM_SWAP_PROGRAM_ID,
+  USDC_DECIMALS,
   ZO_DEX_PROGRAM_ID,
 } from "../config";
 import Decimal from "decimal.js";
 import Cache from "./Cache";
+import { getMintDecimals } from "@project-serum/serum/lib/market";
 
 interface Schema extends Omit<MarginSchema, "collateral"> {
   /** The deposit amount divided by the entry supply or borrow multiplier */
@@ -436,10 +438,12 @@ export default class Margin extends BaseAccount<Schema> {
 
   /**
    * Swaps between USDC and a given Token B (or vice versa) on the Serum Spot DEX. This is a direct IOC trade that instantly settles.
-   * Note that the token B needs to be swappable, as enabled by the program.
-   * @param buy If true, the swapping USDC for Token B. If false, the swapping Token B for USDC.
+   * Note that the token B needs to be swappable, as enabled by the 01 program.
+   * @param buy If true, then swapping USDC for Token B. If false, the swapping Token B for USDC.
    * @param tokenMint The mint public key of Token B.
-   * @param amount The native amount of tokens to swap *from*. If buy, this is USDC. If not buy, this is Token B.
+   * @param fromSize The amount of tokens to swap *from*. If buy, this is USDC. If not buy, this is Token B. This is in big units (ex: 0.5 BTC or 1.5 SOL, not satoshis nor lamports).
+   * @param toSize The amount of tokens to swap *to*. If buy, this is Token B. If not buy, this is USDC. This is in big units (ex: 0.5 BTC or 1.5 SOL, not satoshis nor lamports).
+   * @param slippage The tolerance for the amount of tokens received changing from its expected toSize. Number between 0 - 1, if 1, then max slippage.
    * @param minRate The exchange rate to use when determining whether the transaction should abort.
    * @param allowBorrow If false, will only be able to swap up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully swapped.
    * @param serumMarket The market public key of the Serum Spot DEX.
@@ -447,15 +451,17 @@ export default class Margin extends BaseAccount<Schema> {
   async swap({
     buy,
     tokenMint,
-    amount,
-    minRate,
+    fromSize,
+    toSize,
+    slippage,
     allowBorrow,
     serumMarket,
   }: Readonly<{
     buy: boolean;
     tokenMint: PublicKey;
-    amount: BN;
-    minRate: BN;
+    fromSize: number;
+    toSize: number;
+    slippage: number;
     allowBorrow: boolean;
     serumMarket: PublicKey;
   }>): Promise<TransactionId> {
@@ -463,6 +469,10 @@ export default class Margin extends BaseAccount<Schema> {
       throw new Error(
         `<State ${this.state.pubkey.toString()}> does not have a base collateral`,
       );
+    }
+
+    if (slippage > 1 || slippage < 0) {
+      throw new Error("Invalid slippage input, must be between 0 and 1");
     }
 
     const market = await SerumMarket.load(
@@ -474,6 +484,19 @@ export default class Margin extends BaseAccount<Schema> {
 
     const colIdx = this.state.getCollateralIndex(tokenMint);
     const stateQuoteMint = this.state.data.collaterals[0]!.mint;
+    // TODO: optimize below to avoid fetching
+    const baseDecimals = await getMintDecimals(this.connection, tokenMint);
+
+    const amount = buy
+      ? new BN(fromSize * 10 ** USDC_DECIMALS)
+      : new BN(fromSize * 10 ** baseDecimals);
+    const minRate =
+      slippage === 1
+        ? new BN(1)
+        : new Num(
+            (toSize * (1 - slippage)) / fromSize,
+            buy ? baseDecimals : USDC_DECIMALS,
+          ).n;
 
     if (
       !market.baseMintAddress.equals(tokenMint) ||
@@ -485,7 +508,7 @@ export default class Margin extends BaseAccount<Schema> {
           `  market wants: base=${market.baseMintAddress}, quote=${market.quoteMintAddress}`,
       );
     }
-    
+
     const vaultSigner: PublicKey = await PublicKey.createProgramAddress(
       [
         market.address.toBuffer(),
@@ -517,7 +540,6 @@ export default class Margin extends BaseAccount<Schema> {
         serumPcVault: market.decoded.quoteVault,
         serumVaultSigner: vaultSigner,
         srmSpotProgram: SERUM_SPOT_PROGRAM_ID,
-        srmSwapProgram: SERUM_SWAP_PROGRAM_ID,
         tokenProgram: TOKEN_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
       },

@@ -7,6 +7,7 @@ export const CONTROL_ACCOUNT_SIZE = 8 + 4482;
 
 // == PARAMS ==
 export const ZO_TAKER_FEE = 0.001; // 10bps
+export const USDC_DECIMALS = 6;
 
 // == 01 PROGRAM IDS ==
 export const ZERO_ONE_PROGRAM_ID = new PublicKey(
