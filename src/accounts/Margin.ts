@@ -276,16 +276,16 @@ export default class Margin extends BaseAccount<Schema> {
   /**
    * Withdraws a given amount of collateral from the Margin account to a specified token account. If withdrawing more than the amount deposited, then account will be borrowing.
    * @param mint of the collateral being withdrawn
-   * @param amount The amount of tokens to withdraw, in native quantity. (ex: lamports for SOL, satoshis for BTC)
+   * @param size The amount of tokens to withdraw, in big units. (ex: 1.5 SOL, or 0.5 BTC)
    * @param allowBorrow If false, will only be able to withdraw up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully withdrawn.
    */
-  async withdraw(mint: PublicKey, amount: number, allowBorrow: boolean) {
+  async withdraw(mint: PublicKey, size: number, allowBorrow: boolean) {
     const [vault, collateralInfo] = this.state.getVaultCollateralByMint(mint);
     const associatedTokenAccount = await findAssociatedTokenAddress(
       this.program.provider.wallet.publicKey,
       mint,
     );
-    const amountSmoll = new Num(amount, collateralInfo.decimals).n;
+    const amountSmoll = new Num(size, collateralInfo.decimals).n;
     //optimize: can be cached
     let associatedTokenAccountExists = false;
     if (
