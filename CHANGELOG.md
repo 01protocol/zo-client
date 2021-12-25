@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Withdraw & deposit now accept mint and deposit/withdraw directly to/from associated token account
 - Associated token account is created before withdrawal if such account does not exist
 - Old implementations of deposit / withdrawals are repurposed as depositRaw/ withdrawRaw in case users want to deposit/withdraw to/from a specific account
+- Swap is now simplified. Takes in big units (like SOL and BTC) instead of smol units (like satoshis and lamports). Accepts a slippage parameter.
 
 ## [0.1.0] - 2021-12-16
 
