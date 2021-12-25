@@ -10,6 +10,11 @@ export const ZO_FUTURE_TAKER_FEE = 0.001; // 10bps
 export const ZO_OPTION_TAKER_FEE = 0.001; // temporary value, not actual
 export const USDC_DECIMALS = 6;
 
+// == 01 CONSTANTS ==
+export const ZO_STATE_KEY = new PublicKey(
+  "HAdeMzG1ZuzhWnt26iyggLhYUen3YosXiD5sgDXJoNDY",
+);
+
 // == 01 PROGRAM IDS ==
 export const ZERO_ONE_PROGRAM_ID = new PublicKey(
   "DuSPvazsfthvWRuJ8TUs984VXCeUfJ1qbzd8NwkRLEpd",

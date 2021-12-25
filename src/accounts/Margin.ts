@@ -74,6 +74,11 @@ export default class Margin extends BaseAccount<Schema> {
     return new this(program, key, data, control, st);
   }
 
+  /**
+   * Creates a margin account.
+   * @param program The Zo Program
+   * @param st The Zo State object, overrides the default config.
+   */
   static async create(program: Program<Zo>, st: State): Promise<Margin> {
     const conn = program.provider.connection;
     const [[key, nonce], control, controlLamports] = await Promise.all([
@@ -156,6 +161,9 @@ export default class Margin extends BaseAccount<Schema> {
     };
   }
 
+  /**
+   * Refreshes the data on the Margin, state, cache and control accounts.
+   */
   async refresh(): Promise<void> {
     [this.data] = await Promise.all([
       Margin.fetch(this.program, this.pubkey, this.state, this.state.cache),
@@ -199,7 +207,7 @@ export default class Margin extends BaseAccount<Schema> {
   }
 
   /**
-   * Deposits a given amount of collateral into the Margin account.
+   * Deposits a given amount of collateral into the Margin account. Raw implementation of the instruction.
    * @param tokenAccount The user's token account where tokens will be subtracted from.
    * @param vault The state vault where tokens will be deposited into.
    * @param amount The amount of tokens to deposit, in native quantity. (ex: lamports for SOL, satoshis for BTC)
@@ -248,6 +256,7 @@ export default class Margin extends BaseAccount<Schema> {
 
   /**
    * Withdraws a given amount of collateral from the Margin account to a specified token account. If withdrawing more than the amount deposited, then account will be borrowing.
+   * Raw implementation of the instruction.
    * @param tokenAccount The user's token account where tokens will be withdrawn to.
    * @param vault The state vault where tokens will be withdrawn from.
    * @param amount The amount of tokens to withdraw, in native quantity. (ex: lamports for SOL, satoshis for BTC)
@@ -566,7 +575,6 @@ export default class Margin extends BaseAccount<Schema> {
    * @param fromSize The amount of tokens to swap *from*. If buy, this is USDC. If not buy, this is Token B. This is in big units (ex: 0.5 BTC or 1.5 SOL, not satoshis nor lamports).
    * @param toSize The amount of tokens to swap *to*. In other words, the amount of expected to tokens. If buy, this is Token B. If not buy, this is USDC. This is in big units (ex: 0.5 BTC or 1.5 SOL, not satoshis nor lamports).
    * @param slippage The tolerance for the amount of tokens received changing from its expected toSize. Number between 0 - 1, if 1, then max slippage.
-   * @param minRate The exchange rate to use when determining whether the transaction should abort.
    * @param allowBorrow If false, will only be able to swap up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully swapped.
    * @param serumMarket The market public key of the Serum Spot DEX.
    */
@@ -670,7 +678,7 @@ export default class Margin extends BaseAccount<Schema> {
 
   /**
    * Settles unrealized funding and realized PnL into the margin account for a given market.
-   * @param symbol
+   * @param symbol Market symbol (ex: BTC-PERP).
    */
   async settleFunds(symbol: string) {
     const market = await this.state.getMarketBySymbol(symbol);

@@ -19,14 +19,19 @@ curl -XPOST 'https://devnet-faucet.01.xyz?owner=<WALLET>&mint=<MINT>&amount=<AMO
 ```
 
 ## Program
-|       | Pubkey |
-| ----- | ------ |
-| State | HAdeMzG1ZuzhWnt26iyggLhYUen3YosXiD5sgDXJoNDY |
+|       | Cluster | Pubkey                                       |
+| ----- |---------|----------------------------------------------|
+| State | Devnet  | HAdeMzG1ZuzhWnt26iyggLhYUen3YosXiD5sgDXJoNDY |
 
-## Markets
+## Derivatives Markets
 | Symbol      | Cluster | Base Lots | Quote Lots |
 | ----------- | ------- | --------- | ---------- |
 | BTC-PERP    | Devnet  | 100       | 10         |
+
+## Spot Swap Markets 
+| Symbol   | Cluster | Serum Market Key                             |
+|----------| ------- |----------------------------------------------|
+| BTC-USDC | Devnet  | 9vNzQmmG7c3aXuTdKKULQW2oGrYsfGZ1uRsMtgZ2APJF |
 
 ## Collaterals 
 | Symbol      | Cluster | Mint                                         | Decimals |
@@ -48,12 +53,13 @@ The following example shows how to run basic setup instructions.
 const program = anchor.workspace.Zo as Program<Zo>;
 
 // Load the state
-let state: State = await State.load(program, stateKey);
+const state: State = await State.load(program, stateKey);
 
-// Create a margin account (which also creates the control account)
-let margin: Margin = await Margin.create(program, state);
+// Create a margin account (which also creates a control account)
+const margin: Margin = await Margin.create(program, state);
 
 // Create a PerpOpenOrders account (to be created for every market)
+// This step is optional. Placing an order on a new market will also create the account automatically.
 const MARKET_SYMBOL = "BTC-PERP";
 await margin.createPerpOpenOrders(MARKET_SYMBOL);
 ```
@@ -64,34 +70,29 @@ The following example shows how to deposit, withdraw and swap from a margin acco
 
 ```typescript
 // Deposit
-let depositAmount = new BN(50 * 10 ** USDC_DECIMALS); // $50
-let repayOnly = false;
-const stateUsdcVault = state.getVaultCollateralByMint(USDC_MINT)[0];
-await margin.deposit(usdcTokenAcc, stateUsdcVault, depositAmount, repayOnly);
+const depositSize = 50_250.25; // $50,250.25 USDC
+const repayOnly = false;
+await margin.deposit(usdcMintKey, size, repayOnly);
 
 // Withdraw
-let withdrawAmount = new BN(140 * 10 ** USDC_DECIMALS);
-let allowBorrow = false;
-await margin.withdraw(
-  usdcTokenAcc,
-  stateUsdcVault,
-  withdrawAmount,
-  allowBorrow,
-);
+const withdrawSize = 0.001; // 0.001 BTC
+const allowWithdrawBorrow = false;
+await margin.withdraw(btcMintKey, withdrawSize, allowWithdrawBorrow);
 
 // Swap USDC to Token B (or vice versa)
-let buy = true;
-let amount = 20 * 10 ** USDC_DECIMALS;
-let minRate = new BN(1);
-let allowSwapBorrow = false;
-
+const buy = true;
+const fromSize = 50_000; // $50,000.00 USDC
+const toSize = 1; // 1 BTC
+const slippage = 0.1; // 10% slippage tolerance
+const allowSwapBorrow = false;
 await margin.swap({
   buy,
-  tokenMint: TOKEN_B_MINT,
-  amount,
-  minRate,
+  tokenMint: btcMintKey,
+  fromSize,
+  toSize,
+  slippage,
   allowBorrow: allowSwapBorrow,
-  serumMarket: SERUM_SPOT_MARKET,
+  serumMarket: btcUsdcSerumMarketKey,
 });
 ```
 
@@ -100,19 +101,20 @@ await margin.swap({
 The following example shows to perform trading actions.
 
 ```typescript
-// Place an order
-let price = 50_000;
-let size = 0.004;
-let isLong = true;
+// Place an order (automatically creates an openOrders account for you if placing on a new market)
+const price = 50_000; // $50,000.00 per BTC
+const size = 0.004; // 0.004 BTC
+const isLong = true;
+const clientId = 12; // optional clientId to uniquely tag orders (used in CancelPerpOrderByClientId)
 const orderType: OrderType = { limit: {} };
 
 await margin.placePerpOrder({
   symbol: MARKET_SYMBOL,
-  orderType: orderType,
+  orderType,
   isLong,
-  limitPrice,
-  maxBaseQty,
-  maxQuoteQty,
+  price,
+  size,
+  clientId // optional arg
 });
 
 // Fetch Market
@@ -149,10 +151,14 @@ for (const order of asks) {
   );
 }
 
-// Cancel an order
+// Cancel an order by order id
 const orderIsLong = true;
 const orderId = orders[0]; // or whichever order that is being cancelled
 await margin.cancelPerpOrder(MARKET_SYMBOL, orderIsLong, orderId);
+
+// Cancel an order by client id
+await margin.cancelPerpOrderByClientId(MARKET_SYMBOL, clientId);
+
 
 // Settle funds
 await margin.settleFunds(MARKET_SYMBOL);
