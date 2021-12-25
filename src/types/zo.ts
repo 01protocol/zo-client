@@ -401,6 +401,10 @@ export type Zo = {
         {
           "name": "limit",
           "type": "u16"
+        },
+        {
+          "name": "clientId",
+          "type": "u64"
         }
       ]
     },
@@ -471,6 +475,72 @@ export type Zo = {
         {
           "name": "isLong",
           "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "cancelPerpOrderByClientId",
+      "accounts": [
+        {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "control",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "clientId",
+          "type": "u64"
         }
       ]
     },
@@ -2463,6 +2533,10 @@ export const IDL: Zo = {
         {
           "name": "limit",
           "type": "u16"
+        },
+        {
+          "name": "clientId",
+          "type": "u64"
         }
       ]
     },
@@ -2533,6 +2607,72 @@ export const IDL: Zo = {
         {
           "name": "isLong",
           "type": "bool"
+        }
+      ]
+    },
+    {
+      "name": "cancelPerpOrderByClientId",
+      "accounts": [
+        {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "control",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "clientId",
+          "type": "u64"
         }
       ]
     },
