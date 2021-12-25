@@ -950,11 +950,6 @@ export type Zo = {
           isSigner: false;
         },
         {
-          name: "srmSwapProgram";
-          isMut: false;
-          isSigner: false;
-        },
-        {
           name: "tokenProgram";
           isMut: false;
           isSigner: false;
@@ -2987,11 +2982,6 @@ export const IDL: Zo = {
         },
         {
           name: "srmSpotProgram",
-          isMut: false,
-          isSigner: false,
-        },
-        {
-          name: "srmSwapProgram",
           isMut: false,
           isSigner: false,
         },

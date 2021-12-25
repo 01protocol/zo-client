@@ -8,6 +8,7 @@ import {
 } from "@solana/web3.js";
 import {
   AccountLayout,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
   MintInfo,
   MintLayout,
   Token,
@@ -19,7 +20,12 @@ import BN from "bn.js";
 import Decimal from "decimal.js";
 import { blob, struct, u8 } from "buffer-layout";
 import { Zo } from "../types";
-import { IDL, WRAPPED_SOL_MINT, ZERO_ONE_PROGRAM_ID } from "../config";
+import {
+  IDL,
+  RENT_PROGRAM_ID,
+  WRAPPED_SOL_MINT,
+  ZERO_ONE_PROGRAM_ID,
+} from "../config";
 
 export * from "./rpc";
 export * from "./units";
@@ -186,6 +192,72 @@ export async function createTokenAccount(
   tx.add(...(await createTokenAccountIxs(vault, provider, mint, owner)));
   await provider.send(tx, [vault]);
   return vault.publicKey;
+}
+
+export async function findAssociatedTokenAddress(
+  walletAddress: PublicKey,
+  tokenMintAddress: PublicKey,
+): Promise<PublicKey> {
+  return (
+    await PublicKey.findProgramAddress(
+      [
+        walletAddress.toBuffer(),
+        TOKEN_PROGRAM_ID.toBuffer(),
+        tokenMintAddress.toBuffer(),
+      ],
+      ASSOCIATED_TOKEN_PROGRAM_ID,
+    )
+  )[0];
+}
+
+export function getAssociatedTokenTransactionWithPayer(
+  tokenMintAddress: PublicKey,
+  associatedTokenAddress: PublicKey,
+  owner: PublicKey,
+) {
+  const keys = [
+    {
+      pubkey: owner,
+      isSigner: true,
+      isWritable: true,
+    },
+    {
+      pubkey: associatedTokenAddress,
+      isSigner: false,
+      isWritable: true,
+    },
+    {
+      pubkey: owner,
+      isSigner: false,
+      isWritable: false,
+    },
+    {
+      pubkey: tokenMintAddress,
+      isSigner: false,
+      isWritable: false,
+    },
+    {
+      pubkey: SystemProgram.programId,
+      isSigner: false,
+      isWritable: false,
+    },
+    {
+      pubkey: TOKEN_PROGRAM_ID,
+      isSigner: false,
+      isWritable: false,
+    },
+    {
+      pubkey: RENT_PROGRAM_ID,
+      isSigner: false,
+      isWritable: false,
+    },
+  ];
+
+  return new TransactionInstruction({
+    keys,
+    programId: ASSOCIATED_TOKEN_PROGRAM_ID,
+    data: Buffer.from([]),
+  });
 }
 
 export async function mintTo(

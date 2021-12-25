@@ -13,12 +13,15 @@ import BaseAccount from "./BaseAccount";
 import State from "./State";
 import Control from "./Control";
 import Num from "../Num";
-import { loadWI80F48 } from "../utils";
+import {
+  findAssociatedTokenAddress,
+  getAssociatedTokenTransactionWithPayer,
+  loadWI80F48,
+} from "../utils";
 import { MarginSchema, OrderType, TransactionId, Zo } from "../types";
 import {
   CONTROL_ACCOUNT_SIZE,
   SERUM_SPOT_PROGRAM_ID,
-  SERUM_SWAP_PROGRAM_ID,
   ZO_DEX_PROGRAM_ID,
 } from "../config";
 import Decimal from "decimal.js";
@@ -197,7 +200,7 @@ export default class Margin extends BaseAccount<Schema> {
    * @param amount The amount of tokens to deposit, in native quantity. (ex: lamports for SOL, satoshis for BTC)
    * @param repayOnly If true, will only deposit up to the amount borrowed. If true, amount parameter can be set to an arbitrarily large number to ensure that any outstanding borrow is fully repaid.
    */
-  async deposit(
+  async depositRaw(
     tokenAccount: PublicKey,
     vault: PublicKey,
     amount: BN,
@@ -218,13 +221,39 @@ export default class Margin extends BaseAccount<Schema> {
   }
 
   /**
-   * Withdraws a given amount of collateral from the Margin account. If withdrawing more than the amount deposited, then account will be borrowing.
+   * Deposits a given amount of collateral into the Margin account from the associated token account.
+   * @param mint Mint of the collateral being deposited.
+   * @param amount The amount of tokens to deposit, in native quantity. (ex: lamports for SOL, satoshis for BTC)
+   * @param repayOnly If true, will only deposit up to the amount borrowed. If true, amount parameter can be set to an arbitrarily large number to ensure that any outstanding borrow is fully repaid.
+   */
+  async deposit(mint: PublicKey, amount: BN, repayOnly: boolean) {
+    const vault = this.state.getVaultCollateralByMint(mint)[0];
+    const associatedTokenAccount = await findAssociatedTokenAddress(
+      this.program.provider.wallet.publicKey,
+      mint,
+    );
+    return await this.program.rpc.deposit(repayOnly, amount, {
+      accounts: {
+        state: this.state.pubkey,
+        stateSigner: this.state.signer,
+        cache: this.state.cache.pubkey,
+        authority: this.wallet.publicKey,
+        margin: this.pubkey,
+        tokenAccount: associatedTokenAccount,
+        vault,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      },
+    });
+  }
+
+  /**
+   * Withdraws a given amount of collateral from the Margin account to a specified token account. If withdrawing more than the amount deposited, then account will be borrowing.
    * @param tokenAccount The user's token account where tokens will be withdrawn to.
    * @param vault The state vault where tokens will be withdrawn from.
    * @param amount The amount of tokens to withdraw, in native quantity. (ex: lamports for SOL, satoshis for BTC)
    * @param allowBorrow If false, will only be able to withdraw up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully withdrawn.
    */
-  async withdraw(
+  async withdrawRaw(
     tokenAccount: PublicKey,
     vault: PublicKey,
     amount: BN,
@@ -243,6 +272,61 @@ export default class Margin extends BaseAccount<Schema> {
         tokenProgram: TOKEN_PROGRAM_ID,
       },
     });
+  }
+
+  /**
+   * Withdraws a given amount of collateral from the Margin account to a specified token account. If withdrawing more than the amount deposited, then account will be borrowing.
+   * @param mint of the collateral being withdrawn
+   * @param amount The amount of tokens to withdraw, in native quantity. (ex: lamports for SOL, satoshis for BTC)
+   * @param allowBorrow If false, will only be able to withdraw up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully withdrawn.
+   */
+  async withdraw(mint: PublicKey, amount: BN, allowBorrow: boolean) {
+    const vault = this.state.getVaultCollateralByMint(mint)[0];
+    const associatedTokenAccount = await findAssociatedTokenAddress(
+      this.program.provider.wallet.publicKey,
+      mint,
+    );
+
+    if (
+      await this.program.provider.connection.getAccountInfo(
+        associatedTokenAccount,
+      )
+    ) {
+      return await this.program.rpc.withdraw(allowBorrow, amount, {
+        accounts: {
+          state: this.state.pubkey,
+          stateSigner: this.state.signer,
+          cache: this.state.cache.pubkey,
+          authority: this.wallet.publicKey,
+          margin: this.pubkey,
+          control: this.data.control,
+          tokenAccount: associatedTokenAccount,
+          vault,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        },
+      });
+    } else {
+      return await this.program.rpc.withdraw(allowBorrow, amount, {
+        accounts: {
+          state: this.state.pubkey,
+          stateSigner: this.state.signer,
+          cache: this.state.cache.pubkey,
+          authority: this.wallet.publicKey,
+          margin: this.pubkey,
+          control: this.data.control,
+          tokenAccount: associatedTokenAccount,
+          vault,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        },
+        preInstructions: [
+          getAssociatedTokenTransactionWithPayer(
+            mint,
+            associatedTokenAccount,
+            this.program.provider.wallet.publicKey,
+          ),
+        ],
+      });
+    }
   }
 
   /**
@@ -485,7 +569,7 @@ export default class Margin extends BaseAccount<Schema> {
           `  market wants: base=${market.baseMintAddress}, quote=${market.quoteMintAddress}`,
       );
     }
-    
+
     const vaultSigner: PublicKey = await PublicKey.createProgramAddress(
       [
         market.address.toBuffer(),
@@ -517,7 +601,6 @@ export default class Margin extends BaseAccount<Schema> {
         serumPcVault: market.decoded.quoteVault,
         serumVaultSigner: vaultSigner,
         srmSpotProgram: SERUM_SPOT_PROGRAM_ID,
-        srmSwapProgram: SERUM_SWAP_PROGRAM_ID,
         tokenProgram: TOKEN_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
       },
