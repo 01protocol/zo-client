@@ -340,6 +340,7 @@ export default class Margin extends BaseAccount<Schema> {
   }
 
   /**
+   * Raw implementation of the instruction rpc call.
    * Places an order on the orderbook for a given market, using lot sizes for limit and base quantity, and native units for quote quantity.
    * Assumes an open orders account has been created already.
    * @param symbol The market symbol. Ex: ("BTC-PERP")
@@ -358,6 +359,7 @@ export default class Margin extends BaseAccount<Schema> {
     maxBaseQty,
     maxQuoteQty,
     limit,
+    clientId,
   }: Readonly<{
     symbol: string;
     orderType: OrderType;
@@ -366,6 +368,7 @@ export default class Margin extends BaseAccount<Schema> {
     maxBaseQty: BN;
     maxQuoteQty: BN;
     limit?: number;
+    clientId?: BN;
   }>): Promise<TransactionId> {
     const market = await this.state.getMarketBySymbol(symbol);
     const oo = await this.getOpenOrdersInfoBySymbol(symbol);
@@ -377,6 +380,7 @@ export default class Margin extends BaseAccount<Schema> {
       maxQuoteQty,
       orderType,
       limit ?? 10,
+      clientId ?? new BN(0),
       {
         accounts: {
           state: this.state.pubkey,
@@ -406,6 +410,7 @@ export default class Margin extends BaseAccount<Schema> {
    * @param price The limit price in big quote units per big base units. Ex: (50,000 USD/SOL)
    * @param size The maximum amount of big base units to buy or sell.
    * @param limit If this order is taking, the limit sets the number of maker orders the fill will go through, until stopping and posting. If running into compute unit issues, then set this number lower.
+   * @param clientId Used to tag an order with a unique id, which can be used to cancel this order through cancelPerpOrderByClientId. For optimal use, make sure all ids for every order is unique.
    */
   async placePerpOrder({
     symbol,
@@ -414,6 +419,7 @@ export default class Margin extends BaseAccount<Schema> {
     price,
     size,
     limit,
+    clientId,
   }: Readonly<{
     symbol: string;
     orderType: OrderType;
@@ -421,6 +427,7 @@ export default class Margin extends BaseAccount<Schema> {
     price: number;
     size: number;
     limit?: number;
+    clientId?: number;
   }>): Promise<TransactionId> {
     const market = await this.state.getMarketBySymbol(symbol);
     const limitPriceBn = market.priceNumberToLots(price);
@@ -458,6 +465,7 @@ export default class Margin extends BaseAccount<Schema> {
       maxQuoteQtyBn,
       orderType,
       limit ?? 10,
+      new BN(clientId ?? 0),
       {
         accounts: {
           state: this.state.pubkey,
@@ -498,7 +506,7 @@ export default class Margin extends BaseAccount<Schema> {
   }
 
   /**
-   * Cancels an order on the orderbook for a given market.
+   * Cancels an order on the orderbook for a given market by order id.
    * @param symbol The market symbol. Ex: ("BTC-PERP")
    * @param isLong True if the order being cancelled is a buy order, false if sell order.
    * @param orderId The order id of the order to cancel. To get order id, call loadOrdersForOwner through the market.
@@ -508,6 +516,32 @@ export default class Margin extends BaseAccount<Schema> {
     const oo = await this.getOpenOrdersInfoBySymbol(symbol);
 
     return await this.program.rpc.cancelPerpOrder(orderId, isLong, {
+      accounts: {
+        state: this.state.pubkey,
+        cache: this.state.cache.pubkey,
+        authority: this.wallet.publicKey,
+        margin: this.pubkey,
+        control: this.control.pubkey,
+        openOrders: oo!.key,
+        dexMarket: market.address,
+        marketBids: market.bidsAddress,
+        marketAsks: market.asksAddress,
+        eventQ: market.eventQueueAddress,
+        dexProgram: ZO_DEX_PROGRAM_ID,
+      },
+    });
+  }
+
+  /**
+   * Cancels an order on the orderbook for a given market that was pre-assigned a unique clientId.
+   * @param symbol The market symbol. Ex: ("BTC-PERP")
+   * @param clientId The client id that was assigned to the order when it was placed.
+   */
+  async cancelPerpOrderByClientId(symbol: string, clientId: number) {
+    const market = await this.state.getMarketBySymbol(symbol);
+    const oo = await this.getOpenOrdersInfoBySymbol(symbol);
+
+    return await this.program.rpc.cancelPerpOrderByClientId(new BN(clientId), {
       accounts: {
         state: this.state.pubkey,
         cache: this.state.cache.pubkey,
