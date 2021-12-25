@@ -224,16 +224,16 @@ export default class Margin extends BaseAccount<Schema> {
   /**
    * Deposits a given amount of collateral into the Margin account from the associated token account.
    * @param mint Mint of the collateral being deposited.
-   * @param amount The amount of tokens to deposit, in native quantity. (ex: lamports for SOL, satoshis for BTC)
+   * @param size The amount of tokens to deposit, in big units. (ex: 1.5 SOL, or 0.5 BTC)
    * @param repayOnly If true, will only deposit up to the amount borrowed. If true, amount parameter can be set to an arbitrarily large number to ensure that any outstanding borrow is fully repaid.
    */
-  async deposit(mint: PublicKey, amount: number, repayOnly: boolean) {
+  async deposit(mint: PublicKey, size: number, repayOnly: boolean) {
     const [vault, collateralInfo] = this.state.getVaultCollateralByMint(mint);
     const associatedTokenAccount = await findAssociatedTokenAddress(
       this.program.provider.wallet.publicKey,
       mint,
     );
-    const amountSmoll = new Num(amount, collateralInfo.decimals).n;
+    const amountSmoll = new Num(size, collateralInfo.decimals).n;
     return await this.depositRaw(
       associatedTokenAccount,
       vault,
