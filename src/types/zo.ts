@@ -397,6 +397,10 @@ export type Zo = {
           "type": {
             "defined": "OrderType"
           }
+        },
+        {
+          "name": "limit",
+          "type": "u16"
         }
       ]
     },
@@ -2455,6 +2459,10 @@ export const IDL: Zo = {
           "type": {
             "defined": "OrderType"
           }
+        },
+        {
+          "name": "limit",
+          "type": "u16"
         }
       ]
     },
