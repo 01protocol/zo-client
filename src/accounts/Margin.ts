@@ -4,6 +4,7 @@ import {
   PublicKey,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
+  TransactionInstruction,
 } from "@solana/web3.js";
 import { Program } from "@project-serum/anchor";
 import { Market as SerumMarket } from "@project-serum/serum";
@@ -13,12 +14,15 @@ import BaseAccount from "./BaseAccount";
 import State from "./State";
 import Control from "./Control";
 import Num from "../Num";
-import { loadWI80F48 } from "../utils";
+import {
+  findAssociatedTokenAddress,
+  getAssociatedTokenTransactionWithPayer,
+  loadWI80F48,
+} from "../utils";
 import { MarginSchema, OrderType, TransactionId, Zo } from "../types";
 import {
   CONTROL_ACCOUNT_SIZE,
   SERUM_SPOT_PROGRAM_ID,
-  SERUM_SWAP_PROGRAM_ID,
   USDC_DECIMALS,
   ZO_DEX_PROGRAM_ID,
 } from "../config";
@@ -199,7 +203,7 @@ export default class Margin extends BaseAccount<Schema> {
    * @param amount The amount of tokens to deposit, in native quantity. (ex: lamports for SOL, satoshis for BTC)
    * @param repayOnly If true, will only deposit up to the amount borrowed. If true, amount parameter can be set to an arbitrarily large number to ensure that any outstanding borrow is fully repaid.
    */
-  async deposit(
+  async depositRaw(
     tokenAccount: PublicKey,
     vault: PublicKey,
     amount: BN,
@@ -220,17 +224,40 @@ export default class Margin extends BaseAccount<Schema> {
   }
 
   /**
-   * Withdraws a given amount of collateral from the Margin account. If withdrawing more than the amount deposited, then account will be borrowing.
+   * Deposits a given amount of collateral into the Margin account from the associated token account.
+   * @param mint Mint of the collateral being deposited.
+   * @param size The amount of tokens to deposit, in big units. (ex: 1.5 SOL, or 0.5 BTC)
+   * @param repayOnly If true, will only deposit up to the amount borrowed. If true, amount parameter can be set to an arbitrarily large number to ensure that any outstanding borrow is fully repaid.
+   */
+  async deposit(mint: PublicKey, size: number, repayOnly: boolean) {
+    const [vault, collateralInfo] = this.state.getVaultCollateralByMint(mint);
+    const associatedTokenAccount = await findAssociatedTokenAddress(
+      this.program.provider.wallet.publicKey,
+      mint,
+    );
+    const amountSmoll = new Num(size, collateralInfo.decimals).n;
+    return await this.depositRaw(
+      associatedTokenAccount,
+      vault,
+      amountSmoll,
+      repayOnly,
+    );
+  }
+
+  /**
+   * Withdraws a given amount of collateral from the Margin account to a specified token account. If withdrawing more than the amount deposited, then account will be borrowing.
    * @param tokenAccount The user's token account where tokens will be withdrawn to.
    * @param vault The state vault where tokens will be withdrawn from.
    * @param amount The amount of tokens to withdraw, in native quantity. (ex: lamports for SOL, satoshis for BTC)
    * @param allowBorrow If false, will only be able to withdraw up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully withdrawn.
+   * @param preInstructions instructions executed before withdrawal
    */
-  async withdraw(
+  async withdrawRaw(
     tokenAccount: PublicKey,
     vault: PublicKey,
     amount: BN,
     allowBorrow: boolean,
+    preInstructions: TransactionInstruction[] | undefined,
   ) {
     return await this.program.rpc.withdraw(allowBorrow, amount, {
       accounts: {
@@ -244,7 +271,48 @@ export default class Margin extends BaseAccount<Schema> {
         vault,
         tokenProgram: TOKEN_PROGRAM_ID,
       },
+      preInstructions: preInstructions,
     });
+  }
+
+  /**
+   * Withdraws a given amount of collateral from the Margin account to a specified token account. If withdrawing more than the amount deposited, then account will be borrowing.
+   * @param mint of the collateral being withdrawn
+   * @param size The amount of tokens to withdraw, in big units. (ex: 1.5 SOL, or 0.5 BTC)
+   * @param allowBorrow If false, will only be able to withdraw up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully withdrawn.
+   */
+  async withdraw(mint: PublicKey, size: number, allowBorrow: boolean) {
+    const [vault, collateralInfo] = this.state.getVaultCollateralByMint(mint);
+    const associatedTokenAccount = await findAssociatedTokenAddress(
+      this.program.provider.wallet.publicKey,
+      mint,
+    );
+    const amountSmoll = new Num(size, collateralInfo.decimals).n;
+    //optimize: can be cached
+    let associatedTokenAccountExists = false;
+    if (
+      await this.program.provider.connection.getAccountInfo(
+        associatedTokenAccount,
+      )
+    ) {
+      associatedTokenAccountExists = true;
+    }
+
+    return await this.withdrawRaw(
+      associatedTokenAccount,
+      vault,
+      amountSmoll,
+      allowBorrow,
+      associatedTokenAccountExists
+        ? undefined
+        : [
+            getAssociatedTokenTransactionWithPayer(
+              mint,
+              associatedTokenAccount,
+              this.program.provider.wallet.publicKey,
+            ),
+          ],
+    );
   }
 
   /**
