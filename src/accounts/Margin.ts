@@ -25,6 +25,8 @@ import {
   SERUM_SPOT_PROGRAM_ID,
   USDC_DECIMALS,
   ZO_DEX_PROGRAM_ID,
+  ZO_FUTURE_TAKER_FEE,
+  ZO_OPTION_TAKER_FEE,
 } from "../config";
 import Decimal from "decimal.js";
 import Cache from "./Cache";
@@ -346,6 +348,7 @@ export default class Margin extends BaseAccount<Schema> {
    * @param limitPrice The limit price in base lots per quote lots.
    * @param maxBaseQty The maximum amount of base lots to buy or sell.
    * @param maxQuoteQty The maximum amount of native quote, including fees, to pay or receive.
+   * @param limit If this order is taking, the limit sets the number of maker orders the fill will go through, until stopping and posting. If running into compute unit issues, then set this number lower.
    */
   async placePerpOrderRaw({
     symbol,
@@ -354,6 +357,7 @@ export default class Margin extends BaseAccount<Schema> {
     limitPrice,
     maxBaseQty,
     maxQuoteQty,
+    limit,
   }: Readonly<{
     symbol: string;
     orderType: OrderType;
@@ -361,6 +365,7 @@ export default class Margin extends BaseAccount<Schema> {
     limitPrice: BN;
     maxBaseQty: BN;
     maxQuoteQty: BN;
+    limit?: number;
   }>): Promise<TransactionId> {
     const market = await this.state.getMarketBySymbol(symbol);
     const oo = await this.getOpenOrdersInfoBySymbol(symbol);
@@ -371,6 +376,7 @@ export default class Margin extends BaseAccount<Schema> {
       maxBaseQty,
       maxQuoteQty,
       orderType,
+      limit ?? 10,
       {
         accounts: {
           state: this.state.pubkey,
@@ -397,29 +403,42 @@ export default class Margin extends BaseAccount<Schema> {
    * @param symbol The market symbol. Ex: ("BTC-PERP")
    * @param orderType The order type. Either limit, immediateOrCancel, or postOnly.
    * @param isLong True if buy, false if sell.
-   * @param limitPrice The limit price in big quote units per big base units. Ex: (50_000 USD/SOL)
-   * @param maxBaseQty The maximum amount of big base units to buy or sell.
-   * @param maxQuoteQty The maximum amount of big quote units, including fees, to pay or receive.
+   * @param price The limit price in big quote units per big base units. Ex: (50,000 USD/SOL)
+   * @param size The maximum amount of big base units to buy or sell.
+   * @param limit If this order is taking, the limit sets the number of maker orders the fill will go through, until stopping and posting. If running into compute unit issues, then set this number lower.
    */
   async placePerpOrder({
     symbol,
     orderType,
     isLong,
-    limitPrice,
-    maxBaseQty,
-    maxQuoteQty,
+    price,
+    size,
+    limit,
   }: Readonly<{
     symbol: string;
     orderType: OrderType;
     isLong: boolean;
-    limitPrice: number;
-    maxBaseQty: number;
-    maxQuoteQty: number;
+    price: number;
+    size: number;
+    limit?: number;
   }>): Promise<TransactionId> {
     const market = await this.state.getMarketBySymbol(symbol);
-    const limitPriceBn = market.priceNumberToLots(limitPrice);
-    const maxBaseQtyBn = market.baseSizeNumberToLots(maxBaseQty);
-    const maxQuoteQtyBn = market.quoteSizeNumberToSmoll(maxQuoteQty);
+    const limitPriceBn = market.priceNumberToLots(price);
+    const maxBaseQtyBn = market.baseSizeNumberToLots(size);
+    const takerFee =
+      market.decoded.perpType.toNumber() === 1
+        ? ZO_FUTURE_TAKER_FEE
+        : ZO_OPTION_TAKER_FEE;
+    const feeMultiplier = isLong ? 1 + takerFee : 1 - takerFee;
+    const maxQuoteQtyBn = new BN(
+      Math.round(
+        limitPriceBn
+          .mul(maxBaseQtyBn)
+          .mul(market.decoded["quoteLotSize"])
+          .toNumber() * feeMultiplier,
+      ),
+    );
+    console.log("maxquoteqty ", maxQuoteQtyBn.toNumber());
 
     let ooKey;
     const oo = await this.getOpenOrdersInfoBySymbol(symbol);
@@ -438,6 +457,7 @@ export default class Margin extends BaseAccount<Schema> {
       maxBaseQtyBn,
       maxQuoteQtyBn,
       orderType,
+      limit ?? 10,
       {
         accounts: {
           state: this.state.pubkey,
