@@ -1,11 +1,12 @@
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
+  Commitment,
   Keypair,
   PublicKey,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
   TransactionInstruction,
-} from "@solana/web3.js";
+} from "@solana/web3.js"
 import { Program } from "@project-serum/anchor";
 import { Market as SerumMarket } from "@project-serum/serum";
 import BN from "bn.js";
@@ -78,8 +79,9 @@ export default class Margin extends BaseAccount<Schema> {
    * Creates a margin account.
    * @param program The Zo Program
    * @param st The Zo State object, overrides the default config.
+   * @param commitment commitment of the transaction, finalized is used as default
    */
-  static async create(program: Program<Zo>, st: State): Promise<Margin> {
+  static async create(program: Program<Zo>, st: State, commitment:Commitment = 'finalized' ): Promise<Margin> {
     const conn = program.provider.connection;
     const [[key, nonce], control, controlLamports] = await Promise.all([
       this.getPda(st, program.provider.wallet.publicKey, program.programId),
@@ -106,7 +108,7 @@ export default class Margin extends BaseAccount<Schema> {
           }),
         ],
         signers: [control],
-      }),
+      }),commitment
     );
     return await Margin.load(program, st, st.cache);
   }
