@@ -17,6 +17,7 @@ Replace `<WALLET>`, `<MINT>`, and `<AMOUNT>`
 ```bash 
 curl -XPOST 'https://devnet-faucet.01.xyz?owner=<WALLET>&mint=<MINT>&amount=<AMOUNT>'
 ```
+(currently does not support SOL faucet, will be updated once it does)
 
 ## Program
 |       | Cluster | Pubkey                                       |
@@ -38,7 +39,7 @@ curl -XPOST 'https://devnet-faucet.01.xyz?owner=<WALLET>&mint=<MINT>&amount=<AMO
 | ----------- | ------- | -------------------------------------------- | -------- |
 | USDC        | Devnet  | 7UT1javY6X1M9R2UrPGrwcZ78SX3huaXyETff5hm5YdX | 6        |
 | BTC         | Devnet  | 3n3sMJMnZhgNDaxp6cfywvjHLrV1s34ndfa6xAaYvpRs | 6        |
-| SOL         | Devnet  | 8FXJqPB6xrjpWKoURnGeubPbXTcanjV4KSsN8gQYqdvM | 9        |
+| SOL         | Devnet  | So11111111111111111111111111111111111111112  | 9        |
 
 ## Usage examples
 
