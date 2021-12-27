@@ -1,4 +1,4 @@
-import { TOKEN_PROGRAM_ID } from "@solana/spl-token"
+import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
   Commitment,
   Keypair,
@@ -6,22 +6,22 @@ import {
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
   TransactionInstruction,
-} from "@solana/web3.js"
-import { Program } from "@project-serum/anchor"
-import { Market as SerumMarket } from "@project-serum/serum"
-import BN from "bn.js"
-import { Buffer } from "buffer"
-import BaseAccount from "./BaseAccount"
-import State from "./State"
-import Control from "./Control"
-import Num from "../Num"
+} from "@solana/web3.js";
+import { Program } from "@project-serum/anchor";
+import { Market as SerumMarket } from "@project-serum/serum";
+import BN from "bn.js";
+import { Buffer } from "buffer";
+import BaseAccount from "./BaseAccount";
+import State from "./State";
+import Control from "./Control";
+import Num from "../Num";
 import {
   findAssociatedTokenAddress,
   getAssociatedTokenTransactionWithPayer,
   getWrappedSolInstructionsAndKey,
   loadWI80F48,
-} from "../utils"
-import { MarginSchema, OrderType, TransactionId, Zo } from "../types"
+} from "../utils";
+import { MarginSchema, OrderType, TransactionId, Zo } from "../types";
 import {
   CONTROL_ACCOUNT_SIZE,
   SERUM_SPOT_PROGRAM_ID,
@@ -30,10 +30,10 @@ import {
   ZO_DEX_PROGRAM_ID,
   ZO_FUTURE_TAKER_FEE,
   ZO_OPTION_TAKER_FEE,
-} from "../config"
-import Decimal from "decimal.js"
-import Cache from "./Cache"
-import { getMintDecimals } from "@project-serum/serum/lib/market"
+} from "../config";
+import Decimal from "decimal.js";
+import Cache from "./Cache";
+import { getMintDecimals } from "@project-serum/serum/lib/market";
 
 interface Schema extends Omit<MarginSchema, "collateral"> {
   /** The deposit amount divided by the entry supply or borrow multiplier */
@@ -56,7 +56,7 @@ export default class Margin extends BaseAccount<Schema> {
     public readonly control: Control,
     public readonly state: State,
   ) {
-    super(program, pubkey, data)
+    super(program, pubkey, data);
   }
 
   /**
@@ -71,10 +71,10 @@ export default class Margin extends BaseAccount<Schema> {
       st,
       program.provider.wallet.publicKey,
       program.programId,
-    )
-    const data = await this.fetch(program, key, st, ch)
-    const control = await Control.load(program, data.control)
-    return new this(program, key, data, control, st)
+    );
+    const data = await this.fetch(program, key, st, ch);
+    const control = await Control.load(program, data.control);
+    return new this(program, key, data, control, st);
   }
 
   /**
@@ -83,13 +83,17 @@ export default class Margin extends BaseAccount<Schema> {
    * @param st The Zo State object, overrides the default config.
    * @param commitment commitment of the transaction, finalized is used as default
    */
-  static async create(program: Program<Zo>, st: State, commitment: Commitment = "finalized"): Promise<Margin> {
-    const conn = program.provider.connection
+  static async create(
+    program: Program<Zo>,
+    st: State,
+    commitment: Commitment = "finalized",
+  ): Promise<Margin> {
+    const conn = program.provider.connection;
     const [[key, nonce], control, controlLamports] = await Promise.all([
       this.getPda(st, program.provider.wallet.publicKey, program.programId),
       Keypair.generate(),
       conn.getMinimumBalanceForRentExemption(CONTROL_ACCOUNT_SIZE),
-    ])
+    ]);
     await conn.confirmTransaction(
       await program.rpc.createMargin(nonce, {
         accounts: {
@@ -110,9 +114,10 @@ export default class Margin extends BaseAccount<Schema> {
           }),
         ],
         signers: [control],
-      }), commitment,
-    )
-    return await Margin.load(program, st, st.cache)
+      }),
+      commitment,
+    );
+    return await Margin.load(program, st, st.cache);
   }
 
   /**
@@ -127,7 +132,7 @@ export default class Margin extends BaseAccount<Schema> {
     return await PublicKey.findProgramAddress(
       [traderKey.toBuffer(), st.pubkey.toBuffer(), Buffer.from("marginv1")],
       programId,
-    )
+    );
   }
 
   private static async fetch(
@@ -136,34 +141,32 @@ export default class Margin extends BaseAccount<Schema> {
     st: State,
     ch: Cache,
   ): Promise<Schema> {
-    const data = (await program.account["margin"].fetch(k)) as MarginSchema
+    const data = (await program.account["margin"].fetch(k)) as MarginSchema;
     const rawCollateral = data.collateral
       .map((c) => loadWI80F48(c!))
-      .slice(0, st.data.totalCollaterals)
+      .slice(0, st.data.totalCollaterals);
     return {
       ...data,
       rawCollateral,
-      actualCollateral: st.data.collaterals.map(
-        (c, i) => {
-          return new Num(
-            new BN(
-              rawCollateral[i]!.isPos()
-                ? rawCollateral[i]!.times(
+      actualCollateral: st.data.collaterals.map((c, i) => {
+        return new Num(
+          new BN(
+            rawCollateral[i]!.isPos()
+              ? rawCollateral[i]!.times(
                   ch.data.borrowCache[i]!.supplyMultiplier,
                 )
                   .floor()
                   .toString()
-                : rawCollateral[i]!.times(
+              : rawCollateral[i]!.times(
                   ch.data.borrowCache[i]!.borrowMultiplier,
                 )
                   .floor()
                   .toString(),
-            ),
-            c.decimals,
-          )
-        },
-      ),
-    }
+          ),
+          c.decimals,
+        );
+      }),
+    };
   }
 
   /**
@@ -174,7 +177,7 @@ export default class Margin extends BaseAccount<Schema> {
       Margin.fetch(this.program, this.pubkey, this.state, this.state.cache),
       this.control.refresh(),
       this.state.refresh(),
-    ])
+    ]);
   }
 
   /**
@@ -182,11 +185,11 @@ export default class Margin extends BaseAccount<Schema> {
    * @returns The OpenOrders account key for the given market.
    */
   async getOpenOrdersKeyBySymbol(symbol: string): Promise<[PublicKey, number]> {
-    const dexMarket = this.state.getMarketKeyBySymbol(symbol)
+    const dexMarket = this.state.getMarketKeyBySymbol(symbol);
     return await PublicKey.findProgramAddress(
       [this.data.control.toBuffer(), dexMarket.toBuffer()],
       ZO_DEX_PROGRAM_ID,
-    )
+    );
   }
 
   /**
@@ -198,17 +201,17 @@ export default class Margin extends BaseAccount<Schema> {
     symbol: string,
     create = false,
   ): Promise<Control["data"]["openOrdersAgg"][0] | null> {
-    const marketIndex = this.state.getMarketIndexBySymbol(symbol)
-    let oo = this.control.data.openOrdersAgg[marketIndex]
+    const marketIndex = this.state.getMarketIndexBySymbol(symbol);
+    let oo = this.control.data.openOrdersAgg[marketIndex];
     if (oo!.key.equals(PublicKey.default)) {
       if (create) {
-        await this.createPerpOpenOrders(symbol)
-        oo = this.control.data.openOrdersAgg[marketIndex]
+        await this.createPerpOpenOrders(symbol);
+        oo = this.control.data.openOrdersAgg[marketIndex];
       } else {
-        return null
+        return null;
       }
     }
-    return oo!
+    return oo!;
   }
 
   /**
@@ -235,7 +238,7 @@ export default class Margin extends BaseAccount<Schema> {
         vault,
         tokenProgram: TOKEN_PROGRAM_ID,
       },
-    })
+    });
   }
 
   /**
@@ -244,18 +247,14 @@ export default class Margin extends BaseAccount<Schema> {
    * @param amount The amount of tokens to deposit, in native quantity. (ex: lamports for SOL, satoshis for BTC)
    * @param repayOnly If true, will only deposit up to the amount borrowed. If true, amount parameter can be set to an arbitrarily large number to ensure that any outstanding borrow is fully repaid.
    */
-  async depositSol(
-    vault: PublicKey,
-    amount: BN,
-    repayOnly: boolean,
-  ) {
+  async depositSol(vault: PublicKey, amount: BN, repayOnly: boolean) {
     const {
       createTokenAccountIx,
       initTokenAccountIx,
       closeTokenAccountIx,
       intermediary,
       intermediaryKeypair,
-    } = await getWrappedSolInstructionsAndKey(amount, this.program.provider)
+    } = await getWrappedSolInstructionsAndKey(amount, this.program.provider);
 
     return await this.program.rpc.deposit(repayOnly, amount, {
       accounts: {
@@ -271,7 +270,7 @@ export default class Margin extends BaseAccount<Schema> {
       preInstructions: [createTokenAccountIx, initTokenAccountIx],
       postInstructions: [closeTokenAccountIx],
       signers: [intermediaryKeypair],
-    })
+    });
   }
 
   /**
@@ -281,18 +280,14 @@ export default class Margin extends BaseAccount<Schema> {
    * @param amount The amount of tokens to withdraw, in native quantity. (ex: lamports for SOL, satoshis for BTC)
    * @param allowBorrow If false, will only be able to withdraw up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully withdrawn.
    */
-  async withdrawSol(
-    vault: PublicKey,
-    amount: BN,
-    allowBorrow: boolean,
-  ) {
+  async withdrawSol(vault: PublicKey, amount: BN, allowBorrow: boolean) {
     const {
       createTokenAccountIx,
       initTokenAccountIx,
       closeTokenAccountIx,
       intermediary,
       intermediaryKeypair,
-    } = await getWrappedSolInstructionsAndKey(amount, this.program.provider)
+    } = await getWrappedSolInstructionsAndKey(amount, this.program.provider);
 
     return await this.program.rpc.withdraw(allowBorrow, amount, {
       accounts: {
@@ -309,7 +304,7 @@ export default class Margin extends BaseAccount<Schema> {
       preInstructions: [createTokenAccountIx, initTokenAccountIx],
       postInstructions: [closeTokenAccountIx],
       signers: [intermediaryKeypair],
-    })
+    });
   }
 
   /**
@@ -319,26 +314,24 @@ export default class Margin extends BaseAccount<Schema> {
    * @param repayOnly If true, will only deposit up to the amount borrowed. If true, amount parameter can be set to an arbitrarily large number to ensure that any outstanding borrow is fully repaid.
    * @param tokenAccountProvided optional param to provide the token account to use it for deposits
    */
-  async deposit(mint: PublicKey, size: number, repayOnly: boolean, tokenAccountProvided?: PublicKey) {
-    const [vault, collateralInfo] = this.state.getVaultCollateralByMint(mint)
-    const amountSmoll = new Num(size, collateralInfo.decimals).n
+  async deposit(
+    mint: PublicKey,
+    size: number,
+    repayOnly: boolean,
+    tokenAccountProvided?: PublicKey,
+  ) {
+    const [vault, collateralInfo] = this.state.getVaultCollateralByMint(mint);
+    const amountSmoll = new Num(size, collateralInfo.decimals).n;
     if (WRAPPED_SOL_MINT.toString() == mint.toString()) {
-      return await this.depositSol(
-        vault,
-        amountSmoll,
-        repayOnly,
-      )
+      return await this.depositSol(vault, amountSmoll, repayOnly);
     }
-    const tokenAccount = tokenAccountProvided ? tokenAccountProvided : await findAssociatedTokenAddress(
-      this.program.provider.wallet.publicKey,
-      mint,
-    )
-    return await this.depositRaw(
-      tokenAccount,
-      vault,
-      amountSmoll,
-      repayOnly,
-    )
+    const tokenAccount = tokenAccountProvided
+      ? tokenAccountProvided
+      : await findAssociatedTokenAddress(
+          this.program.provider.wallet.publicKey,
+          mint,
+        );
+    return await this.depositRaw(tokenAccount, vault, amountSmoll, repayOnly);
   }
 
   /**
@@ -370,7 +363,7 @@ export default class Margin extends BaseAccount<Schema> {
         tokenProgram: TOKEN_PROGRAM_ID,
       },
       preInstructions: preInstructions,
-    })
+    });
   }
 
   /**
@@ -380,27 +373,23 @@ export default class Margin extends BaseAccount<Schema> {
    * @param allowBorrow If false, will only be able to withdraw up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully withdrawn.
    */
   async withdraw(mint: PublicKey, size: number, allowBorrow: boolean) {
-    const [vault, collateralInfo] = this.state.getVaultCollateralByMint(mint)
-    const amountSmoll = new Num(size, collateralInfo.decimals).n
+    const [vault, collateralInfo] = this.state.getVaultCollateralByMint(mint);
+    const amountSmoll = new Num(size, collateralInfo.decimals).n;
     if (WRAPPED_SOL_MINT.toString() == mint.toString()) {
-      return await this.withdrawSol(
-        vault,
-        amountSmoll,
-        allowBorrow,
-      )
+      return await this.withdrawSol(vault, amountSmoll, allowBorrow);
     }
     const associatedTokenAccount = await findAssociatedTokenAddress(
       this.program.provider.wallet.publicKey,
       mint,
-    )
+    );
     //optimize: can be cached
-    let associatedTokenAccountExists = false
+    let associatedTokenAccountExists = false;
     if (
       await this.program.provider.connection.getAccountInfo(
         associatedTokenAccount,
       )
     ) {
-      associatedTokenAccountExists = true
+      associatedTokenAccountExists = true;
     }
 
     return await this.withdrawRaw(
@@ -411,13 +400,13 @@ export default class Margin extends BaseAccount<Schema> {
       associatedTokenAccountExists
         ? undefined
         : [
-          getAssociatedTokenTransactionWithPayer(
-            mint,
-            associatedTokenAccount,
-            this.program.provider.wallet.publicKey,
-          ),
-        ],
-    )
+            getAssociatedTokenTransactionWithPayer(
+              mint,
+              associatedTokenAccount,
+              this.program.provider.wallet.publicKey,
+            ),
+          ],
+    );
   }
 
   /**
@@ -425,7 +414,7 @@ export default class Margin extends BaseAccount<Schema> {
    * @param symbol The market symbol. Ex: ("BTC-PERP")
    */
   async createPerpOpenOrders(symbol: string): Promise<string> {
-    const [ooKey, _] = await this.getOpenOrdersKeyBySymbol(symbol)
+    const [ooKey, _] = await this.getOpenOrdersKeyBySymbol(symbol);
     return await this.program.rpc.createPerpOpenOrders({
       accounts: {
         state: this.state.pubkey,
@@ -439,7 +428,7 @@ export default class Margin extends BaseAccount<Schema> {
         rent: SYSVAR_RENT_PUBKEY,
         systemProgram: SystemProgram.programId,
       },
-    })
+    });
   }
 
   /**
@@ -455,15 +444,15 @@ export default class Margin extends BaseAccount<Schema> {
    * @param limit If this order is taking, the limit sets the number of maker orders the fill will go through, until stopping and posting. If running into compute unit issues, then set this number lower.
    */
   async placePerpOrderRaw({
-                            symbol,
-                            orderType,
-                            isLong,
-                            limitPrice,
-                            maxBaseQty,
-                            maxQuoteQty,
-                            limit,
-                            clientId,
-                          }: Readonly<{
+    symbol,
+    orderType,
+    isLong,
+    limitPrice,
+    maxBaseQty,
+    maxQuoteQty,
+    limit,
+    clientId,
+  }: Readonly<{
     symbol: string;
     orderType: OrderType;
     isLong: boolean;
@@ -473,8 +462,8 @@ export default class Margin extends BaseAccount<Schema> {
     limit?: number;
     clientId?: BN;
   }>): Promise<TransactionId> {
-    const market = await this.state.getMarketBySymbol(symbol)
-    const oo = await this.getOpenOrdersInfoBySymbol(symbol)
+    const market = await this.state.getMarketBySymbol(symbol);
+    const oo = await this.getOpenOrdersInfoBySymbol(symbol);
 
     return await this.program.rpc.placePerpOrder(
       isLong,
@@ -502,7 +491,7 @@ export default class Margin extends BaseAccount<Schema> {
           rent: SYSVAR_RENT_PUBKEY,
         },
       },
-    )
+    );
   }
 
   /**
@@ -516,14 +505,14 @@ export default class Margin extends BaseAccount<Schema> {
    * @param clientId Used to tag an order with a unique id, which can be used to cancel this order through cancelPerpOrderByClientId. For optimal use, make sure all ids for every order is unique.
    */
   async placePerpOrder({
-                         symbol,
-                         orderType,
-                         isLong,
-                         price,
-                         size,
-                         limit,
-                         clientId,
-                       }: Readonly<{
+    symbol,
+    orderType,
+    isLong,
+    price,
+    size,
+    limit,
+    clientId,
+  }: Readonly<{
     symbol: string;
     orderType: OrderType;
     isLong: boolean;
@@ -532,14 +521,14 @@ export default class Margin extends BaseAccount<Schema> {
     limit?: number;
     clientId?: number;
   }>): Promise<TransactionId> {
-    const market = await this.state.getMarketBySymbol(symbol)
-    const limitPriceBn = market.priceNumberToLots(price)
-    const maxBaseQtyBn = market.baseSizeNumberToLots(size)
+    const market = await this.state.getMarketBySymbol(symbol);
+    const limitPriceBn = market.priceNumberToLots(price);
+    const maxBaseQtyBn = market.baseSizeNumberToLots(size);
     const takerFee =
       market.decoded.perpType.toNumber() === 1
         ? ZO_FUTURE_TAKER_FEE
-        : ZO_OPTION_TAKER_FEE
-    const feeMultiplier = isLong ? 1 + takerFee : 1 - takerFee
+        : ZO_OPTION_TAKER_FEE;
+    const feeMultiplier = isLong ? 1 + takerFee : 1 - takerFee;
     const maxQuoteQtyBn = new BN(
       Math.round(
         limitPriceBn
@@ -547,18 +536,18 @@ export default class Margin extends BaseAccount<Schema> {
           .mul(market.decoded["quoteLotSize"])
           .toNumber() * feeMultiplier,
       ),
-    )
-    console.log("maxquoteqty ", maxQuoteQtyBn.toNumber())
+    );
+    console.log("maxquoteqty ", maxQuoteQtyBn.toNumber());
 
-    let ooKey
-    const oo = await this.getOpenOrdersInfoBySymbol(symbol)
-    let createOo
+    let ooKey;
+    const oo = await this.getOpenOrdersInfoBySymbol(symbol);
+    let createOo;
     if (!oo) {
-      ooKey = (await this.getOpenOrdersKeyBySymbol(symbol))[0]
-      createOo = true
+      ooKey = (await this.getOpenOrdersKeyBySymbol(symbol))[0];
+      createOo = true;
     } else {
-      ooKey = oo.key
-      createOo = false
+      ooKey = oo.key;
+      createOo = false;
     }
 
     return await this.program.rpc.placePerpOrder(
@@ -588,24 +577,24 @@ export default class Margin extends BaseAccount<Schema> {
         },
         preInstructions: createOo
           ? [
-            this.program.instruction.createPerpOpenOrders({
-              accounts: {
-                state: this.state.pubkey,
-                stateSigner: this.state.signer,
-                authority: this.wallet.publicKey,
-                margin: this.pubkey,
-                control: this.data.control,
-                openOrders: ooKey,
-                dexMarket: this.state.getMarketKeyBySymbol(symbol),
-                dexProgram: ZO_DEX_PROGRAM_ID,
-                rent: SYSVAR_RENT_PUBKEY,
-                systemProgram: SystemProgram.programId,
-              },
-            }),
-          ]
+              this.program.instruction.createPerpOpenOrders({
+                accounts: {
+                  state: this.state.pubkey,
+                  stateSigner: this.state.signer,
+                  authority: this.wallet.publicKey,
+                  margin: this.pubkey,
+                  control: this.data.control,
+                  openOrders: ooKey,
+                  dexMarket: this.state.getMarketKeyBySymbol(symbol),
+                  dexProgram: ZO_DEX_PROGRAM_ID,
+                  rent: SYSVAR_RENT_PUBKEY,
+                  systemProgram: SystemProgram.programId,
+                },
+              }),
+            ]
           : undefined,
       },
-    )
+    );
   }
 
   /**
@@ -615,8 +604,8 @@ export default class Margin extends BaseAccount<Schema> {
    * @param orderId The order id of the order to cancel. To get order id, call loadOrdersForOwner through the market.
    */
   async cancelPerpOrder(symbol: string, isLong: boolean, orderId: BN) {
-    const market = await this.state.getMarketBySymbol(symbol)
-    const oo = await this.getOpenOrdersInfoBySymbol(symbol)
+    const market = await this.state.getMarketBySymbol(symbol);
+    const oo = await this.getOpenOrdersInfoBySymbol(symbol);
 
     return await this.program.rpc.cancelPerpOrder(orderId, isLong, {
       accounts: {
@@ -632,7 +621,7 @@ export default class Margin extends BaseAccount<Schema> {
         eventQ: market.eventQueueAddress,
         dexProgram: ZO_DEX_PROGRAM_ID,
       },
-    })
+    });
   }
 
   /**
@@ -641,8 +630,8 @@ export default class Margin extends BaseAccount<Schema> {
    * @param clientId The client id that was assigned to the order when it was placed.
    */
   async cancelPerpOrderByClientId(symbol: string, clientId: number) {
-    const market = await this.state.getMarketBySymbol(symbol)
-    const oo = await this.getOpenOrdersInfoBySymbol(symbol)
+    const market = await this.state.getMarketBySymbol(symbol);
+    const oo = await this.getOpenOrdersInfoBySymbol(symbol);
 
     return await this.program.rpc.cancelPerpOrderByClientId(new BN(clientId), {
       accounts: {
@@ -658,7 +647,7 @@ export default class Margin extends BaseAccount<Schema> {
         eventQ: market.eventQueueAddress,
         dexProgram: ZO_DEX_PROGRAM_ID,
       },
-    })
+    });
   }
 
   /**
@@ -673,14 +662,14 @@ export default class Margin extends BaseAccount<Schema> {
    * @param serumMarket The market public key of the Serum Spot DEX.
    */
   async swap({
-               buy,
-               tokenMint,
-               fromSize,
-               toSize,
-               slippage,
-               allowBorrow,
-               serumMarket,
-             }: Readonly<{
+    buy,
+    tokenMint,
+    fromSize,
+    toSize,
+    slippage,
+    allowBorrow,
+    serumMarket,
+  }: Readonly<{
     buy: boolean;
     tokenMint: PublicKey;
     fromSize: number;
@@ -692,11 +681,11 @@ export default class Margin extends BaseAccount<Schema> {
     if (this.state.data.totalCollaterals < 1) {
       throw new Error(
         `<State ${this.state.pubkey.toString()}> does not have a base collateral`,
-      )
+      );
     }
 
     if (slippage > 1 || slippage < 0) {
-      throw new Error("Invalid slippage input, must be between 0 and 1")
+      throw new Error("Invalid slippage input, must be between 0 and 1");
     }
 
     const market = await SerumMarket.load(
@@ -704,23 +693,23 @@ export default class Margin extends BaseAccount<Schema> {
       serumMarket,
       {},
       SERUM_SPOT_PROGRAM_ID,
-    )
+    );
 
-    const colIdx = this.state.getCollateralIndex(tokenMint)
-    const stateQuoteMint = this.state.data.collaterals[0]!.mint
+    const colIdx = this.state.getCollateralIndex(tokenMint);
+    const stateQuoteMint = this.state.data.collaterals[0]!.mint;
     // TODO: optimize below to avoid fetching
-    const baseDecimals = await getMintDecimals(this.connection, tokenMint)
+    const baseDecimals = await getMintDecimals(this.connection, tokenMint);
 
     const amount = buy
       ? new BN(fromSize * 10 ** USDC_DECIMALS)
-      : new BN(fromSize * 10 ** baseDecimals)
+      : new BN(fromSize * 10 ** baseDecimals);
     const minRate =
       slippage === 1
         ? new BN(1)
         : new Num(
-          (toSize * (1 - slippage)) / fromSize,
-          buy ? baseDecimals : USDC_DECIMALS,
-        ).n
+            (toSize * (1 - slippage)) / fromSize,
+            buy ? baseDecimals : USDC_DECIMALS,
+          ).n;
 
     if (
       !market.baseMintAddress.equals(tokenMint) ||
@@ -728,9 +717,9 @@ export default class Margin extends BaseAccount<Schema> {
     ) {
       throw new Error(
         `Invalid <SerumSpotMarket ${serumMarket}> for swap:\n` +
-        `  swap wants:   base=${tokenMint}, quote=${stateQuoteMint}\n` +
-        `  market wants: base=${market.baseMintAddress}, quote=${market.quoteMintAddress}`,
-      )
+          `  swap wants:   base=${tokenMint}, quote=${stateQuoteMint}\n` +
+          `  market wants: base=${market.baseMintAddress}, quote=${market.quoteMintAddress}`,
+      );
     }
 
     const vaultSigner: PublicKey = await PublicKey.createProgramAddress(
@@ -739,7 +728,7 @@ export default class Margin extends BaseAccount<Schema> {
         market.decoded.vaultSignerNonce.toArrayLike(Buffer, "le", 8),
       ],
       SERUM_SPOT_PROGRAM_ID,
-    )
+    );
 
     return await this.program.rpc.swap(buy, allowBorrow, amount, minRate, {
       accounts: {
@@ -767,7 +756,7 @@ export default class Margin extends BaseAccount<Schema> {
         tokenProgram: TOKEN_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
       },
-    })
+    });
   }
 
   /**
@@ -775,8 +764,8 @@ export default class Margin extends BaseAccount<Schema> {
    * @param symbol Market symbol (ex: BTC-PERP).
    */
   async settleFunds(symbol: string) {
-    const market = await this.state.getMarketBySymbol(symbol)
-    const oo = await this.getOpenOrdersInfoBySymbol(symbol)
+    const market = await this.state.getMarketBySymbol(symbol);
+    const oo = await this.getOpenOrdersInfoBySymbol(symbol);
 
     return await this.program.rpc.settleFunds({
       accounts: {
@@ -790,6 +779,6 @@ export default class Margin extends BaseAccount<Schema> {
         dexMarket: market.address,
         dexProgram: ZO_DEX_PROGRAM_ID,
       },
-    })
+    });
   }
 }
