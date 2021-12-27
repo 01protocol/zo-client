@@ -15,12 +15,18 @@ import BaseAccount from "./BaseAccount"
 import State from "./State"
 import Control from "./Control"
 import Num from "../Num"
-import { findAssociatedTokenAddress, getAssociatedTokenTransactionWithPayer, loadWI80F48 } from "../utils"
+import {
+  findAssociatedTokenAddress,
+  getAssociatedTokenTransactionWithPayer,
+  getWrappedSolInstructionsAndKey,
+  loadWI80F48,
+} from "../utils"
 import { MarginSchema, OrderType, TransactionId, Zo } from "../types"
 import {
   CONTROL_ACCOUNT_SIZE,
   SERUM_SPOT_PROGRAM_ID,
   USDC_DECIMALS,
+  WRAPPED_SOL_MINT,
   ZO_DEX_PROGRAM_ID,
   ZO_FUTURE_TAKER_FEE,
   ZO_OPTION_TAKER_FEE,
@@ -233,6 +239,80 @@ export default class Margin extends BaseAccount<Schema> {
   }
 
   /**
+   * Deposits a given amount of SOL collateral into the Margin account. Raw implementation of the instruction.
+   * @param vault The state vault where tokens will be deposited into.
+   * @param amount The amount of tokens to deposit, in native quantity. (ex: lamports for SOL, satoshis for BTC)
+   * @param repayOnly If true, will only deposit up to the amount borrowed. If true, amount parameter can be set to an arbitrarily large number to ensure that any outstanding borrow is fully repaid.
+   */
+  async depositSol(
+    vault: PublicKey,
+    amount: BN,
+    repayOnly: boolean,
+  ) {
+    const {
+      createTokenAccountIx,
+      initTokenAccountIx,
+      closeTokenAccountIx,
+      intermediary,
+      intermediaryKeypair,
+    } = await getWrappedSolInstructionsAndKey(amount, this.program.provider)
+
+    return await this.program.rpc.deposit(repayOnly, amount, {
+      accounts: {
+        state: this.state.pubkey,
+        stateSigner: this.state.signer,
+        cache: this.state.cache.pubkey,
+        authority: this.wallet.publicKey,
+        margin: this.pubkey,
+        tokenAccount: intermediary,
+        vault,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      },
+      preInstructions: [createTokenAccountIx, initTokenAccountIx],
+      postInstructions: [closeTokenAccountIx],
+      signers: [intermediaryKeypair],
+    })
+  }
+
+  /**
+   * Withdraws a given amount of collateral from the Margin account to a specified token account. If withdrawing more than the amount deposited, then account will be borrowing.
+   * Raw implementation of the instruction.
+   * @param vault The state vault where tokens will be withdrawn from.
+   * @param amount The amount of tokens to withdraw, in native quantity. (ex: lamports for SOL, satoshis for BTC)
+   * @param allowBorrow If false, will only be able to withdraw up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully withdrawn.
+   */
+  async withdrawSol(
+    vault: PublicKey,
+    amount: BN,
+    allowBorrow: boolean,
+  ) {
+    const {
+      createTokenAccountIx,
+      initTokenAccountIx,
+      closeTokenAccountIx,
+      intermediary,
+      intermediaryKeypair,
+    } = await getWrappedSolInstructionsAndKey(amount, this.program.provider)
+
+    return await this.program.rpc.withdraw(allowBorrow, amount, {
+      accounts: {
+        state: this.state.pubkey,
+        stateSigner: this.state.signer,
+        cache: this.state.cache.pubkey,
+        authority: this.wallet.publicKey,
+        margin: this.pubkey,
+        control: this.data.control,
+        tokenAccount: intermediary,
+        vault,
+        tokenProgram: TOKEN_PROGRAM_ID,
+      },
+      preInstructions: [createTokenAccountIx, initTokenAccountIx],
+      postInstructions: [closeTokenAccountIx],
+      signers: [intermediaryKeypair],
+    })
+  }
+
+  /**
    * Deposits a given amount of collateral into the Margin account from the associated token account.
    * @param mint Mint of the collateral being deposited.
    * @param size The amount of tokens to deposit, in big units. (ex: 1.5 SOL, or 0.5 BTC)
@@ -241,11 +321,18 @@ export default class Margin extends BaseAccount<Schema> {
    */
   async deposit(mint: PublicKey, size: number, repayOnly: boolean, tokenAccountProvided?: PublicKey) {
     const [vault, collateralInfo] = this.state.getVaultCollateralByMint(mint)
+    const amountSmoll = new Num(size, collateralInfo.decimals).n
+    if (WRAPPED_SOL_MINT.toString() == mint.toString()) {
+      return await this.depositSol(
+        vault,
+        amountSmoll,
+        repayOnly,
+      )
+    }
     const tokenAccount = tokenAccountProvided ? tokenAccountProvided : await findAssociatedTokenAddress(
       this.program.provider.wallet.publicKey,
       mint,
     )
-    const amountSmoll = new Num(size, collateralInfo.decimals).n
     return await this.depositRaw(
       tokenAccount,
       vault,
@@ -294,11 +381,18 @@ export default class Margin extends BaseAccount<Schema> {
    */
   async withdraw(mint: PublicKey, size: number, allowBorrow: boolean) {
     const [vault, collateralInfo] = this.state.getVaultCollateralByMint(mint)
+    const amountSmoll = new Num(size, collateralInfo.decimals).n
+    if (WRAPPED_SOL_MINT.toString() == mint.toString()) {
+      return await this.withdrawSol(
+        vault,
+        amountSmoll,
+        allowBorrow,
+      )
+    }
     const associatedTokenAccount = await findAssociatedTokenAddress(
       this.program.provider.wallet.publicKey,
       mint,
     )
-    const amountSmoll = new Num(size, collateralInfo.decimals).n
     //optimize: can be cached
     let associatedTokenAccountExists = false
     if (
