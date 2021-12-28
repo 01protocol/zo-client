@@ -5,6 +5,10 @@
     "moduleResolution": "node",
     "outDir": "./dist/esm",
     "allowJs": true,
+    "lib": [
+      "es2019",
+      "es6"
+    ],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
@@ -18,8 +22,14 @@
     "rootDir": "src/"
   },
   "typedocOptions": {
-    "entryPoints": ["src/index.ts"],
+    "entryPoints": [
+      "src/index.ts"
+    ],
     "out": "docs"
   },
-  "include": ["src/**/*.ts", "src/**/*.js", "src/**/*.json"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.js",
+    "src/**/*.json"
+  ]
 }
