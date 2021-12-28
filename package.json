@@ -1,5 +1,5 @@
 {
-  "name": "@01/zo-client",
+  "name": "@zero_one/zo-client",
   "version": "0.2.1",
   "license": "Apache-2.0",
   "description": "TypeScript Client API",
