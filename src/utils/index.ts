@@ -15,7 +15,6 @@ import Decimal from "decimal.js"
 import { blob, struct, u8 } from "buffer-layout"
 import { Zo } from "../types"
 import { IDL, RENT_PROGRAM_ID, WRAPPED_SOL_MINT, ZERO_ONE_PROGRAM_ID } from "../config"
-import { TextDecoder } from "util"
 
 export * from "./rpc"
 export * from "./units"
