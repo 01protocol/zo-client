@@ -1,6 +1,6 @@
 {
-  "name": "zo-client",
-  "version": "0.1.1",
+  "name": "@01/zo-client",
+  "version": "0.2.1",
   "license": "Apache-2.0",
   "description": "TypeScript Client API",
   "main": "dist/cjs/index.js",
@@ -14,7 +14,7 @@
     "check": "npm run build && npm run lint-format"
   },
   "dependencies": {
-    "@project-serum/anchor": "^0.19.0",
+    "@project-serum/anchor": "^0.19.1-beta.1",
     "@project-serum/serum": "^0.13.61",
     "@solana/spl-token": "^0.1.8",
     "@solana/web3.js": "^1.31.0",
