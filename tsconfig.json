@@ -7,7 +7,8 @@
     "allowJs": true,
     "lib": [
       "es2019",
-      "es6"
+      "es6",
+      "dom"
     ],
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
