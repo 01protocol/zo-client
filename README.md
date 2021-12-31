@@ -73,7 +73,7 @@ The following example shows how to deposit, withdraw and swap from a margin acco
 // Deposit
 const depositSize = 50_250.25; // $50,250.25 USDC
 const repayOnly = false;
-await margin.deposit(usdcMintKey, size, repayOnly);
+await margin.deposit(usdcMintKey, depositSize, repayOnly);
 
 // Withdraw
 const withdrawSize = 0.001; // 0.001 BTC
