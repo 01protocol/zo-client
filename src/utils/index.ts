@@ -23,6 +23,7 @@ import { blob, struct, u8 } from "buffer-layout";
 import { Zo } from "../types";
 import {
   IDL,
+  DEX_IDL,
   RENT_PROGRAM_ID,
   WRAPPED_SOL_MINT,
   ZERO_ONE_PROGRAM_ID,
