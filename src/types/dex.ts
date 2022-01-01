@@ -1,4 +1,4 @@
-export const IDL = {
+export const DEX_IDL = {
   version: "0.1.0",
   name: "dex",
   instructions: [],
