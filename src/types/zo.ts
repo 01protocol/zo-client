@@ -15,7 +15,7 @@ export type Zo = {
     {
       name: "DUST_THRESHOLD";
       type: "i64";
-      value: "10_000";
+      value: "1_000_000";
     },
     {
       name: "ORACLE_STALENESS_THRESH";
@@ -58,34 +58,6 @@ export type Zo = {
         defined: "&str";
       };
       value: '"DEBUG"';
-    },
-    {
-      name: "NOOPS_LOG";
-      type: {
-        defined: "&str";
-      };
-      value: '"NOOPS"';
-    },
-    {
-      name: "LIQ_LOG";
-      type: {
-        defined: "&str";
-      };
-      value: '"LIQ"';
-    },
-    {
-      name: "BANKRUPTCY_LOG";
-      type: {
-        defined: "&str";
-      };
-      value: '"BANK"';
-    },
-    {
-      name: "BORROW_LOG";
-      type: {
-        defined: "&str";
-      };
-      value: '"BOR"';
     },
   ];
   instructions: [
@@ -1722,6 +1694,40 @@ export type Zo = {
       };
     },
     {
+      name: "LiquidationEvent";
+      type: {
+        kind: "enum";
+        variants: [
+          {
+            name: "Perp";
+          },
+          {
+            name: "Spot";
+          },
+        ];
+      };
+    },
+    {
+      name: "MfReturnOption";
+      type: {
+        kind: "enum";
+        variants: [
+          {
+            name: "Imf";
+          },
+          {
+            name: "Mmf";
+          },
+          {
+            name: "Cancel";
+          },
+          {
+            name: "Both";
+          },
+        ];
+      };
+    },
+    {
       name: "OracleType";
       type: {
         kind: "enum";
@@ -1802,6 +1808,210 @@ export type Zo = {
           },
         ];
       };
+    },
+  ];
+  events: [
+    {
+      name: "DepositLog";
+      fields: [
+        {
+          name: "testKey";
+          type: {
+            array: ["u64", 4];
+          };
+          index: false;
+        },
+        {
+          name: "testKey2";
+          type: {
+            array: ["u64", 4];
+          };
+          index: false;
+        },
+        {
+          name: "colIndex";
+          type: "u8";
+          index: false;
+        },
+        {
+          name: "depositAmount";
+          type: "u64";
+          index: false;
+        },
+      ];
+    },
+    {
+      name: "WithdrawLog";
+      fields: [
+        {
+          name: "colIndex";
+          type: "u8";
+          index: false;
+        },
+        {
+          name: "withdrawAmount";
+          type: "u64";
+          index: false;
+        },
+      ];
+    },
+    {
+      name: "CollateralBalanceLog";
+      fields: [
+        {
+          name: "colIndex";
+          type: "u8";
+          index: false;
+        },
+        {
+          name: "col";
+          type: {
+            defined: "WrappedI80F48";
+          };
+          index: false;
+        },
+      ];
+    },
+    {
+      name: "ForceCancelLog";
+      fields: [
+        {
+          name: "cancelledBids";
+          type: "u64";
+          index: false;
+        },
+        {
+          name: "cancelledAsks";
+          type: "u64";
+          index: false;
+        },
+      ];
+    },
+    {
+      name: "LiquidationLog";
+      fields: [
+        {
+          name: "liquidationEvent";
+          type: {
+            defined: "LiquidationEvent";
+          };
+          index: false;
+        },
+        {
+          name: "assetsToLiqor";
+          type: "i64";
+          index: false;
+        },
+        {
+          name: "quoteToLiqor";
+          type: "i64";
+          index: false;
+        },
+      ];
+    },
+    {
+      name: "BankruptcyLog";
+      fields: [
+        {
+          name: "assetsToLiqor";
+          type: "i64";
+          index: false;
+        },
+        {
+          name: "quoteToLiqor";
+          type: "i64";
+          index: false;
+        },
+        {
+          name: "insuranceLoss";
+          type: "i64";
+          index: false;
+        },
+        {
+          name: "socializedLoss";
+          type: "i64";
+          index: false;
+        },
+      ];
+    },
+    {
+      name: "CacheOracleLog";
+      fields: [
+        {
+          name: "symbols";
+          type: {
+            vec: "string";
+          };
+          index: false;
+        },
+        {
+          name: "prices";
+          type: {
+            vec: {
+              defined: "WrappedI80F48";
+            };
+          };
+          index: false;
+        },
+        {
+          name: "twaps";
+          type: {
+            vec: {
+              defined: "WrappedI80F48";
+            };
+          };
+          index: false;
+        },
+      ];
+    },
+    {
+      name: "CacheOracleNoops";
+      fields: [
+        {
+          name: "symbols";
+          type: {
+            vec: "string";
+          };
+          index: false;
+        },
+      ];
+    },
+    {
+      name: "CacheIRLog";
+      fields: [
+        {
+          name: "ir";
+          type: {
+            defined: "WrappedI80F48";
+          };
+          index: false;
+        },
+        {
+          name: "util";
+          type: {
+            defined: "WrappedI80F48";
+          };
+          index: false;
+        },
+        {
+          name: "supMul";
+          type: {
+            defined: "WrappedI80F48";
+          };
+          index: false;
+        },
+        {
+          name: "borMul";
+          type: {
+            defined: "WrappedI80F48";
+          };
+          index: false;
+        },
+      ];
+    },
+    {
+      name: "ControlStateLog";
+      fields: [];
     },
   ];
   errors: [
@@ -2135,7 +2345,7 @@ export const IDL: Zo = {
     {
       name: "DUST_THRESHOLD",
       type: "i64",
-      value: "10_000",
+      value: "1_000_000",
     },
     {
       name: "ORACLE_STALENESS_THRESH",
@@ -2178,34 +2388,6 @@ export const IDL: Zo = {
         defined: "&str",
       },
       value: '"DEBUG"',
-    },
-    {
-      name: "NOOPS_LOG",
-      type: {
-        defined: "&str",
-      },
-      value: '"NOOPS"',
-    },
-    {
-      name: "LIQ_LOG",
-      type: {
-        defined: "&str",
-      },
-      value: '"LIQ"',
-    },
-    {
-      name: "BANKRUPTCY_LOG",
-      type: {
-        defined: "&str",
-      },
-      value: '"BANK"',
-    },
-    {
-      name: "BORROW_LOG",
-      type: {
-        defined: "&str",
-      },
-      value: '"BOR"',
     },
   ],
   instructions: [
@@ -3842,6 +4024,40 @@ export const IDL: Zo = {
       },
     },
     {
+      name: "LiquidationEvent",
+      type: {
+        kind: "enum",
+        variants: [
+          {
+            name: "Perp",
+          },
+          {
+            name: "Spot",
+          },
+        ],
+      },
+    },
+    {
+      name: "MfReturnOption",
+      type: {
+        kind: "enum",
+        variants: [
+          {
+            name: "Imf",
+          },
+          {
+            name: "Mmf",
+          },
+          {
+            name: "Cancel",
+          },
+          {
+            name: "Both",
+          },
+        ],
+      },
+    },
+    {
       name: "OracleType",
       type: {
         kind: "enum",
@@ -3922,6 +4138,210 @@ export const IDL: Zo = {
           },
         ],
       },
+    },
+  ],
+  events: [
+    {
+      name: "DepositLog",
+      fields: [
+        {
+          name: "testKey",
+          type: {
+            array: ["u64", 4],
+          },
+          index: false,
+        },
+        {
+          name: "testKey2",
+          type: {
+            array: ["u64", 4],
+          },
+          index: false,
+        },
+        {
+          name: "colIndex",
+          type: "u8",
+          index: false,
+        },
+        {
+          name: "depositAmount",
+          type: "u64",
+          index: false,
+        },
+      ],
+    },
+    {
+      name: "WithdrawLog",
+      fields: [
+        {
+          name: "colIndex",
+          type: "u8",
+          index: false,
+        },
+        {
+          name: "withdrawAmount",
+          type: "u64",
+          index: false,
+        },
+      ],
+    },
+    {
+      name: "CollateralBalanceLog",
+      fields: [
+        {
+          name: "colIndex",
+          type: "u8",
+          index: false,
+        },
+        {
+          name: "col",
+          type: {
+            defined: "WrappedI80F48",
+          },
+          index: false,
+        },
+      ],
+    },
+    {
+      name: "ForceCancelLog",
+      fields: [
+        {
+          name: "cancelledBids",
+          type: "u64",
+          index: false,
+        },
+        {
+          name: "cancelledAsks",
+          type: "u64",
+          index: false,
+        },
+      ],
+    },
+    {
+      name: "LiquidationLog",
+      fields: [
+        {
+          name: "liquidationEvent",
+          type: {
+            defined: "LiquidationEvent",
+          },
+          index: false,
+        },
+        {
+          name: "assetsToLiqor",
+          type: "i64",
+          index: false,
+        },
+        {
+          name: "quoteToLiqor",
+          type: "i64",
+          index: false,
+        },
+      ],
+    },
+    {
+      name: "BankruptcyLog",
+      fields: [
+        {
+          name: "assetsToLiqor",
+          type: "i64",
+          index: false,
+        },
+        {
+          name: "quoteToLiqor",
+          type: "i64",
+          index: false,
+        },
+        {
+          name: "insuranceLoss",
+          type: "i64",
+          index: false,
+        },
+        {
+          name: "socializedLoss",
+          type: "i64",
+          index: false,
+        },
+      ],
+    },
+    {
+      name: "CacheOracleLog",
+      fields: [
+        {
+          name: "symbols",
+          type: {
+            vec: "string",
+          },
+          index: false,
+        },
+        {
+          name: "prices",
+          type: {
+            vec: {
+              defined: "WrappedI80F48",
+            },
+          },
+          index: false,
+        },
+        {
+          name: "twaps",
+          type: {
+            vec: {
+              defined: "WrappedI80F48",
+            },
+          },
+          index: false,
+        },
+      ],
+    },
+    {
+      name: "CacheOracleNoops",
+      fields: [
+        {
+          name: "symbols",
+          type: {
+            vec: "string",
+          },
+          index: false,
+        },
+      ],
+    },
+    {
+      name: "CacheIRLog",
+      fields: [
+        {
+          name: "ir",
+          type: {
+            defined: "WrappedI80F48",
+          },
+          index: false,
+        },
+        {
+          name: "util",
+          type: {
+            defined: "WrappedI80F48",
+          },
+          index: false,
+        },
+        {
+          name: "supMul",
+          type: {
+            defined: "WrappedI80F48",
+          },
+          index: false,
+        },
+        {
+          name: "borMul",
+          type: {
+            defined: "WrappedI80F48",
+          },
+          index: false,
+        },
+      ],
+    },
+    {
+      name: "ControlStateLog",
+      fields: [],
     },
   ],
   errors: [
