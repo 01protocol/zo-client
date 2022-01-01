@@ -134,8 +134,8 @@ const orders = await market.loadOrdersForOwner(
 );
 
 // Fetch orderbook
-const bids = await ts.zoMarket.loadBids(program.provider.connection);
-const asks = await ts.zoMarket.loadAsks(program.provider.connection);
+const bids = await market.loadBids(program.provider.connection);
+const asks = await market.loadAsks(program.provider.connection);
 
 // L2 orderbook data
 for (const [price, size] of bids.getL2(20)) {
