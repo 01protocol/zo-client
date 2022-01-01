@@ -7,10 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2021-12-25 🎅
+
+### Added
+- Changed serum-ts to lite-serum to remove unnecessary files
+
+
 ## [0.2.0] - 2021-12-25 🎅
 
 ### Added
-- Deposit/Withdraw: Now accepts a mint pubkey and deposist/withdraws directly to/from an associated token account
+- Deposit/Withdraw: Now accepts a mint pubkey and deposits/withdraws directly to/from an associated token account
 - Deposit/Withdraw: Old implementations of deposit/withdraw are repurposed as depositRaw/withdrawRaw in case users want to deposit/withdraw to/from a specific account
 - Withdraw: Associated token account is created before withdrawal if such account does not exist
 - Margin: Add an optional limit arg to placePerpOrder used when compute limit is reached
