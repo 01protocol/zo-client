@@ -7,17 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<<<<<<< HEAD
-## [0.2.4] - 2021-12-25 🎅
+## [0.2.4] - 2021-12-25
 
-### Added
 - Events: Added anchor events and decoder ([#31](https://github.com/01protocol/zo-client/pull/31))
 
 
-## [0.2.3] - 2021-12-25 🎅
+## [0.2.3] - 2021-12-25
 
-### Added
-- Changed serum-ts to lite-serum to remove unnecessary files
+- Changed serum-ts to lite-serum to remove unnecessary files ([#29](https://github.com/01protocol/zo-client/pull/29))
 
 
 ## [0.2.0] - 2021-12-25 🎅
