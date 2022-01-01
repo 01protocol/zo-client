@@ -8,7 +8,7 @@ import {
   TransactionInstruction,
 } from "@solana/web3.js";
 import { Program } from "@project-serum/anchor";
-import { Market as SerumMarket } from "@project-serum/serum";
+import { Market as SerumMarket } from "@zero_one/lite-serum";
 import BN from "bn.js";
 import { Buffer } from "buffer";
 import BaseAccount from "./BaseAccount";
@@ -33,7 +33,7 @@ import {
 } from "../config";
 import Decimal from "decimal.js";
 import Cache from "./Cache";
-import { getMintDecimals } from "@project-serum/serum/lib/market";
+import { getMintDecimals } from "@zero_one/lite-serum/lib/market";
 
 interface Schema extends Omit<MarginSchema, "collateral"> {
   /** The deposit amount divided by the entry supply or borrow multiplier */
