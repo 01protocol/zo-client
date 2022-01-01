@@ -17,7 +17,7 @@ Replace `<WALLET>`, `<MINT>`, and `<AMOUNT>`
 ```bash 
 curl -XPOST 'https://devnet-faucet.01.xyz?owner=<WALLET>&mint=<MINT>&amount=<AMOUNT>'
 ```
-(currently does not support SOL faucet, will be updated once it does)
+SOL can be deposited directly using native lamports. You can get SOL either through Solana cli airdrop or at any airdrop faucet.
 
 ## Program
 |       | Cluster | Pubkey                                       |
