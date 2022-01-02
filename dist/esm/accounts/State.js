@@ -48,7 +48,7 @@ export default class State extends BaseAccount {
     }
     static fetch(program, k) {
         return __awaiter(this, void 0, void 0, function* () {
-            const data = (yield program.account["state"].fetch(k, program.provider.connection.commitment));
+            const data = (yield program.account["state"].fetch(k, "confirmed"));
             // Convert StateSchema to Schema.
             return Object.assign(Object.assign({}, data), { vaults: data.vaults.slice(0, data.totalCollaterals), collaterals: data.collaterals
                     .slice(0, data.totalCollaterals)

@@ -7,10 +7,6 @@
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
   "scripts": {
-    "build": "tsc && tsc -p tsconfig.cjs.json",
-    "build-docs": "typedoc --out docs src/index.ts",
-    "lint-format": "prettier --check ./src",
-    "prepare": "husky install"
   },
   "dependencies": {
     "@project-serum/anchor": "github:01protocol/temp-anchor",

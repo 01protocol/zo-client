@@ -143,7 +143,7 @@ export default class Margin extends BaseAccount<Schema> {
   ): Promise<Schema> {
     const data = (await program.account["margin"].fetch(
       k,
-      program.provider.connection.commitment,
+      "confirmed",
     )) as MarginSchema;
     const rawCollateral = data.collateral
       .map((c) => loadWI80F48(c!))

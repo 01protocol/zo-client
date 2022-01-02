@@ -71,7 +71,7 @@ export default class State extends BaseAccount<Schema> {
   ): Promise<Schema> {
     const data = (await program.account["state"].fetch(
       k,
-      program.provider.connection.commitment,
+      "confirmed",
     )) as StateSchema;
 
     // Convert StateSchema to Schema.

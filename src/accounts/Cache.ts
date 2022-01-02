@@ -73,7 +73,7 @@ export default class Cache extends BaseAccount<Schema> {
   ): Promise<Schema> {
     const data = (await program.account["cache"].fetch(
       k,
-      program.provider.connection.commitment,
+      "confirmed",
     )) as CacheSchema;
     return {
       ...data,
