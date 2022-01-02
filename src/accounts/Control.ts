@@ -21,7 +21,7 @@ export default class Control extends BaseAccount<Schema> {
   ): Promise<Schema> {
     const data = (await program.account["control"].fetch(
       k,
-      "confirmed",
+      "recent",
     )) as unknown as Schema;
     return {
       ...data,
