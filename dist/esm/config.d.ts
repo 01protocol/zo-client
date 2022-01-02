@@ -1,0 +1,18 @@
+import { PublicKey } from "@solana/web3.js";
+export { IDL } from "./types/zo";
+export { DEX_IDL } from "./types/dex";
+export declare const CONTROL_ACCOUNT_SIZE: number;
+export declare const ZO_FUTURE_TAKER_FEE = 0.001;
+export declare const ZO_OPTION_TAKER_FEE = 0.001;
+export declare const USDC_DECIMALS = 6;
+export declare const ZO_STATE_KEY: PublicKey;
+export declare const ZERO_ONE_PROGRAM_ID: PublicKey;
+export declare const ZO_DEX_PROGRAM_ID: PublicKey;
+export declare const SERUM_SPOT_PROGRAM_ID: PublicKey;
+export declare const SERUM_SWAP_PROGRAM_ID: PublicKey;
+export declare const SYSTEM_PROGRAM_ID: PublicKey;
+export declare const TOKEN_PROGRAM_ID: PublicKey;
+export declare const MEMO_PROGRAM_ID: PublicKey;
+export declare const RENT_PROGRAM_ID: PublicKey;
+export declare const WRAPPED_SOL_MINT: PublicKey;
+export declare const DEV_ENDPOINT = "https://api.devnet.solana.com";
