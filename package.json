@@ -1,12 +1,16 @@
 {
   "name": "@zero_one/client",
-  "version": "0.2.4-dev.2",
+  "version": "0.2.3",
   "license": "Apache-2.0",
   "description": "TypeScript Client API",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
   "scripts": {
+    "build": "tsc && tsc -p tsconfig.cjs.json",
+    "build-docs": "typedoc --out docs src/index.ts",
+    "lint-format": "prettier --check ./src",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@project-serum/anchor": "github:01protocol/temp-anchor",
@@ -36,3 +40,4 @@
     "trailingComma": "all"
   }
 }
+
