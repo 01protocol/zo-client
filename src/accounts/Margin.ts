@@ -540,7 +540,6 @@ export default class Margin extends BaseAccount<Schema> {
           .toNumber() * feeMultiplier,
       ),
     );
-    console.log("maxquoteqty ", maxQuoteQtyBn.toNumber());
 
     let ooKey;
     const oo = await this.getOpenOrdersInfoBySymbol(symbol);
