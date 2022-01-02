@@ -200,10 +200,14 @@ export class ZoMarket {
     address: PublicKey,
     options: MarketOptions = {},
     programId: PublicKey = ZO_DEX_PROGRAM_ID,
+    accountInfoPrefetched?: AccountInfo<Buffer>,
     layoutOverride?: any,
   ) {
+    const { commitment = "confirmed" } = options;
     const { owner, data } = throwIfNull(
-      await connection.getAccountInfo(address),
+      accountInfoPrefetched
+        ? accountInfoPrefetched
+        : await connection.getAccountInfo(address, commitment),
       "Market not found",
     );
     if (!owner.equals(programId)) {
