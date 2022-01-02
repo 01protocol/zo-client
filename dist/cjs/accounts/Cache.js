@@ -35,7 +35,7 @@ class Cache extends BaseAccount_1.default {
     }
     static fetch(program, k, st) {
         return __awaiter(this, void 0, void 0, function* () {
-            const data = (yield program.account["cache"].fetch(k, "recent"));
+            const data = (yield program.account["cache"].fetch(k, "confirmed"));
             return Object.assign(Object.assign({}, data), { oracles: data.oracles
                     .filter((c) => !c.symbol.data.every((x) => x === 0))
                     .map((c) => {

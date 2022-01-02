@@ -23,7 +23,7 @@ export default class Control extends BaseAccount {
     }
     static fetch(program, k) {
         return __awaiter(this, void 0, void 0, function* () {
-            const data = (yield program.account["control"].fetch(k, "recent"));
+            const data = (yield program.account["control"].fetch(k, "confirmed"));
             return Object.assign({}, data);
         });
     }

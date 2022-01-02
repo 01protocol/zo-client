@@ -94,7 +94,7 @@ class Margin extends BaseAccount_1.default {
     }
     static fetch(program, k, st, ch) {
         return __awaiter(this, void 0, void 0, function* () {
-            const data = (yield program.account["margin"].fetch(k, "recent"));
+            const data = (yield program.account["margin"].fetch(k, "confirmed"));
             const rawCollateral = data.collateral
                 .map((c) => (0, utils_1.loadWI80F48)(c))
                 .slice(0, st.data.totalCollaterals);
