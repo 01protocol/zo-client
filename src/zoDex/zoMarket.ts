@@ -231,16 +231,22 @@ export class ZoMarket {
     );
   }
 
-  async loadBids(connection: Connection): Promise<Orderbook> {
+  async loadBids(
+    connection: Connection,
+    commitment?: Commitment,
+  ): Promise<Orderbook> {
     const { data } = throwIfNull(
-      await connection.getAccountInfo(this._decoded.bids),
+      await connection.getAccountInfo(this._decoded.bids, commitment),
     );
     return Orderbook.decode(this, data);
   }
 
-  async loadAsks(connection: Connection): Promise<Orderbook> {
+  async loadAsks(
+    connection: Connection,
+    commitment?: Commitment,
+  ): Promise<Orderbook> {
     const { data } = throwIfNull(
-      await connection.getAccountInfo(this._decoded.asks),
+      await connection.getAccountInfo(this._decoded.asks, commitment),
     );
     return Orderbook.decode(this, data);
   }
