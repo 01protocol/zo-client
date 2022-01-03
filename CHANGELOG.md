@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Events: Added swap event ([#32](https://github.com/01protocol/zo-client/pull/32))
+
 ## [0.2.4] - 2022-1-1 🥳
 
 - Events: Added anchor events and decoder ([#31](https://github.com/01protocol/zo-client/pull/31))
