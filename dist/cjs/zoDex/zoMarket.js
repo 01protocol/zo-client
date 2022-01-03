@@ -127,9 +127,12 @@ class ZoMarket {
             return getFilteredProgramAccounts(connection, programId, filters);
         });
     }
-    static load(connection, address, options = {}, programId = config_1.ZO_DEX_PROGRAM_ID, layoutOverride) {
+    static load(connection, address, options = {}, programId = config_1.ZO_DEX_PROGRAM_ID, accountInfoPrefetched, layoutOverride) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { owner, data } = (0, utils_1.throwIfNull)(yield connection.getAccountInfo(address), "Market not found");
+            const { commitment = "confirmed" } = options;
+            const { owner, data } = (0, utils_1.throwIfNull)(accountInfoPrefetched
+                ? accountInfoPrefetched
+                : yield connection.getAccountInfo(address, commitment), "Market not found");
             if (!owner.equals(programId)) {
                 throw new Error("Address not owned by program: " + owner.toBase58());
             }

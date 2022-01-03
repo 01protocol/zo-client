@@ -37,7 +37,7 @@ export declare class ZoMarket {
         publicKey: PublicKey;
         accountInfo: AccountInfo<Buffer>;
     }[]>;
-    static load(connection: Connection, address: PublicKey, options?: MarketOptions, programId?: PublicKey, layoutOverride?: any): Promise<ZoMarket>;
+    static load(connection: Connection, address: PublicKey, options?: MarketOptions, programId?: PublicKey, accountInfoPrefetched?: AccountInfo<Buffer>, layoutOverride?: any): Promise<ZoMarket>;
     loadBids(connection: Connection): Promise<Orderbook>;
     loadAsks(connection: Connection): Promise<Orderbook>;
     loadOrdersForOwner(connection: Connection, controlAddress: PublicKey, cacheDurationMs?: number): Promise<Order[]>;

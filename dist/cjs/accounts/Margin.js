@@ -384,7 +384,6 @@ class Margin extends BaseAccount_1.default {
                 .mul(maxBaseQtyBn)
                 .mul(market.decoded["quoteLotSize"])
                 .toNumber() * feeMultiplier));
-            console.log("maxquoteqty ", maxQuoteQtyBn.toNumber());
             let ooKey;
             const oo = yield this.getOpenOrdersInfoBySymbol(symbol);
             let createOo;
