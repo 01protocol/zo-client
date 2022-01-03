@@ -1824,21 +1824,6 @@ export const IDL = {
     ],
     "events": [
         {
-            "name": "FakeDepositLog",
-            "fields": [
-                {
-                    "name": "colIndex",
-                    "type": "u8",
-                    "index": false
-                },
-                {
-                    "name": "depositAmount",
-                    "type": "u64",
-                    "index": false
-                }
-            ]
-        },
-        {
             "name": "DepositLog",
             "fields": [
                 {
