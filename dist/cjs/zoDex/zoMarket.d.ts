@@ -38,8 +38,8 @@ export declare class ZoMarket {
         accountInfo: AccountInfo<Buffer>;
     }[]>;
     static load(connection: Connection, address: PublicKey, options?: MarketOptions, programId?: PublicKey, accountInfoPrefetched?: AccountInfo<Buffer>, layoutOverride?: any): Promise<ZoMarket>;
-    loadBids(connection: Connection): Promise<Orderbook>;
-    loadAsks(connection: Connection): Promise<Orderbook>;
+    loadBids(connection: Connection, commitment?: Commitment): Promise<Orderbook>;
+    loadAsks(connection: Connection, commitment?: Commitment): Promise<Orderbook>;
     loadOrdersForOwner(connection: Connection, controlAddress: PublicKey, cacheDurationMs?: number): Promise<Order[]>;
     filterForOpenOrders(bids: Orderbook, asks: Orderbook, controlAccount: PublicKey): Order[];
     findBaseTokenAccountsForOwner(connection: Connection, ownerAddress: PublicKey, includeUnwrappedSol?: boolean): Promise<Array<{

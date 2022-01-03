@@ -139,15 +139,15 @@ export class ZoMarket {
             return new ZoMarket(decoded, decoded.coinDecimals, 6, options, programId, layoutOverride);
         });
     }
-    loadBids(connection) {
+    loadBids(connection, commitment) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { data } = throwIfNull(yield connection.getAccountInfo(this._decoded.bids));
+            const { data } = throwIfNull(yield connection.getAccountInfo(this._decoded.bids, commitment));
             return Orderbook.decode(this, data);
         });
     }
-    loadAsks(connection) {
+    loadAsks(connection, commitment) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { data } = throwIfNull(yield connection.getAccountInfo(this._decoded.asks));
+            const { data } = throwIfNull(yield connection.getAccountInfo(this._decoded.asks, commitment));
             return Orderbook.decode(this, data);
         });
     }
