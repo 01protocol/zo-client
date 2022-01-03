@@ -42,14 +42,14 @@ class Cache extends BaseAccount_1.default {
                     const decimals = c.quoteDecimals - c.baseDecimals;
                     return Object.assign(Object.assign({}, c), { symbol: (0, utils_1.loadSymbol)(c.symbol), price: Num_1.default.fromWI80F48(c.price, decimals), twap: Num_1.default.fromWI80F48(c.twap, decimals) });
                 }), marks: st.perpMarkets.map((m, i) => {
-                    const decimals = m.assetDecimals;
+                    const decimals = 6 - m.assetDecimals;
                     const c = data.marks[i];
-                    return Object.assign(Object.assign({}, c), { price: Num_1.default.fromWI80F48(c.price, decimals - 6), twap: {
-                            cumulAvg: Num_1.default.fromWI80F48(c.twap.cumulAvg, decimals - 6),
-                            open: Num_1.default.fromWI80F48(c.twap.open, decimals - 6),
-                            high: Num_1.default.fromWI80F48(c.twap.high, decimals - 6),
-                            low: Num_1.default.fromWI80F48(c.twap.low, decimals - 6),
-                            close: Num_1.default.fromWI80F48(c.twap.close, decimals - 6),
+                    return Object.assign(Object.assign({}, c), { price: Num_1.default.fromWI80F48(c.price, decimals), twap: {
+                            cumulAvg: Num_1.default.fromWI80F48(c.twap.cumulAvg, decimals),
+                            open: Num_1.default.fromWI80F48(c.twap.open, decimals),
+                            high: Num_1.default.fromWI80F48(c.twap.high, decimals),
+                            low: Num_1.default.fromWI80F48(c.twap.low, decimals),
+                            close: Num_1.default.fromWI80F48(c.twap.close, decimals),
                             lastSampleStartTime: new Date(c.twap.lastSampleStartTime.toNumber()),
                         } });
                 }), borrowCache: st.collaterals.map((col, i) => {

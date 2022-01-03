@@ -37,14 +37,14 @@ export default class Cache extends BaseAccount {
                     const decimals = c.quoteDecimals - c.baseDecimals;
                     return Object.assign(Object.assign({}, c), { symbol: loadSymbol(c.symbol), price: Num.fromWI80F48(c.price, decimals), twap: Num.fromWI80F48(c.twap, decimals) });
                 }), marks: st.perpMarkets.map((m, i) => {
-                    const decimals = m.assetDecimals;
+                    const decimals = 6 - m.assetDecimals;
                     const c = data.marks[i];
-                    return Object.assign(Object.assign({}, c), { price: Num.fromWI80F48(c.price, decimals - 6), twap: {
-                            cumulAvg: Num.fromWI80F48(c.twap.cumulAvg, decimals - 6),
-                            open: Num.fromWI80F48(c.twap.open, decimals - 6),
-                            high: Num.fromWI80F48(c.twap.high, decimals - 6),
-                            low: Num.fromWI80F48(c.twap.low, decimals - 6),
-                            close: Num.fromWI80F48(c.twap.close, decimals - 6),
+                    return Object.assign(Object.assign({}, c), { price: Num.fromWI80F48(c.price, decimals), twap: {
+                            cumulAvg: Num.fromWI80F48(c.twap.cumulAvg, decimals),
+                            open: Num.fromWI80F48(c.twap.open, decimals),
+                            high: Num.fromWI80F48(c.twap.high, decimals),
+                            low: Num.fromWI80F48(c.twap.low, decimals),
+                            close: Num.fromWI80F48(c.twap.close, decimals),
                             lastSampleStartTime: new Date(c.twap.lastSampleStartTime.toNumber()),
                         } });
                 }), borrowCache: st.collaterals.map((col, i) => {
