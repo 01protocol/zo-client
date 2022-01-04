@@ -16,11 +16,13 @@
   "dependencies": {
     "@project-serum/anchor": "^0.19.1-beta.1",
     "@solana/spl-token": "^0.1.8",
-    "@solana/web3.js": "^1.31.0",
     "@zero_one/lite-serum": "^0.1.1",
     "bn.js": "^5.2.0",
     "buffer-layout": "^1.2.2",
     "decimal.js": "^10.3.1"
+  },
+  "peerDependencies": {
+    "@solana/web3.js": "^1.31.0"
   },
   "devDependencies": {
     "@types/node": "^17.0.1",
