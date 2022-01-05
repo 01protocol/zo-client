@@ -1,6 +1,6 @@
 {
   "name": "@zero_one/client",
-  "version": "0.2.3",
+  "version": "0.2.5-dev.1",
   "license": "Apache-2.0",
   "description": "TypeScript Client API",
   "main": "dist/cjs/index.js",
@@ -15,11 +15,13 @@
   "dependencies": {
     "@project-serum/anchor": "github:01protocol/temp-anchor",
     "@solana/spl-token": "^0.1.8",
-    "@solana/web3.js": "^1.31.0",
     "@zero_one/lite-serum": "^0.1.1",
     "bn.js": "^5.2.0",
     "buffer-layout": "^1.2.2",
     "decimal.js": "^10.3.1"
+  },
+  "peerDependencies": {
+    "@solana/web3.js": "^1.31.0"
   },
   "devDependencies": {
     "@types/node": "^17.0.1",

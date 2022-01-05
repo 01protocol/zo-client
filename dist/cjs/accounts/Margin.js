@@ -210,7 +210,7 @@ class Margin extends BaseAccount_1.default {
      */
     withdrawSol(vault, amount, allowBorrow) {
         return __awaiter(this, void 0, void 0, function* () {
-            const { createTokenAccountIx, initTokenAccountIx, closeTokenAccountIx, intermediary, intermediaryKeypair, } = yield (0, utils_1.getWrappedSolInstructionsAndKey)(amount, this.program.provider);
+            const { createTokenAccountIx, initTokenAccountIx, closeTokenAccountIx, intermediary, intermediaryKeypair, } = yield (0, utils_1.getWrappedSolInstructionsAndKey)(new bn_js_1.default(0), this.program.provider);
             return yield this.program.rpc.withdraw(allowBorrow, amount, {
                 accounts: {
                     state: this.state.pubkey,

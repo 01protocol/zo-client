@@ -290,7 +290,7 @@ export default class Margin extends BaseAccount<Schema> {
       closeTokenAccountIx,
       intermediary,
       intermediaryKeypair,
-    } = await getWrappedSolInstructionsAndKey(amount, this.program.provider);
+    } = await getWrappedSolInstructionsAndKey(new BN(0), this.program.provider);
 
     return await this.program.rpc.withdraw(allowBorrow, amount, {
       accounts: {
