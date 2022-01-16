@@ -71,7 +71,10 @@ export default class Cache extends BaseAccount<Schema> {
     k: PublicKey,
     st: StateSchema,
   ): Promise<Schema> {
-    const data = (await program.account["cache"].fetch(k)) as CacheSchema;
+    const data = (await program.account["cache"].fetch(
+      k,
+      "recent",
+    )) as CacheSchema;
     return {
       ...data,
       oracles: data.oracles

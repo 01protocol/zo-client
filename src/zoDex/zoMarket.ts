@@ -200,10 +200,14 @@ export class ZoMarket {
     address: PublicKey,
     options: MarketOptions = {},
     programId: PublicKey = ZO_DEX_PROGRAM_ID,
+    accountInfoPrefetched?: AccountInfo<Buffer>,
     layoutOverride?: any,
   ) {
+    const { commitment = "confirmed" } = options;
     const { owner, data } = throwIfNull(
-      await connection.getAccountInfo(address),
+      accountInfoPrefetched
+        ? accountInfoPrefetched
+        : await connection.getAccountInfo(address, commitment),
       "Market not found",
     );
     if (!owner.equals(programId)) {
@@ -227,16 +231,22 @@ export class ZoMarket {
     );
   }
 
-  async loadBids(connection: Connection): Promise<Orderbook> {
+  async loadBids(
+    connection: Connection,
+    commitment?: Commitment,
+  ): Promise<Orderbook> {
     const { data } = throwIfNull(
-      await connection.getAccountInfo(this._decoded.bids),
+      await connection.getAccountInfo(this._decoded.bids, commitment),
     );
     return Orderbook.decode(this, data);
   }
 
-  async loadAsks(connection: Connection): Promise<Orderbook> {
+  async loadAsks(
+    connection: Connection,
+    commitment?: Commitment,
+  ): Promise<Orderbook> {
     const { data } = throwIfNull(
-      await connection.getAccountInfo(this._decoded.asks),
+      await connection.getAccountInfo(this._decoded.asks, commitment),
     );
     return Orderbook.decode(this, data);
   }
