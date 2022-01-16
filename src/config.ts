@@ -1,6 +1,7 @@
 import { PublicKey } from "@solana/web3.js";
 
 export { IDL } from "./types/zo";
+export { DEX_IDL } from "./types/dex";
 
 // == ACCOUNT SIZES ==
 export const CONTROL_ACCOUNT_SIZE = 8 + 4482;
