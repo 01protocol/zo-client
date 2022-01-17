@@ -9,6 +9,7 @@
   "scripts": {
     "build": "tsc && tsc -p tsconfig.cjs.json",
     "build-docs": "typedoc --out docs src/index.ts",
+    "postinstall": "npm run build",
     "lint-format": "prettier --check ./src",
     "prepare": "husky install"
   },
