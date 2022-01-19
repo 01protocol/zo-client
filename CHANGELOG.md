@@ -7,24 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.8] - 2022-01-16
+
 - Margin: Added reduceOnlyIoc and reduceOnlyLimit order types ([#49](https://github.com/01protocol/zo-client/pull/49))
 
-## [0.2.7] - 2022-1-16
+## [0.2.7] - 2022-01-16
 
 - General: updated anchor to newer version and enabled commitment passing ([#42](https://github.com/01protocol/zo-client/pull/42))
 - Fix: fixed decimal errors on some decoding ([#42](https://github.com/01protocol/zo-client/pull/42))
 
-## [0.2.6] - 2022-1-4 
+## [0.2.6] - 2022-01-04 
 
 - Events: Added swap event ([#32](https://github.com/01protocol/zo-client/pull/32))
 - Fix: Npm build ([#33](https://github.com/01protocol/zo-client/pull/38))
 
-## [0.2.4] - 2022-1-1 🥳
+## [0.2.4] - 2022-01-01
 
 - Events: Added anchor events and decoder ([#31](https://github.com/01protocol/zo-client/pull/31))
 
 
-## [0.2.3] - 2022-1-1 🥳
+## [0.2.3] - 2022-01-01 🥳
 
 - Changed serum-ts to lite-serum to remove unnecessary files ([#29](https://github.com/01protocol/zo-client/pull/29))
 
