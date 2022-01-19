@@ -8,6 +8,7 @@ export const CONTROL_ACCOUNT_SIZE = 8 + 4482;
 // == PARAMS ==
 export const ZO_FUTURE_TAKER_FEE = 0.001; // 10bps
 export const ZO_OPTION_TAKER_FEE = 0.001; // temporary value, not actual
+export const ZO_SQUARE_TAKER_FEE = 0.0015; // 15bps
 export const USDC_DECIMALS = 6;
 
 // == 01 CONSTANTS ==

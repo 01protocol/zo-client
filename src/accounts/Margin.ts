@@ -30,6 +30,7 @@ import {
   ZO_DEX_PROGRAM_ID,
   ZO_FUTURE_TAKER_FEE,
   ZO_OPTION_TAKER_FEE,
+  ZO_SQUARE_TAKER_FEE,
 } from "../config";
 import Decimal from "decimal.js";
 import Cache from "./Cache";
@@ -527,7 +528,9 @@ export default class Margin extends BaseAccount<Schema> {
     const takerFee =
       market.decoded.perpType.toNumber() === 1
         ? ZO_FUTURE_TAKER_FEE
-        : ZO_OPTION_TAKER_FEE;
+        : market.decoded.perpType.toNumber() === 2
+        ? ZO_OPTION_TAKER_FEE
+        : ZO_SQUARE_TAKER_FEE;
     const feeMultiplier = isLong ? 1 + takerFee : 1 - takerFee;
     const maxQuoteQtyBn = new BN(
       Math.round(
