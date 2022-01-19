@@ -1786,6 +1786,12 @@ export type Zo = {
           },
           {
             "name": "PostOnly"
+          },
+          {
+            "name": "ReduceOnlyIoc"
+          },
+          {
+            "name": "ReduceOnlyLimit"
           }
         ]
       }
@@ -2384,6 +2390,11 @@ export type Zo = {
       "code": 6061,
       "name": "SlippageExceeded",
       "msg": "Slippage tolerance exceeded"
+    },
+    {
+      "code": 6062,
+      "name": "ReduceOnlyViolated",
+      "msg": "Reduce only order was violated"
     }
   ]
 };
@@ -4176,6 +4187,12 @@ export const IDL: Zo = {
           },
           {
             "name": "PostOnly"
+          },
+          {
+            "name": "ReduceOnlyIoc"
+          },
+          {
+            "name": "ReduceOnlyLimit"
           }
         ]
       }
@@ -4774,6 +4791,11 @@ export const IDL: Zo = {
       "code": 6061,
       "name": "SlippageExceeded",
       "msg": "Slippage tolerance exceeded"
+    },
+    {
+      "code": 6062,
+      "name": "ReduceOnlyViolated",
+      "msg": "Reduce only order was violated"
     }
   ]
 };
