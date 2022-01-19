@@ -93,5 +93,40 @@ export const DEX_IDL = {
         }
       ]
     },
+    {
+      "name": "SettleFunding",
+      "fields": [
+        {
+          "name": "funding",
+          "type": "i64",
+          "index": false
+        }
+      ]
+    },
+    {
+      "name": "UpdateFundingLog",
+      "fields": [
+        {
+          "name": "oraclePrice",
+          "type": "i64",
+          "index": false
+        },
+        {
+          "name": "indexPrice",
+          "type": "i64",
+          "index": false
+        },
+        {
+          "name": "marketFundingIndex",
+          "type": "i128",
+          "index": false
+        },
+        {
+          "name": "lastUpdated",
+          "type": "u64",
+          "index": false
+        }
+      ]
+    }
   ]
 }
