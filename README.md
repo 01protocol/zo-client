@@ -25,9 +25,11 @@ SOL can be deposited directly using native lamports. You can get SOL either thro
 | State | Devnet  | HAdeMzG1ZuzhWnt26iyggLhYUen3YosXiD5sgDXJoNDY |
 
 ## Derivatives Markets
-| Symbol      | Cluster | Base Lots | Quote Lots |
-| ----------- | ------- | --------- | ---------- |
-| BTC-PERP    | Devnet  | 100       | 10         |
+| Symbol      | Cluster | Base Lots | Quote Lots | Base Decimals |
+| ----------- | ------- | --------- | ---------- | ------------- |
+| BTC-PERP    | Devnet  | 100       | 10         | 6             |
+| SOL-PERP    | Devnet  | 100       | 10         | 6             |
+| AVAX-PERP   | Devnet  | 1000      | 10         | 8             |
 
 ## Spot Swap Markets 
 | Symbol   | Cluster | Serum Market Key                             |
@@ -170,3 +172,5 @@ await margin.settleFunds(MARKET_SYMBOL);
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 Please make sure to update tests as appropriate.
+_
+_

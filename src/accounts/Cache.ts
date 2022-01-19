@@ -71,7 +71,10 @@ export default class Cache extends BaseAccount<Schema> {
     k: PublicKey,
     st: StateSchema,
   ): Promise<Schema> {
-    const data = (await program.account["cache"].fetch(k)) as CacheSchema;
+    const data = (await program.account["cache"].fetch(
+      k,
+      "recent",
+    )) as CacheSchema;
     return {
       ...data,
       oracles: data.oracles
@@ -86,17 +89,17 @@ export default class Cache extends BaseAccount<Schema> {
           };
         }),
       marks: st.perpMarkets.map((m, i) => {
-        const decimals = m.assetDecimals;
+        const decimals = 6 - m.assetDecimals;
         const c = data.marks[i]!;
         return {
           ...c,
-          price: Num.fromWI80F48(c.price, decimals - 6),
+          price: Num.fromWI80F48(c.price, decimals),
           twap: {
-            cumulAvg: Num.fromWI80F48(c.twap.cumulAvg, decimals - 6),
-            open: Num.fromWI80F48(c.twap.open, decimals - 6),
-            high: Num.fromWI80F48(c.twap.high, decimals - 6),
-            low: Num.fromWI80F48(c.twap.low, decimals - 6),
-            close: Num.fromWI80F48(c.twap.close, decimals - 6),
+            cumulAvg: Num.fromWI80F48(c.twap.cumulAvg, decimals),
+            open: Num.fromWI80F48(c.twap.open, decimals),
+            high: Num.fromWI80F48(c.twap.high, decimals),
+            low: Num.fromWI80F48(c.twap.low, decimals),
+            close: Num.fromWI80F48(c.twap.close, decimals),
             lastSampleStartTime: new Date(
               c.twap.lastSampleStartTime.toNumber(),
             ),

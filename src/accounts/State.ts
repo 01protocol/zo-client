@@ -69,7 +69,10 @@ export default class State extends BaseAccount<Schema> {
     program: Program<Zo>,
     k: PublicKey,
   ): Promise<Schema> {
-    const data = (await program.account["state"].fetch(k)) as StateSchema;
+    const data = (await program.account["state"].fetch(
+      k,
+      "recent",
+    )) as StateSchema;
 
     // Convert StateSchema to Schema.
     return {

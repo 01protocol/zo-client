@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.7] - 2022-1-16
+
+- General: updated anchor to newer version and enabled commitment passing ([#42](https://github.com/01protocol/zo-client/pull/42))
+- Fix: fixed decimal errors on some decoding ([#42](https://github.com/01protocol/zo-client/pull/42))
+
+## [0.2.6] - 2022-1-4 
+
 - Events: Added swap event ([#32](https://github.com/01protocol/zo-client/pull/32))
+- Fix: Npm build ([#33](https://github.com/01protocol/zo-client/pull/38))
 
 ## [0.2.4] - 2022-1-1 🥳
 
