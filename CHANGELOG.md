@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Spot: Added and enabled swapping for SOL-USDC spot market
+
 ## [0.2.8] - 2022-01-16
 
 - Margin: Added reduceOnlyIoc and reduceOnlyLimit order types ([#49](https://github.com/01protocol/zo-client/pull/49))

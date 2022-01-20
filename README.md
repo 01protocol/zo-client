@@ -35,6 +35,7 @@ SOL can be deposited directly using native lamports. You can get SOL either thro
 | Symbol   | Cluster | Serum Market Key                             |
 |----------| ------- |----------------------------------------------|
 | BTC-USDC | Devnet  | 9vNzQmmG7c3aXuTdKKULQW2oGrYsfGZ1uRsMtgZ2APJF |
+| SOL-USDC | Devnet  | E5gEK3WUVHzGDB6JSWZEwemJ7JZDZqHmG5gGX6NjgW2v |
 
 ## Collaterals 
 | Symbol      | Cluster | Mint                                         | Decimals |
