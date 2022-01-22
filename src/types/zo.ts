@@ -62,6 +62,521 @@ export type Zo = {
   ],
   "instructions": [
     {
+      "name": "initState",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "swapFeeVault",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "signerNonce",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "updateState",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "newAdmin",
+          "type": {
+            "option": "publicKey"
+          }
+        },
+        {
+          "name": "newSwapFeeVault",
+          "type": {
+            "option": "publicKey"
+          }
+        }
+      ]
+    },
+    {
+      "name": "addInsurance",
+      "accounts": [
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "reduceInsurance",
+      "accounts": [
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "sweepMarketFees",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "treasuryTokenAcc",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "srmTokenAcc",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "addCollateral",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "oracleSymbol",
+          "type": "string"
+        },
+        {
+          "name": "weight",
+          "type": "u16"
+        },
+        {
+          "name": "isBorrowable",
+          "type": "bool"
+        },
+        {
+          "name": "optimalUtil",
+          "type": "u16"
+        },
+        {
+          "name": "optimalRate",
+          "type": "u16"
+        },
+        {
+          "name": "maxRate",
+          "type": "u16"
+        },
+        {
+          "name": "liqFee",
+          "type": "u16"
+        },
+        {
+          "name": "ogFee",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "updateCollateral",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "newMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "newVault",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "newOracleSymbol",
+          "type": {
+            "option": "string"
+          }
+        },
+        {
+          "name": "newDecimals",
+          "type": {
+            "option": "u8"
+          }
+        },
+        {
+          "name": "newWeight",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "newLiqFee",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "newIsBorrowable",
+          "type": {
+            "option": "bool"
+          }
+        },
+        {
+          "name": "newOptimalUtil",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "newOptimalRate",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "newMaxRate",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "newOgFee",
+          "type": {
+            "option": "u16"
+          }
+        }
+      ]
+    },
+    {
+      "name": "addOracle",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "symbol",
+          "type": "string"
+        },
+        {
+          "name": "baseDecimals",
+          "type": "u8"
+        },
+        {
+          "name": "quoteDecimals",
+          "type": "u8"
+        },
+        {
+          "name": "oracleTypes",
+          "type": {
+            "vec": {
+              "defined": "OracleType"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "updateOracle",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "symbol",
+          "type": "string"
+        },
+        {
+          "name": "baseDecimals",
+          "type": {
+            "option": "u8"
+          }
+        },
+        {
+          "name": "quoteDecimals",
+          "type": {
+            "option": "u8"
+          }
+        }
+      ]
+    },
+    {
+      "name": "removeOracle",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "symbol",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "sweepAccruedFees",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "treasuryTokenAcc",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "createMargin",
       "accounts": [
         {
@@ -71,6 +586,11 @@ export type Zo = {
         },
         {
           "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "payer",
           "isMut": false,
           "isSigner": true
         },
@@ -218,6 +738,151 @@ export type Zo = {
       ]
     },
     {
+      "name": "initPerpMarket",
+      "accounts": [
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "cache",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reqQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "symbol",
+          "type": "string"
+        },
+        {
+          "name": "oracleSymbol",
+          "type": "string"
+        },
+        {
+          "name": "perpType",
+          "type": {
+            "defined": "PerpType"
+          }
+        },
+        {
+          "name": "vAssetLotSize",
+          "type": "u64"
+        },
+        {
+          "name": "vCollateralLotSize",
+          "type": "u64"
+        },
+        {
+          "name": "strike",
+          "type": "u64"
+        },
+        {
+          "name": "baseImf",
+          "type": "u16"
+        },
+        {
+          "name": "liqFee",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "updatePerpMarketInfo",
+      "accounts": [
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "newBaseImf",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "newOracleSymbol",
+          "type": {
+            "option": "string"
+          }
+        }
+      ]
+    },
+    {
       "name": "createPerpOpenOrders",
       "accounts": [
         {
@@ -232,6 +897,11 @@ export type Zo = {
         },
         {
           "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "payer",
           "isMut": false,
           "isSigner": true
         },
@@ -685,6 +1355,82 @@ export type Zo = {
       ]
     },
     {
+      "name": "forceCloseEverlastingPosition",
+      "accounts": [
+        {
+          "name": "liquidator",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "control",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reqQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "liquidatePerpPosition",
       "accounts": [
         {
@@ -888,6 +1634,93 @@ export type Zo = {
       "args": []
     },
     {
+      "name": "enableSwap",
+      "accounts": [
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "serumOpenOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "serumMarket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "srmSpotProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "disableSwap",
+      "accounts": [
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "serumOpenOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "serumMarket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "srmSpotProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "swap",
       "accounts": [
         {
@@ -1024,6 +1857,77 @@ export type Zo = {
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "sweepSwapFees",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "quoteVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "assetVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "swapFeeVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "serumOpenOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "serumMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "serumCoinVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "serumPcVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "serumVaultSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "srmSpotProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     },
     {
       "name": "cacheOracle",
@@ -2463,6 +3367,521 @@ export const IDL: Zo = {
   ],
   "instructions": [
     {
+      "name": "initState",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "swapFeeVault",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "signerNonce",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "updateState",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "newAdmin",
+          "type": {
+            "option": "publicKey"
+          }
+        },
+        {
+          "name": "newSwapFeeVault",
+          "type": {
+            "option": "publicKey"
+          }
+        }
+      ]
+    },
+    {
+      "name": "addInsurance",
+      "accounts": [
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "reduceInsurance",
+      "accounts": [
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "tokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "sweepMarketFees",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "treasuryTokenAcc",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "srmTokenAcc",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "addCollateral",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "oracleSymbol",
+          "type": "string"
+        },
+        {
+          "name": "weight",
+          "type": "u16"
+        },
+        {
+          "name": "isBorrowable",
+          "type": "bool"
+        },
+        {
+          "name": "optimalUtil",
+          "type": "u16"
+        },
+        {
+          "name": "optimalRate",
+          "type": "u16"
+        },
+        {
+          "name": "maxRate",
+          "type": "u16"
+        },
+        {
+          "name": "liqFee",
+          "type": "u16"
+        },
+        {
+          "name": "ogFee",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "updateCollateral",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "newMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "newVault",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "newOracleSymbol",
+          "type": {
+            "option": "string"
+          }
+        },
+        {
+          "name": "newDecimals",
+          "type": {
+            "option": "u8"
+          }
+        },
+        {
+          "name": "newWeight",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "newLiqFee",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "newIsBorrowable",
+          "type": {
+            "option": "bool"
+          }
+        },
+        {
+          "name": "newOptimalUtil",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "newOptimalRate",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "newMaxRate",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "newOgFee",
+          "type": {
+            "option": "u16"
+          }
+        }
+      ]
+    },
+    {
+      "name": "addOracle",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "symbol",
+          "type": "string"
+        },
+        {
+          "name": "baseDecimals",
+          "type": "u8"
+        },
+        {
+          "name": "quoteDecimals",
+          "type": "u8"
+        },
+        {
+          "name": "oracleTypes",
+          "type": {
+            "vec": {
+              "defined": "OracleType"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "updateOracle",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "symbol",
+          "type": "string"
+        },
+        {
+          "name": "baseDecimals",
+          "type": {
+            "option": "u8"
+          }
+        },
+        {
+          "name": "quoteDecimals",
+          "type": {
+            "option": "u8"
+          }
+        }
+      ]
+    },
+    {
+      "name": "removeOracle",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "symbol",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "sweepAccruedFees",
+      "accounts": [
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "treasuryTokenAcc",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "createMargin",
       "accounts": [
         {
@@ -2472,6 +3891,11 @@ export const IDL: Zo = {
         },
         {
           "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "payer",
           "isMut": false,
           "isSigner": true
         },
@@ -2619,6 +4043,151 @@ export const IDL: Zo = {
       ]
     },
     {
+      "name": "initPerpMarket",
+      "accounts": [
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "cache",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "bids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "asks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reqQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "symbol",
+          "type": "string"
+        },
+        {
+          "name": "oracleSymbol",
+          "type": "string"
+        },
+        {
+          "name": "perpType",
+          "type": {
+            "defined": "PerpType"
+          }
+        },
+        {
+          "name": "vAssetLotSize",
+          "type": "u64"
+        },
+        {
+          "name": "vCollateralLotSize",
+          "type": "u64"
+        },
+        {
+          "name": "strike",
+          "type": "u64"
+        },
+        {
+          "name": "baseImf",
+          "type": "u16"
+        },
+        {
+          "name": "liqFee",
+          "type": "u16"
+        }
+      ]
+    },
+    {
+      "name": "updatePerpMarketInfo",
+      "accounts": [
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "newBaseImf",
+          "type": {
+            "option": "u16"
+          }
+        },
+        {
+          "name": "newOracleSymbol",
+          "type": {
+            "option": "string"
+          }
+        }
+      ]
+    },
+    {
       "name": "createPerpOpenOrders",
       "accounts": [
         {
@@ -2633,6 +4202,11 @@ export const IDL: Zo = {
         },
         {
           "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "payer",
           "isMut": false,
           "isSigner": true
         },
@@ -3086,6 +4660,82 @@ export const IDL: Zo = {
       ]
     },
     {
+      "name": "forceCloseEverlastingPosition",
+      "accounts": [
+        {
+          "name": "liquidator",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "control",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reqQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "liquidatePerpPosition",
       "accounts": [
         {
@@ -3289,6 +4939,93 @@ export const IDL: Zo = {
       "args": []
     },
     {
+      "name": "enableSwap",
+      "accounts": [
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "serumOpenOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "serumMarket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "srmSpotProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "disableSwap",
+      "accounts": [
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "mint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "serumOpenOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "serumMarket",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "srmSpotProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "swap",
       "accounts": [
         {
@@ -3425,6 +5162,77 @@ export const IDL: Zo = {
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "sweepSwapFees",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "quoteVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "assetVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "swapFeeVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "serumOpenOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "serumMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "serumCoinVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "serumPcVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "serumVaultSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "srmSpotProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     },
     {
       "name": "cacheOracle",

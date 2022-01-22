@@ -100,6 +100,7 @@ export default class Margin extends BaseAccount<Schema> {
         accounts: {
           state: st.pubkey,
           authority: program.provider.wallet.publicKey,
+          payer: program.provider.wallet.publicKey,
           margin: key,
           control: control.publicKey,
           rent: SYSVAR_RENT_PUBKEY,
@@ -424,6 +425,7 @@ export default class Margin extends BaseAccount<Schema> {
         state: this.state.pubkey,
         stateSigner: this.state.signer,
         authority: this.wallet.publicKey,
+        payer: this.wallet.publicKey,
         margin: this.pubkey,
         control: this.data.control,
         openOrders: ooKey,
@@ -587,6 +589,7 @@ export default class Margin extends BaseAccount<Schema> {
                   state: this.state.pubkey,
                   stateSigner: this.state.signer,
                   authority: this.wallet.publicKey,
+                  payer: this.wallet.publicKey,
                   margin: this.pubkey,
                   control: this.data.control,
                   openOrders: ooKey,
