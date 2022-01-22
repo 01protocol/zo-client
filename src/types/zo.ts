@@ -75,6 +75,11 @@ export type Zo = {
           "isSigner": true
         },
         {
+          "name": "payer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
           "name": "margin",
           "isMut": true,
           "isSigner": false
@@ -232,6 +237,11 @@ export type Zo = {
         },
         {
           "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "payer",
           "isMut": false,
           "isSigner": true
         },
@@ -2476,6 +2486,11 @@ export const IDL: Zo = {
           "isSigner": true
         },
         {
+          "name": "payer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
           "name": "margin",
           "isMut": true,
           "isSigner": false
@@ -2633,6 +2648,11 @@ export const IDL: Zo = {
         },
         {
           "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "payer",
           "isMut": false,
           "isSigner": true
         },
