@@ -9,8 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.9] - 2022-01-21 
 
-- Margin: Added payer to createMargin and createPerpOpenOrders so that PDA's can be authorities of margin accounts during CPIs ([#51](https://github.com/01protocol/zo-client/pull/51))
 - Spot: Added and enabled swapping for SOL-USDC spot market
+
+### Breaking
+
+- Margin: Added payer to createMargin and createPerpOpenOrders so that PDA's can be authorities of margin accounts during CPIs ([#51](https://github.com/01protocol/zo-client/pull/51))
 
 ## [0.2.8] - 2022-01-16
 
