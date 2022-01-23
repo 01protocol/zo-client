@@ -23,7 +23,9 @@ export type PerpType = { future: {} } | { callOption: {} } | { putOption: {} };
 export type OrderType =
   | { limit: {} }
   | { immediateOrCancel: {} }
-  | { postOnly: {} };
+  | { postOnly: {} }
+  | { reduceOnlyIoc: {} }
+  | { reduceOnlyLimit: {} };
 
 type WrappedI80F48 = { data: BN };
 type Symbol = { data: number[] };

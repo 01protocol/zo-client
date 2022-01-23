@@ -75,6 +75,11 @@ export type Zo = {
           "isSigner": true
         },
         {
+          "name": "payer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
           "name": "margin",
           "isMut": true,
           "isSigner": false
@@ -232,6 +237,11 @@ export type Zo = {
         },
         {
           "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "payer",
           "isMut": false,
           "isSigner": true
         },
@@ -1786,6 +1796,12 @@ export type Zo = {
           },
           {
             "name": "PostOnly"
+          },
+          {
+            "name": "ReduceOnlyIoc"
+          },
+          {
+            "name": "ReduceOnlyLimit"
           }
         ]
       }
@@ -2384,6 +2400,11 @@ export type Zo = {
       "code": 6061,
       "name": "SlippageExceeded",
       "msg": "Slippage tolerance exceeded"
+    },
+    {
+      "code": 6062,
+      "name": "ReduceOnlyViolated",
+      "msg": "Reduce only order was violated"
     }
   ]
 };
@@ -2465,6 +2486,11 @@ export const IDL: Zo = {
           "isSigner": true
         },
         {
+          "name": "payer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
           "name": "margin",
           "isMut": true,
           "isSigner": false
@@ -2622,6 +2648,11 @@ export const IDL: Zo = {
         },
         {
           "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "payer",
           "isMut": false,
           "isSigner": true
         },
@@ -4176,6 +4207,12 @@ export const IDL: Zo = {
           },
           {
             "name": "PostOnly"
+          },
+          {
+            "name": "ReduceOnlyIoc"
+          },
+          {
+            "name": "ReduceOnlyLimit"
           }
         ]
       }
@@ -4774,6 +4811,11 @@ export const IDL: Zo = {
       "code": 6061,
       "name": "SlippageExceeded",
       "msg": "Slippage tolerance exceeded"
+    },
+    {
+      "code": 6062,
+      "name": "ReduceOnlyViolated",
+      "msg": "Reduce only order was violated"
     }
   ]
 };

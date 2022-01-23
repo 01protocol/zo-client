@@ -30,6 +30,7 @@ import {
   ZO_DEX_PROGRAM_ID,
   ZO_FUTURE_TAKER_FEE,
   ZO_OPTION_TAKER_FEE,
+  ZO_SQUARE_TAKER_FEE,
 } from "../config";
 import Decimal from "decimal.js";
 import Cache from "./Cache";
@@ -98,6 +99,7 @@ export default class Margin extends BaseAccount<Schema> {
         accounts: {
           state: st.pubkey,
           authority: program.provider.wallet.publicKey,
+          payer: program.provider.wallet.publicKey,
           margin: key,
           control: control.publicKey,
           rent: SYSVAR_RENT_PUBKEY,
@@ -422,6 +424,7 @@ export default class Margin extends BaseAccount<Schema> {
         state: this.state.pubkey,
         stateSigner: this.state.signer,
         authority: this.wallet.publicKey,
+        payer: this.wallet.publicKey,
         margin: this.pubkey,
         control: this.data.control,
         openOrders: ooKey,
@@ -438,7 +441,7 @@ export default class Margin extends BaseAccount<Schema> {
    * Places an order on the orderbook for a given market, using lot sizes for limit and base quantity, and native units for quote quantity.
    * Assumes an open orders account has been created already.
    * @param symbol The market symbol. Ex: ("BTC-PERP")
-   * @param orderType The order type. Either limit, immediateOrCancel, or postOnly.
+   * @param orderType The order type. Either limit, immediateOrCancel, postOnly, reduceOnlyIoc, or reduceOnlyLimit
    * @param isLong True if buy, false if sell.
    * @param limitPrice The limit price in base lots per quote lots.
    * @param maxBaseQty The maximum amount of base lots to buy or sell.
@@ -529,7 +532,9 @@ export default class Margin extends BaseAccount<Schema> {
     const takerFee =
       market.decoded.perpType.toNumber() === 1
         ? ZO_FUTURE_TAKER_FEE
-        : ZO_OPTION_TAKER_FEE;
+        : market.decoded.perpType.toNumber() === 2
+        ? ZO_OPTION_TAKER_FEE
+        : ZO_SQUARE_TAKER_FEE;
     const feeMultiplier = isLong ? 1 + takerFee : 1 - takerFee;
     const maxQuoteQtyBn = new BN(
       Math.round(
@@ -583,6 +588,7 @@ export default class Margin extends BaseAccount<Schema> {
                   state: this.state.pubkey,
                   stateSigner: this.state.signer,
                   authority: this.wallet.publicKey,
+                  payer: this.wallet.publicKey,
                   margin: this.pubkey,
                   control: this.data.control,
                   openOrders: ooKey,
