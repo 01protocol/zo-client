@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Added optional Margin owner param
+
 ## [0.2.7] - 2022-1-16
 
 - General: updated anchor to newer version and enabled commitment passing ([#42](https://github.com/01protocol/zo-client/pull/42))

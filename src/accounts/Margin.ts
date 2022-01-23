@@ -55,6 +55,7 @@ export default class Margin extends BaseAccount<Schema> {
     data: Schema,
     public readonly control: Control,
     public readonly state: State,
+    public readonly owner: PublicKey,
   ) {
     super(program, pubkey, data);
   }
@@ -66,15 +67,13 @@ export default class Margin extends BaseAccount<Schema> {
     program: Program<Zo>,
     st: State,
     ch: Cache,
+    owner?: PublicKey,
   ): Promise<Margin> {
-    const [key, _nonce] = await this.getPda(
-      st,
-      program.provider.wallet.publicKey,
-      program.programId,
-    );
+    const marginOwner = owner || program.provider.wallet.publicKey;
+    const [key, _nonce] = await this.getPda(st, marginOwner, program.programId);
     const data = await this.fetch(program, key, st, ch);
     const control = await Control.load(program, data.control);
-    return new this(program, key, data, control, st);
+    return new this(program, key, data, control, st, marginOwner);
   }
 
   /**
