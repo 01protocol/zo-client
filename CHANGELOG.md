@@ -7,16 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2022-01-21 
+
 - Margin: Removed `cancelPerpOrderByClientId` and merged it into `cancelPerpOrder` ([#52](https://github.com/01protocol/zo-client/pull/52))
-- BREAKING: The old Zo devnet program `DuSPvazsfthvWRuJ8TUs984VXCeUfJ1qbzd8NwkRLEpd`, and Zo Dex devnet program `CX8xiCu9uBrLX5v3DSeHX5SEvGT36PSExES2LmzVcyJd` is being decommissioned.
+- BREAKING - Program: The old Zo devnet program `DuSPvazsfthvWRuJ8TUs984VXCeUfJ1qbzd8NwkRLEpd`, and Zo Dex devnet program `CX8xiCu9uBrLX5v3DSeHX5SEvGT36PSExES2LmzVcyJd` is being decommissioned.
 
 ## [0.2.9] - 2022-01-21 
 
 - Spot: Added and enabled swapping for SOL-USDC spot market
-
-### Breaking
-
-- Margin: Added payer to createMargin and createPerpOpenOrders so that PDA's can be authorities of margin accounts during CPIs ([#51](https://github.com/01protocol/zo-client/pull/51))
+- BREAKING - Margin: Added payer to createMargin and createPerpOpenOrders so that PDA's can be authorities of margin accounts during CPIs ([#51](https://github.com/01protocol/zo-client/pull/51))
 
 ## [0.2.8] - 2022-01-16
 
