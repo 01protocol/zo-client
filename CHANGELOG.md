@@ -7,11 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.4.0] - 2022-01-21
+## [0.4.1] - 2022-01-24
+
+- Fix: changed `cancelPerpOrder` null operator
+
+## [0.4.0] - 2022-01-24
 
 - Fix: Update IDL
 
-## [0.3.0] - 2022-01-21 
+## [0.3.0] - 2022-01-24
 
 - Margin: Removed `cancelPerpOrderByClientId` and merged it into `cancelPerpOrder` ([#52](https://github.com/01protocol/zo-client/pull/52))
 - BREAKING - Program: The old Zo devnet program `DuSPvazsfthvWRuJ8TUs984VXCeUfJ1qbzd8NwkRLEpd`, and Zo Dex devnet program `CX8xiCu9uBrLX5v3DSeHX5SEvGT36PSExES2LmzVcyJd` is being decommissioned.
