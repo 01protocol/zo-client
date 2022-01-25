@@ -4,3 +4,4 @@ dist/
 *.log
 *.tsbuildinfo
 .idea
+git

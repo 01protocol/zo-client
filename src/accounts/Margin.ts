@@ -632,9 +632,9 @@ export default class Margin extends BaseAccount<Schema> {
     }
 
     return await this.program.rpc.cancelPerpOrder(
-      orderId || null,
-      isLong || null,
-      clientId || null,
+      orderId ?? null,
+      isLong ?? null,
+      clientId ?? null,
       {
         accounts: {
           state: this.state.pubkey,
