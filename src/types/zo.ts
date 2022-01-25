@@ -20,7 +20,7 @@ export type Zo = {
     {
       "name": "ORACLE_STALENESS_THRESH",
       "type": "u64",
-      "value": "5"
+      "value": "10"
     },
     {
       "name": "TWAP_SAMPLE_DT",
@@ -41,6 +41,13 @@ export type Zo = {
       "name": "VALID_DT",
       "type": "u64",
       "value": "20"
+    },
+    {
+      "name": "MAX_ORACLE_SOURCES",
+      "type": {
+        "defined": "usize"
+      },
+      "value": "3"
     },
     {
       "name": "MAX_COLLATERALS",
@@ -1200,6 +1207,15 @@ export type Zo = {
           {
             "name": "state",
             "type": "publicKey"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                1024
+              ]
+            }
           }
         ]
       }
@@ -1367,6 +1383,14 @@ export type Zo = {
           {
             "name": "ogFee",
             "type": "u16"
+          },
+          {
+            "name": "maxDeposit",
+            "type": "u64"
+          },
+          {
+            "name": "dustThreshold",
+            "type": "u16"
           }
         ]
       }
@@ -1453,7 +1477,7 @@ export type Zo = {
                 {
                   "defined": "OracleSource"
                 },
-                2
+                3
               ]
             }
           },
@@ -1720,6 +1744,23 @@ export type Zo = {
           {
             "name": "serumOpenOrders",
             "type": "publicKey"
+          },
+          {
+            "name": "maxDeposit",
+            "type": "u64"
+          },
+          {
+            "name": "dustThreshold",
+            "type": "u16"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                384
+              ]
+            }
           }
         ]
       }
@@ -1774,6 +1815,15 @@ export type Zo = {
           {
             "name": "dexMarket",
             "type": "publicKey"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                320
+              ]
+            }
           }
         ]
       }
@@ -2600,7 +2650,27 @@ export type Zo = {
     {
       "code": 6063,
       "name": "Unimplemented",
-      "msg": "Reduce only order was violated"
+      "msg": "Unimplemented"
+    },
+    {
+      "code": 6064,
+      "name": "Bankrupt",
+      "msg": "Currently bankrupt"
+    },
+    {
+      "code": 6065,
+      "name": "AboveDepositLimit",
+      "msg": "Deposit exceeds deposit limit for the collateral"
+    },
+    {
+      "code": 6066,
+      "name": "BelowDustThreshold",
+      "msg": "Below the dust threshold"
+    },
+    {
+      "code": 6067,
+      "name": "InvalidLiquidation",
+      "msg": "The liquidation is invalid"
     }
   ]
 };
@@ -2627,7 +2697,7 @@ export const IDL: Zo = {
     {
       "name": "ORACLE_STALENESS_THRESH",
       "type": "u64",
-      "value": "5"
+      "value": "10"
     },
     {
       "name": "TWAP_SAMPLE_DT",
@@ -2648,6 +2718,13 @@ export const IDL: Zo = {
       "name": "VALID_DT",
       "type": "u64",
       "value": "20"
+    },
+    {
+      "name": "MAX_ORACLE_SOURCES",
+      "type": {
+        "defined": "usize"
+      },
+      "value": "3"
     },
     {
       "name": "MAX_COLLATERALS",
@@ -3807,6 +3884,15 @@ export const IDL: Zo = {
           {
             "name": "state",
             "type": "publicKey"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                1024
+              ]
+            }
           }
         ]
       }
@@ -3974,6 +4060,14 @@ export const IDL: Zo = {
           {
             "name": "ogFee",
             "type": "u16"
+          },
+          {
+            "name": "maxDeposit",
+            "type": "u64"
+          },
+          {
+            "name": "dustThreshold",
+            "type": "u16"
           }
         ]
       }
@@ -4060,7 +4154,7 @@ export const IDL: Zo = {
                 {
                   "defined": "OracleSource"
                 },
-                2
+                3
               ]
             }
           },
@@ -4327,6 +4421,23 @@ export const IDL: Zo = {
           {
             "name": "serumOpenOrders",
             "type": "publicKey"
+          },
+          {
+            "name": "maxDeposit",
+            "type": "u64"
+          },
+          {
+            "name": "dustThreshold",
+            "type": "u16"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                384
+              ]
+            }
           }
         ]
       }
@@ -4381,6 +4492,15 @@ export const IDL: Zo = {
           {
             "name": "dexMarket",
             "type": "publicKey"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                320
+              ]
+            }
           }
         ]
       }
@@ -5207,7 +5327,27 @@ export const IDL: Zo = {
     {
       "code": 6063,
       "name": "Unimplemented",
-      "msg": "Reduce only order was violated"
+      "msg": "Unimplemented"
+    },
+    {
+      "code": 6064,
+      "name": "Bankrupt",
+      "msg": "Currently bankrupt"
+    },
+    {
+      "code": 6065,
+      "name": "AboveDepositLimit",
+      "msg": "Deposit exceeds deposit limit for the collateral"
+    },
+    {
+      "code": 6066,
+      "name": "BelowDustThreshold",
+      "msg": "Below the dust threshold"
+    },
+    {
+      "code": 6067,
+      "name": "InvalidLiquidation",
+      "msg": "The liquidation is invalid"
     }
   ]
 };
