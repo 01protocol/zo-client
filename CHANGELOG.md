@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2022-01-21
+
+- Fix: Update IDL
+
 ## [0.3.0] - 2022-01-21 
 
 - Margin: Removed `cancelPerpOrderByClientId` and merged it into `cancelPerpOrder` ([#52](https://github.com/01protocol/zo-client/pull/52))
