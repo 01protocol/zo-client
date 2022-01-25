@@ -29,7 +29,7 @@ SOL can be deposited directly using native lamports. You can get SOL either thro
 | Symbol      | Cluster | Base Lots | Quote Lots | Base Decimals |
 | ----------- | ------- | --------- | ---------- | ------------- |
 | BTC-PERP    | Devnet  | 100       | 10         | 6             |
-| SOL-PERP    | Devnet  | 100       | 10         | 9             |
+| SOL-PERP    | Devnet  | 100000000       | 100         | 9             |
 
 ## Spot Swap Markets 
 | Symbol   | Cluster | Serum Market Key                             |
