@@ -605,56 +605,52 @@ export default class Margin extends BaseAccount<Schema> {
   }
 
   /**
-   * Cancels an order on the orderbook for a given market by order id.
+   * Cancels an order on the orderbook for a given market either by orderId or by clientId.
    * @param symbol The market symbol. Ex: ("BTC-PERP")
    * @param isLong True if the order being cancelled is a buy order, false if sell order.
    * @param orderId The order id of the order to cancel. To get order id, call loadOrdersForOwner through the market.
-   */
-  async cancelPerpOrder(symbol: string, isLong: boolean, orderId: BN) {
-    const market = await this.state.getMarketBySymbol(symbol);
-    const oo = await this.getOpenOrdersInfoBySymbol(symbol);
-
-    return await this.program.rpc.cancelPerpOrder(orderId, isLong, {
-      accounts: {
-        state: this.state.pubkey,
-        cache: this.state.cache.pubkey,
-        authority: this.wallet.publicKey,
-        margin: this.pubkey,
-        control: this.control.pubkey,
-        openOrders: oo!.key,
-        dexMarket: market.address,
-        marketBids: market.bidsAddress,
-        marketAsks: market.asksAddress,
-        eventQ: market.eventQueueAddress,
-        dexProgram: ZO_DEX_PROGRAM_ID,
-      },
-    });
-  }
-
-  /**
-   * Cancels an order on the orderbook for a given market that was pre-assigned a unique clientId.
-   * @param symbol The market symbol. Ex: ("BTC-PERP")
    * @param clientId The client id that was assigned to the order when it was placed.
    */
-  async cancelPerpOrderByClientId(symbol: string, clientId: number) {
+  async cancelPerpOrder({
+    symbol,
+    isLong,
+    orderId,
+    clientId,
+  }: {
+    symbol: string;
+    isLong?: boolean;
+    orderId?: BN;
+    clientId?: BN;
+  }) {
     const market = await this.state.getMarketBySymbol(symbol);
     const oo = await this.getOpenOrdersInfoBySymbol(symbol);
 
-    return await this.program.rpc.cancelPerpOrderByClientId(new BN(clientId), {
-      accounts: {
-        state: this.state.pubkey,
-        cache: this.state.cache.pubkey,
-        authority: this.wallet.publicKey,
-        margin: this.pubkey,
-        control: this.control.pubkey,
-        openOrders: oo!.key,
-        dexMarket: market.address,
-        marketBids: market.bidsAddress,
-        marketAsks: market.asksAddress,
-        eventQ: market.eventQueueAddress,
-        dexProgram: ZO_DEX_PROGRAM_ID,
+    if (!isLong && !orderId && !clientId) {
+      throw new Error(
+        `Either specify both isLong and orderId, or only clientId`,
+      );
+    }
+
+    return await this.program.rpc.cancelPerpOrder(
+      orderId || null,
+      isLong || null,
+      clientId || null,
+      {
+        accounts: {
+          state: this.state.pubkey,
+          cache: this.state.cache.pubkey,
+          authority: this.wallet.publicKey,
+          margin: this.pubkey,
+          control: this.control.pubkey,
+          openOrders: oo!.key,
+          dexMarket: market.address,
+          marketBids: market.bidsAddress,
+          marketAsks: market.asksAddress,
+          eventQ: market.eventQueueAddress,
+          dexProgram: ZO_DEX_PROGRAM_ID,
+        },
       },
-    });
+    );
   }
 
   /**

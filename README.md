@@ -22,14 +22,13 @@ SOL can be deposited directly using native lamports. You can get SOL either thro
 ## Program
 |       | Cluster | Pubkey                                       |
 | ----- |---------|----------------------------------------------|
-| State | Devnet  | HAdeMzG1ZuzhWnt26iyggLhYUen3YosXiD5sgDXJoNDY |
+| Program ID | Devnet  | Zo1ThtSHMh9tZGECwBDL81WJRL6s3QTHf733Tyko7KQ  |
+| State | Devnet  | KwcWW7WvgSXLJcyjKZJBHLbfriErggzYHpjS9qjVD5F  |
 
 ## Derivatives Markets
 | Symbol      | Cluster | Base Lots | Quote Lots | Base Decimals |
 | ----------- | ------- | --------- | ---------- | ------------- |
 | BTC-PERP    | Devnet  | 100       | 10         | 6             |
-| SOL-PERP    | Devnet  | 100       | 10         | 6             |
-| AVAX-PERP   | Devnet  | 1000      | 10         | 8             |
 
 ## Spot Swap Markets 
 | Symbol   | Cluster | Serum Market Key                             |
@@ -41,8 +40,8 @@ SOL can be deposited directly using native lamports. You can get SOL either thro
 | Symbol      | Cluster | Mint                                         | Decimals |
 | ----------- | ------- | -------------------------------------------- | -------- |
 | USDC        | Devnet  | 7UT1javY6X1M9R2UrPGrwcZ78SX3huaXyETff5hm5YdX | 6        |
-| BTC         | Devnet  | 3n3sMJMnZhgNDaxp6cfywvjHLrV1s34ndfa6xAaYvpRs | 6        |
-| SOL         | Devnet  | So11111111111111111111111111111111111111112  | 9        |
+| BTC (not supported yet)         | Devnet  | 3n3sMJMnZhgNDaxp6cfywvjHLrV1s34ndfa6xAaYvpRs | 6        |
+| SOL (not supported yet)         | Devnet  | So11111111111111111111111111111111111111112  | 9        |
 
 ## Usage examples
 

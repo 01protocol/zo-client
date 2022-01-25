@@ -20,7 +20,7 @@ export type Zo = {
     {
       "name": "ORACLE_STALENESS_THRESH",
       "type": "u64",
-      "value": "5"
+      "value": "10"
     },
     {
       "name": "TWAP_SAMPLE_DT",
@@ -43,13 +43,24 @@ export type Zo = {
       "value": "20"
     },
     {
+      "name": "MAX_ORACLE_SOURCES",
+      "type": {
+        "defined": "usize"
+      },
+      "value": "3"
+    },
+    {
       "name": "MAX_COLLATERALS",
-      "type": "u64",
+      "type": {
+        "defined": "usize"
+      },
       "value": "25"
     },
     {
       "name": "MAX_MARKETS",
-      "type": "u64",
+      "type": {
+        "defined": "usize"
+      },
       "value": "50"
     },
     {
@@ -452,77 +463,21 @@ export type Zo = {
       "args": [
         {
           "name": "orderId",
-          "type": "u128"
+          "type": {
+            "option": "u128"
+          }
         },
         {
           "name": "isLong",
-          "type": "bool"
-        }
-      ]
-    },
-    {
-      "name": "cancelPerpOrderByClientId",
-      "accounts": [
-        {
-          "name": "state",
-          "isMut": false,
-          "isSigner": false
+          "type": {
+            "option": "bool"
+          }
         },
-        {
-          "name": "cache",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "authority",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "margin",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "control",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "openOrders",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "dexMarket",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "marketBids",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "marketAsks",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "eventQ",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "dexProgram",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": [
         {
           "name": "clientId",
-          "type": "u64"
+          "type": {
+            "option": "u64"
+          }
         }
       ]
     },
@@ -1241,6 +1196,31 @@ export type Zo = {
       }
     },
     {
+      "name": "globalState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "globalNonce",
+            "type": "u8"
+          },
+          {
+            "name": "state",
+            "type": "publicKey"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                1024
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "margin",
       "type": {
         "kind": "struct",
@@ -1267,6 +1247,15 @@ export type Zo = {
           {
             "name": "control",
             "type": "publicKey"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                320
+              ]
+            }
           }
         ]
       }
@@ -1343,12 +1332,97 @@ export type Zo = {
           {
             "name": "totalMarkets",
             "type": "u16"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                1280
+              ]
+            }
           }
         ]
       }
     }
   ],
   "types": [
+    {
+      "name": "AddCollateralArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "oracleSymbol",
+            "type": "string"
+          },
+          {
+            "name": "weight",
+            "type": "u16"
+          },
+          {
+            "name": "isBorrowable",
+            "type": "bool"
+          },
+          {
+            "name": "optimalUtil",
+            "type": "u16"
+          },
+          {
+            "name": "optimalRate",
+            "type": "u16"
+          },
+          {
+            "name": "maxRate",
+            "type": "u16"
+          },
+          {
+            "name": "liqFee",
+            "type": "u16"
+          },
+          {
+            "name": "ogFee",
+            "type": "u16"
+          },
+          {
+            "name": "maxDeposit",
+            "type": "u64"
+          },
+          {
+            "name": "dustThreshold",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AddOracleArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "baseDecimals",
+            "type": "u8"
+          },
+          {
+            "name": "quoteDecimals",
+            "type": "u8"
+          },
+          {
+            "name": "oracleTypes",
+            "type": {
+              "vec": {
+                "defined": "OracleType"
+              }
+            }
+          }
+        ]
+      }
+    },
     {
       "name": "BorrowCache",
       "type": {
@@ -1403,7 +1477,7 @@ export type Zo = {
                 {
                   "defined": "OracleSource"
                 },
-                2
+                3
               ]
             }
           },
@@ -1537,6 +1611,48 @@ export type Zo = {
       }
     },
     {
+      "name": "InitPerpMarketArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "oracleSymbol",
+            "type": "string"
+          },
+          {
+            "name": "perpType",
+            "type": {
+              "defined": "PerpType"
+            }
+          },
+          {
+            "name": "vAssetLotSize",
+            "type": "u64"
+          },
+          {
+            "name": "vQuoteLotSize",
+            "type": "u64"
+          },
+          {
+            "name": "strike",
+            "type": "u64"
+          },
+          {
+            "name": "baseImf",
+            "type": "u16"
+          },
+          {
+            "name": "liqFee",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
       "name": "OracleSource",
       "type": {
         "kind": "struct",
@@ -1628,6 +1744,23 @@ export type Zo = {
           {
             "name": "serumOpenOrders",
             "type": "publicKey"
+          },
+          {
+            "name": "maxDeposit",
+            "type": "u64"
+          },
+          {
+            "name": "dustThreshold",
+            "type": "u16"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                384
+              ]
+            }
           }
         ]
       }
@@ -1682,6 +1815,15 @@ export type Zo = {
           {
             "name": "dexMarket",
             "type": "publicKey"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                320
+              ]
+            }
           }
         ]
       }
@@ -1711,6 +1853,92 @@ export type Zo = {
           {
             "name": "data",
             "type": "i128"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UpdateCollateralArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "newOracleSymbol",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "newDecimals",
+            "type": {
+              "option": "u8"
+            }
+          },
+          {
+            "name": "newWeight",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "newLiqFee",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "newIsBorrowable",
+            "type": {
+              "option": "bool"
+            }
+          },
+          {
+            "name": "newOptimalUtil",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "newOptimalRate",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "newMaxRate",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "newOgFee",
+            "type": {
+              "option": "u16"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "UpdateOracleArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "newBaseDecimals",
+            "type": {
+              "option": "u8"
+            }
+          },
+          {
+            "name": "newQuoteDecimals",
+            "type": {
+              "option": "u8"
+            }
           }
         ]
       }
@@ -1819,6 +2047,9 @@ export type Zo = {
           },
           {
             "name": "PutOption"
+          },
+          {
+            "name": "Square"
           }
         ]
       }
@@ -1851,6 +2082,11 @@ export type Zo = {
           "name": "depositAmount",
           "type": "u64",
           "index": false
+        },
+        {
+          "name": "marginKey",
+          "type": "publicKey",
+          "index": false
         }
       ]
     },
@@ -1865,6 +2101,11 @@ export type Zo = {
         {
           "name": "withdrawAmount",
           "type": "u64",
+          "index": false
+        },
+        {
+          "name": "marginKey",
+          "type": "publicKey",
           "index": false
         }
       ]
@@ -2405,6 +2646,31 @@ export type Zo = {
       "code": 6062,
       "name": "ReduceOnlyViolated",
       "msg": "Reduce only order was violated"
+    },
+    {
+      "code": 6063,
+      "name": "Unimplemented",
+      "msg": "Unimplemented"
+    },
+    {
+      "code": 6064,
+      "name": "Bankrupt",
+      "msg": "Currently bankrupt"
+    },
+    {
+      "code": 6065,
+      "name": "AboveDepositLimit",
+      "msg": "Deposit exceeds deposit limit for the collateral"
+    },
+    {
+      "code": 6066,
+      "name": "BelowDustThreshold",
+      "msg": "Below the dust threshold"
+    },
+    {
+      "code": 6067,
+      "name": "InvalidLiquidation",
+      "msg": "The liquidation is invalid"
     }
   ]
 };
@@ -2431,7 +2697,7 @@ export const IDL: Zo = {
     {
       "name": "ORACLE_STALENESS_THRESH",
       "type": "u64",
-      "value": "5"
+      "value": "10"
     },
     {
       "name": "TWAP_SAMPLE_DT",
@@ -2454,13 +2720,24 @@ export const IDL: Zo = {
       "value": "20"
     },
     {
+      "name": "MAX_ORACLE_SOURCES",
+      "type": {
+        "defined": "usize"
+      },
+      "value": "3"
+    },
+    {
       "name": "MAX_COLLATERALS",
-      "type": "u64",
+      "type": {
+        "defined": "usize"
+      },
       "value": "25"
     },
     {
       "name": "MAX_MARKETS",
-      "type": "u64",
+      "type": {
+        "defined": "usize"
+      },
       "value": "50"
     },
     {
@@ -2863,77 +3140,21 @@ export const IDL: Zo = {
       "args": [
         {
           "name": "orderId",
-          "type": "u128"
+          "type": {
+            "option": "u128"
+          }
         },
         {
           "name": "isLong",
-          "type": "bool"
-        }
-      ]
-    },
-    {
-      "name": "cancelPerpOrderByClientId",
-      "accounts": [
-        {
-          "name": "state",
-          "isMut": false,
-          "isSigner": false
+          "type": {
+            "option": "bool"
+          }
         },
-        {
-          "name": "cache",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "authority",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
-          "name": "margin",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "control",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "openOrders",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "dexMarket",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "marketBids",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "marketAsks",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "eventQ",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "dexProgram",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": [
         {
           "name": "clientId",
-          "type": "u64"
+          "type": {
+            "option": "u64"
+          }
         }
       ]
     },
@@ -3652,6 +3873,31 @@ export const IDL: Zo = {
       }
     },
     {
+      "name": "globalState",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "globalNonce",
+            "type": "u8"
+          },
+          {
+            "name": "state",
+            "type": "publicKey"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                1024
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "margin",
       "type": {
         "kind": "struct",
@@ -3678,6 +3924,15 @@ export const IDL: Zo = {
           {
             "name": "control",
             "type": "publicKey"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                320
+              ]
+            }
           }
         ]
       }
@@ -3754,12 +4009,97 @@ export const IDL: Zo = {
           {
             "name": "totalMarkets",
             "type": "u16"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                1280
+              ]
+            }
           }
         ]
       }
     }
   ],
   "types": [
+    {
+      "name": "AddCollateralArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "oracleSymbol",
+            "type": "string"
+          },
+          {
+            "name": "weight",
+            "type": "u16"
+          },
+          {
+            "name": "isBorrowable",
+            "type": "bool"
+          },
+          {
+            "name": "optimalUtil",
+            "type": "u16"
+          },
+          {
+            "name": "optimalRate",
+            "type": "u16"
+          },
+          {
+            "name": "maxRate",
+            "type": "u16"
+          },
+          {
+            "name": "liqFee",
+            "type": "u16"
+          },
+          {
+            "name": "ogFee",
+            "type": "u16"
+          },
+          {
+            "name": "maxDeposit",
+            "type": "u64"
+          },
+          {
+            "name": "dustThreshold",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
+      "name": "AddOracleArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "baseDecimals",
+            "type": "u8"
+          },
+          {
+            "name": "quoteDecimals",
+            "type": "u8"
+          },
+          {
+            "name": "oracleTypes",
+            "type": {
+              "vec": {
+                "defined": "OracleType"
+              }
+            }
+          }
+        ]
+      }
+    },
     {
       "name": "BorrowCache",
       "type": {
@@ -3814,7 +4154,7 @@ export const IDL: Zo = {
                 {
                   "defined": "OracleSource"
                 },
-                2
+                3
               ]
             }
           },
@@ -3948,6 +4288,48 @@ export const IDL: Zo = {
       }
     },
     {
+      "name": "InitPerpMarketArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "oracleSymbol",
+            "type": "string"
+          },
+          {
+            "name": "perpType",
+            "type": {
+              "defined": "PerpType"
+            }
+          },
+          {
+            "name": "vAssetLotSize",
+            "type": "u64"
+          },
+          {
+            "name": "vQuoteLotSize",
+            "type": "u64"
+          },
+          {
+            "name": "strike",
+            "type": "u64"
+          },
+          {
+            "name": "baseImf",
+            "type": "u16"
+          },
+          {
+            "name": "liqFee",
+            "type": "u16"
+          }
+        ]
+      }
+    },
+    {
       "name": "OracleSource",
       "type": {
         "kind": "struct",
@@ -4039,6 +4421,23 @@ export const IDL: Zo = {
           {
             "name": "serumOpenOrders",
             "type": "publicKey"
+          },
+          {
+            "name": "maxDeposit",
+            "type": "u64"
+          },
+          {
+            "name": "dustThreshold",
+            "type": "u16"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                384
+              ]
+            }
           }
         ]
       }
@@ -4093,6 +4492,15 @@ export const IDL: Zo = {
           {
             "name": "dexMarket",
             "type": "publicKey"
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                320
+              ]
+            }
           }
         ]
       }
@@ -4122,6 +4530,92 @@ export const IDL: Zo = {
           {
             "name": "data",
             "type": "i128"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UpdateCollateralArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "newOracleSymbol",
+            "type": {
+              "option": "string"
+            }
+          },
+          {
+            "name": "newDecimals",
+            "type": {
+              "option": "u8"
+            }
+          },
+          {
+            "name": "newWeight",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "newLiqFee",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "newIsBorrowable",
+            "type": {
+              "option": "bool"
+            }
+          },
+          {
+            "name": "newOptimalUtil",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "newOptimalRate",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "newMaxRate",
+            "type": {
+              "option": "u16"
+            }
+          },
+          {
+            "name": "newOgFee",
+            "type": {
+              "option": "u16"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "UpdateOracleArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "symbol",
+            "type": "string"
+          },
+          {
+            "name": "newBaseDecimals",
+            "type": {
+              "option": "u8"
+            }
+          },
+          {
+            "name": "newQuoteDecimals",
+            "type": {
+              "option": "u8"
+            }
           }
         ]
       }
@@ -4230,6 +4724,9 @@ export const IDL: Zo = {
           },
           {
             "name": "PutOption"
+          },
+          {
+            "name": "Square"
           }
         ]
       }
@@ -4262,6 +4759,11 @@ export const IDL: Zo = {
           "name": "depositAmount",
           "type": "u64",
           "index": false
+        },
+        {
+          "name": "marginKey",
+          "type": "publicKey",
+          "index": false
         }
       ]
     },
@@ -4276,6 +4778,11 @@ export const IDL: Zo = {
         {
           "name": "withdrawAmount",
           "type": "u64",
+          "index": false
+        },
+        {
+          "name": "marginKey",
+          "type": "publicKey",
           "index": false
         }
       ]
@@ -4816,6 +5323,31 @@ export const IDL: Zo = {
       "code": 6062,
       "name": "ReduceOnlyViolated",
       "msg": "Reduce only order was violated"
+    },
+    {
+      "code": 6063,
+      "name": "Unimplemented",
+      "msg": "Unimplemented"
+    },
+    {
+      "code": 6064,
+      "name": "Bankrupt",
+      "msg": "Currently bankrupt"
+    },
+    {
+      "code": 6065,
+      "name": "AboveDepositLimit",
+      "msg": "Deposit exceeds deposit limit for the collateral"
+    },
+    {
+      "code": 6066,
+      "name": "BelowDustThreshold",
+      "msg": "Below the dust threshold"
+    },
+    {
+      "code": 6067,
+      "name": "InvalidLiquidation",
+      "msg": "The liquidation is invalid"
     }
   ]
 };
