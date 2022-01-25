@@ -7,9 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-- Added optional Margin owner param
+## [0.4.2] - 2022-01-24
 
-## [0.4.0] - 2022-01-21
+- Margin: Added optional `owner` param to `Margin.load()`
+
 ## [0.4.1] - 2022-01-24
 
 - Fix: changed `cancelPerpOrder` null operator
