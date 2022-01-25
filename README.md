@@ -53,7 +53,8 @@ SOL can be deposited directly using native lamports. You can get SOL either thro
 The following example shows how to run basic setup instructions.
 
 ```typescript
-// Setup provider
+// Setup provider (see anchor docs for more instructions on setting up a provider using your wallet)
+import * as anchor from "@project-serum/anchor";
 const provider = anchor.Provider.local("https://api.devnet.solana.com"); // or your own endpoint
     
 // Setup the program
