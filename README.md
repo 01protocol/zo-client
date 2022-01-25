@@ -53,8 +53,11 @@ SOL can be deposited directly using native lamports. You can get SOL either thro
 The following example shows how to run basic setup instructions.
 
 ```typescript
-// Setup the program and provider
-const program = anchor.workspace.Zo as Program<Zo>;
+// Setup provider
+const provider = anchor.Provider.local("https://api.devnet.solana.com"); // or your own endpoint
+    
+// Setup the program
+const program = createProgram(provider);
 
 // Load the state
 const state: State = await State.load(program, stateKey);
