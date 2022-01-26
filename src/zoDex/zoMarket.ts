@@ -22,8 +22,9 @@ import { throwIfNull } from "../utils";
 import { TransactionId } from "../types";
 import {
   WRAPPED_SOL_MINT,
-  ZERO_ONE_PROGRAM_ID,
-  ZO_DEX_PROGRAM_ID,
+  ZERO_ONE_DEVNET_PROGRAM_ID,
+  ZO_DEX_DEVNET_PROGRAM_ID,
+  ZO_DEX_MAINNET_PROGRAM_ID,
 } from "../config";
 import { Program } from "@project-serum/anchor";
 import { State } from "../index";
@@ -199,7 +200,7 @@ export class ZoMarket {
     connection: Connection,
     address: PublicKey,
     options: MarketOptions = {},
-    programId: PublicKey = ZO_DEX_PROGRAM_ID,
+    programId: PublicKey = ZO_DEX_DEVNET_PROGRAM_ID,
     accountInfoPrefetched?: AccountInfo<Buffer>,
     layoutOverride?: any,
   ) {
@@ -622,12 +623,17 @@ export class ZoMarket {
     const eq = await this.loadEventQueue(program.provider.connection);
     //console.log(eq);
 
-    const signer = (await State.getSigner(st.pubkey, ZERO_ONE_PROGRAM_ID))[0];
+    const signer = (
+      await State.getSigner(st.pubkey, ZERO_ONE_DEVNET_PROGRAM_ID)
+    )[0];
     return await program.rpc.consumeEvents!(limit, {
       accounts: {
         state: st.pubkey,
         stateSigner: signer,
-        dexProgram: ZO_DEX_PROGRAM_ID,
+        dexProgram:
+          program.programId === ZERO_ONE_DEVNET_PROGRAM_ID
+            ? ZO_DEX_DEVNET_PROGRAM_ID
+            : ZO_DEX_MAINNET_PROGRAM_ID,
         market: this.address,
         eventQueue: this.eventQueueAddress,
       },
@@ -654,13 +660,18 @@ export class ZoMarket {
       ra.push({ isSigner: false, isWritable: true, pubkey: c });
     });
 
-    const signer = (await State.getSigner(st.pubkey, ZERO_ONE_PROGRAM_ID))[0];
+    const signer = (
+      await State.getSigner(st.pubkey, ZERO_ONE_DEVNET_PROGRAM_ID)
+    )[0];
     return await program.rpc.crankPnl!({
       accounts: {
         state: st.pubkey,
         stateSigner: signer,
         cache: st.cache.pubkey,
-        dexProgram: ZO_DEX_PROGRAM_ID,
+        dexProgram:
+          program.programId === ZERO_ONE_DEVNET_PROGRAM_ID
+            ? ZO_DEX_DEVNET_PROGRAM_ID
+            : ZO_DEX_MAINNET_PROGRAM_ID,
         market: this.address,
       },
       remainingAccounts: ra,

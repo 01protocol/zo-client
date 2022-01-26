@@ -26,7 +26,8 @@ import {
   DEX_IDL,
   RENT_PROGRAM_ID,
   WRAPPED_SOL_MINT,
-  ZERO_ONE_PROGRAM_ID,
+  ZERO_ONE_DEVNET_PROGRAM_ID,
+  ZERO_ONE_MAINNET_PROGRAM_ID,
 } from "../config";
 
 export * from "./rpc";
@@ -36,8 +37,20 @@ export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export function createProgram(provider: Provider): Program<Zo> {
-  return new Program<Zo>(IDL, ZERO_ONE_PROGRAM_ID, provider);
+export enum Cluster {
+  Devnet,
+  Mainnet,
+}
+
+export function createProgram(
+  provider: Provider,
+  cluster: Cluster,
+): Program<Zo> {
+  if (cluster === Cluster.Devnet) {
+    return new Program<Zo>(IDL, ZERO_ONE_DEVNET_PROGRAM_ID, provider);
+  } else {
+    return new Program<Zo>(IDL, ZERO_ONE_MAINNET_PROGRAM_ID, provider);
+  }
 }
 
 export function loadWI80F48({ data }: { data: BN }): Decimal {

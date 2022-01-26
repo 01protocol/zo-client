@@ -18,14 +18,23 @@ export const ZO_STATE_KEY = new PublicKey(
 );
 
 // == 01 PROGRAM IDS ==
-export const ZERO_ONE_PROGRAM_ID = new PublicKey(
+export const ZERO_ONE_DEVNET_PROGRAM_ID = new PublicKey(
   "Zo1ThtSHMh9tZGECwBDL81WJRL6s3QTHf733Tyko7KQ",
 );
-export const ZO_DEX_PROGRAM_ID = new PublicKey(
+export const ZERO_ONE_MAINNET_PROGRAM_ID = new PublicKey(
+  "Zo1ggzTUKMY5bYnDvT5mtVeZxzf2FaLTbKkmvGUhUQk",
+);
+export const ZO_DEX_DEVNET_PROGRAM_ID = new PublicKey(
   "ZDxUi178LkcuwdxcEqsSo2E7KATH99LAAXN5LcSVMBC",
 );
-export const SERUM_SPOT_PROGRAM_ID = new PublicKey(
+export const ZO_DEX_MAINNET_PROGRAM_ID = new PublicKey(
+  "ZDx8a8jBqGmJyxi1whFxxCo5vG6Q9t4hTzW2GSixMKK",
+);
+export const SERUM_DEVNET_SPOT_PROGRAM_ID = new PublicKey(
   "DESVgJVGajEgKGXhb6XmqDHGz3VjdgP7rEVESBgxmroY",
+);
+export const SERUM_MAINNET_SPOT_PROGRAM_ID = new PublicKey(
+  "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
 );
 
 // == SOLANA PROGRAM IDS ==
