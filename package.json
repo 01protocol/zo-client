@@ -1,13 +1,13 @@
 {
   "name": "@zero_one/client",
-  "version": "0.4.4-beta.1",
+  "version": "0.4.3",
   "license": "Apache-2.0",
   "description": "TypeScript Client API",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
   "scripts": {
-    "build": "npm run tsc && npm run tsc -p tsconfig.cjs.json",
+    "build": "tsc && tsc -p tsconfig.cjs.json",
     "build-docs": "typedoc --out docs src/index.ts",
     "postinstall": "npm run build",
     "lint-format": "prettier --check ./src",
