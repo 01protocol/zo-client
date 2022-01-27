@@ -38,8 +38,8 @@ export function sleep(ms: number): Promise<void> {
 }
 
 export enum Cluster {
-  Devnet,
-  Mainnet,
+  Devnet = "Devnet",
+  Mainnet = "Mainnet",
 }
 
 export function createProgram(

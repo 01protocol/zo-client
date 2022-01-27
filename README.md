@@ -1,10 +1,23 @@
 # 01 TypeScript Client SDK
 
-TypeScript SDK for interacting with the 01 Solana program.
+TypeScript SDK for interacting with the 01 Solana program, built on top of [Project Serum](https://github.com/project-serum).
 
 [SDK Docs](https://01protocol.github.io/zo-client/)
 
-## Installation
+## Program
+
+|            | Devnet                                        | Mainnet                                        |
+| ---------- | --------------------------------------------- | ---------------------------------------------- |
+| Program ID | `Zo1ThtSHMh9tZGECwBDL81WJRL6s3QTHf733Tyko7KQ` | `Zo1ggzTUKMY5bYnDvT5mtVeZxzf2FaLTbKkmvGUhUQk`  |
+| State      | `KwcWW7WvgSXLJcyjKZJBHLbfriErggzYHpjS9qjVD5F` | `71yykwxq1zQqy99PgRsgZJXi2HHK2UDx9G4va7pH6qRv` |
+
+## Note
+- **01 is in active development so all APIs and protocols are subject to change.**
+- **The code is unaudited. Use at your own risk.**
+
+## Getting Started 
+
+### Installation
 
 Using npm
 
@@ -12,37 +25,42 @@ Using npm
 npm install
 ```
 
-## Devnet token faucet 
+### Devnet token faucet
+
+You can use the Devnet token faucet to get Devnet only tokens to test on the Devnet program.
 Replace `<WALLET>`, `<MINT>`, and `<AMOUNT>`
-```bash 
+
+```bash
 curl -XPOST 'https://devnet-faucet.01.xyz?owner=<WALLET>&mint=<MINT>&amount=<AMOUNT>'
 ```
-SOL can be deposited directly using native lamports. You can get SOL either through Solana cli airdrop or at any airdrop faucet.
 
-## Program
-|       | Cluster | Pubkey                                       |
-| ----- |---------|----------------------------------------------|
-| Program ID | Devnet  | Zo1ThtSHMh9tZGECwBDL81WJRL6s3QTHf733Tyko7KQ  |
-| State | Devnet  | KwcWW7WvgSXLJcyjKZJBHLbfriErggzYHpjS9qjVD5F  |
+SOL is deposited directly using native lamports. You can get SOL either through Solana cli airdrop or at any airdrop faucet.
 
-## Derivatives Markets
+### Derivatives Markets
+For markets specs on Mainnet, please visit [docs.01.xyz/trading/perpetual-futures/perpetuals-specs](https://docs.01.xyz/trading/perpetual-futures/perpetuals-specs)
+
 | Symbol      | Cluster | Base Lots | Quote Lots | Base Decimals |
 | ----------- | ------- | --------- | ---------- | ------------- |
 | BTC-PERP    | Devnet  | 100       | 10         | 6             |
 | SOL-PERP    | Devnet  | 100000000       | 100         | 9             |
 
-## Spot Swap Markets 
-| Symbol   | Cluster | Serum Market Key                             |
-|----------| ------- |----------------------------------------------|
-| BTC-USDC | Devnet  | 9vNzQmmG7c3aXuTdKKULQW2oGrYsfGZ1uRsMtgZ2APJF |
-| SOL-USDC | Devnet  | E5gEK3WUVHzGDB6JSWZEwemJ7JZDZqHmG5gGX6NjgW2v |
+### Collaterals
 
-## Collaterals 
-| Symbol      | Cluster | Mint                                         | Decimals |
-| ----------- | ------- | -------------------------------------------- | -------- |
-| USDC        | Devnet  | 7UT1javY6X1M9R2UrPGrwcZ78SX3huaXyETff5hm5YdX | 6        |
-| SOL         | Devnet  | So11111111111111111111111111111111111111112  | 9        |
-| BTC         | Devnet  | 3n3sMJMnZhgNDaxp6cfywvjHLrV1s34ndfa6xAaYvpRs | 6        |
+For collateral specs on Mainnet, please visit [docs.01.xyz/margin/collateral](https://docs.01.xyz/margin/collateral)
+
+| Symbol | Cluster | Mint                                         | Decimals |
+| ------ | ------- | -------------------------------------------- | -------- |
+| USDC   | Devnet  | `7UT1javY6X1M9R2UrPGrwcZ78SX3huaXyETff5hm5YdX` | 6        |
+| SOL    | Devnet  | `So11111111111111111111111111111111111111112`  | 9        |
+| BTC    | Devnet  | `3n3sMJMnZhgNDaxp6cfywvjHLrV1s34ndfa6xAaYvpRs` | 6        |
+
+### Spot Swap Markets
+
+| Symbol   | Cluster | Serum Market Key                             |
+| -------- | ------- | -------------------------------------------- |
+| BTC-USDC | Devnet  | `9vNzQmmG7c3aXuTdKKULQW2oGrYsfGZ1uRsMtgZ2APJF` |
+| SOL-USDC | Devnet  | `E5gEK3WUVHzGDB6JSWZEwemJ7JZDZqHmG5gGX6NjgW2v` |
+
 
 ## Usage examples
 
@@ -53,8 +71,12 @@ SOL can be deposited directly using native lamports. You can get SOL either thro
 The following example shows how to run basic setup instructions.
 
 ```typescript
-// Setup the program and provider
-const program = anchor.workspace.Zo as Program<Zo>;
+// Setup provider (see anchor docs for more instructions on setting up a provider using your wallet)
+import * as anchor from "@project-serum/anchor";
+const provider = anchor.Provider.local("https://api.devnet.solana.com"); // or your own endpoint
+
+// Setup the program
+const program = createProgram(provider, Cluster.Mainnet); // or Devnet
 
 // Load the state
 const state: State = await State.load(program, stateKey);
@@ -118,7 +140,7 @@ await margin.placePerpOrder({
   isLong,
   price,
   size,
-  clientId // optional arg
+  clientId, // optional arg
 });
 
 // Fetch Market
@@ -163,7 +185,6 @@ await margin.cancelPerpOrder(MARKET_SYMBOL, orderIsLong, orderId);
 // Cancel an order by client id
 await margin.cancelPerpOrderByClientId(MARKET_SYMBOL, clientId);
 
-
 // Settle funds
 await margin.settleFunds(MARKET_SYMBOL);
 ```
@@ -173,5 +194,5 @@ await margin.settleFunds(MARKET_SYMBOL);
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
 Please make sure to update tests as appropriate.
-_
-_
+\_
+\_

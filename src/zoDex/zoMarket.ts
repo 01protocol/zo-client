@@ -630,10 +630,9 @@ export class ZoMarket {
       accounts: {
         state: st.pubkey,
         stateSigner: signer,
-        dexProgram:
-          program.programId === ZERO_ONE_DEVNET_PROGRAM_ID
-            ? ZO_DEX_DEVNET_PROGRAM_ID
-            : ZO_DEX_MAINNET_PROGRAM_ID,
+        dexProgram: program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
+          ? ZO_DEX_DEVNET_PROGRAM_ID
+          : ZO_DEX_MAINNET_PROGRAM_ID,
         market: this.address,
         eventQueue: this.eventQueueAddress,
       },
@@ -668,10 +667,9 @@ export class ZoMarket {
         state: st.pubkey,
         stateSigner: signer,
         cache: st.cache.pubkey,
-        dexProgram:
-          program.programId === ZERO_ONE_DEVNET_PROGRAM_ID
-            ? ZO_DEX_DEVNET_PROGRAM_ID
-            : ZO_DEX_MAINNET_PROGRAM_ID,
+        dexProgram: program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
+          ? ZO_DEX_DEVNET_PROGRAM_ID
+          : ZO_DEX_MAINNET_PROGRAM_ID,
         market: this.address,
       },
       remainingAccounts: ra,

@@ -158,7 +158,7 @@ export default class State extends BaseAccount<Schema> {
         this.connection,
         this.getMarketKeyBySymbol(sym),
         this.provider.opts,
-        this.program.programId === ZERO_ONE_DEVNET_PROGRAM_ID
+        this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
           ? ZO_DEX_DEVNET_PROGRAM_ID
           : ZO_DEX_MAINNET_PROGRAM_ID,
       );
@@ -180,10 +180,9 @@ export default class State extends BaseAccount<Schema> {
         dexMarket: market.address,
         marketBids: market.bidsAddress,
         marketAsks: market.asksAddress,
-        dexProgram:
-          this.program.programId === ZERO_ONE_DEVNET_PROGRAM_ID
-            ? ZO_DEX_DEVNET_PROGRAM_ID
-            : ZO_DEX_MAINNET_PROGRAM_ID,
+        dexProgram: this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
+          ? ZO_DEX_DEVNET_PROGRAM_ID
+          : ZO_DEX_MAINNET_PROGRAM_ID,
       },
     });
   }
