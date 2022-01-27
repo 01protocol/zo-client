@@ -180,10 +180,10 @@ for (const order of asks) {
 // Cancel an order by order id
 const orderIsLong = true;
 const orderId = orders[0]; // or whichever order that is being cancelled
-await margin.cancelPerpOrder(MARKET_SYMBOL, orderIsLong, orderId);
+await margin.cancelPerpOrder({symbol: MARKET_SYMBOL, isLong: orderIsLong, orderId: orderId});
 
 // Cancel an order by client id
-await margin.cancelPerpOrderByClientId(MARKET_SYMBOL, clientId);
+await margin.cancelPerpOrder({symbol: MARKET_SYMBOL, clientId: clientId});
 
 // Settle funds
 await margin.settleFunds(MARKET_SYMBOL);
