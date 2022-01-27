@@ -16,6 +16,7 @@ import State from "./State";
 import Control from "./Control";
 import Num from "../Num";
 import {
+  Cluster,
   findAssociatedTokenAddress,
   getAssociatedTokenTransactionWithPayer,
   getWrappedSolInstructionsAndKey,
@@ -24,10 +25,13 @@ import {
 import { MarginSchema, OrderType, TransactionId, Zo } from "../types";
 import {
   CONTROL_ACCOUNT_SIZE,
-  SERUM_SPOT_PROGRAM_ID,
+  SERUM_MAINNET_SPOT_PROGRAM_ID,
+  SERUM_DEVNET_SPOT_PROGRAM_ID,
   USDC_DECIMALS,
   WRAPPED_SOL_MINT,
-  ZO_DEX_PROGRAM_ID,
+  ZERO_ONE_DEVNET_PROGRAM_ID,
+  ZO_DEX_DEVNET_PROGRAM_ID,
+  ZO_DEX_MAINNET_PROGRAM_ID,
   ZO_FUTURE_TAKER_FEE,
   ZO_OPTION_TAKER_FEE,
   ZO_SQUARE_TAKER_FEE,
@@ -188,11 +192,16 @@ export default class Margin extends BaseAccount<Schema> {
    * @param symbol The market symbol. Ex: ("BTC-PERP")
    * @returns The OpenOrders account key for the given market.
    */
-  async getOpenOrdersKeyBySymbol(symbol: string): Promise<[PublicKey, number]> {
+  async getOpenOrdersKeyBySymbol(
+    symbol: string,
+    cluster: Cluster,
+  ): Promise<[PublicKey, number]> {
     const dexMarket = this.state.getMarketKeyBySymbol(symbol);
     return await PublicKey.findProgramAddress(
       [this.data.control.toBuffer(), dexMarket.toBuffer()],
-      ZO_DEX_PROGRAM_ID,
+      cluster === Cluster.Devnet
+        ? ZO_DEX_DEVNET_PROGRAM_ID
+        : ZO_DEX_MAINNET_PROGRAM_ID,
     );
   }
 
@@ -418,7 +427,12 @@ export default class Margin extends BaseAccount<Schema> {
    * @param symbol The market symbol. Ex: ("BTC-PERP")
    */
   async createPerpOpenOrders(symbol: string): Promise<string> {
-    const [ooKey, _] = await this.getOpenOrdersKeyBySymbol(symbol);
+    const [ooKey, _] = await this.getOpenOrdersKeyBySymbol(
+      symbol,
+      this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
+        ? Cluster.Devnet
+        : Cluster.Mainnet,
+    );
     return await this.program.rpc.createPerpOpenOrders({
       accounts: {
         state: this.state.pubkey,
@@ -429,7 +443,9 @@ export default class Margin extends BaseAccount<Schema> {
         control: this.data.control,
         openOrders: ooKey,
         dexMarket: this.state.getMarketKeyBySymbol(symbol),
-        dexProgram: ZO_DEX_PROGRAM_ID,
+        dexProgram: this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
+          ? ZO_DEX_DEVNET_PROGRAM_ID
+          : ZO_DEX_MAINNET_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
         systemProgram: SystemProgram.programId,
       },
@@ -492,7 +508,9 @@ export default class Margin extends BaseAccount<Schema> {
           eventQ: market.eventQueueAddress,
           marketBids: market.bidsAddress,
           marketAsks: market.asksAddress,
-          dexProgram: ZO_DEX_PROGRAM_ID,
+          dexProgram: this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
+            ? ZO_DEX_DEVNET_PROGRAM_ID
+            : ZO_DEX_MAINNET_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         },
       },
@@ -549,7 +567,14 @@ export default class Margin extends BaseAccount<Schema> {
     const oo = await this.getOpenOrdersInfoBySymbol(symbol);
     let createOo;
     if (!oo) {
-      ooKey = (await this.getOpenOrdersKeyBySymbol(symbol))[0];
+      ooKey = (
+        await this.getOpenOrdersKeyBySymbol(
+          symbol,
+          this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
+            ? Cluster.Devnet
+            : Cluster.Mainnet,
+        )
+      )[0];
       createOo = true;
     } else {
       ooKey = oo.key;
@@ -578,7 +603,9 @@ export default class Margin extends BaseAccount<Schema> {
           eventQ: market.eventQueueAddress,
           marketBids: market.bidsAddress,
           marketAsks: market.asksAddress,
-          dexProgram: ZO_DEX_PROGRAM_ID,
+          dexProgram: this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
+            ? ZO_DEX_DEVNET_PROGRAM_ID
+            : ZO_DEX_MAINNET_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
         },
         preInstructions: createOo
@@ -593,7 +620,11 @@ export default class Margin extends BaseAccount<Schema> {
                   control: this.data.control,
                   openOrders: ooKey,
                   dexMarket: this.state.getMarketKeyBySymbol(symbol),
-                  dexProgram: ZO_DEX_PROGRAM_ID,
+                  dexProgram: this.program.programId.equals(
+                    ZERO_ONE_DEVNET_PROGRAM_ID,
+                  )
+                    ? ZO_DEX_DEVNET_PROGRAM_ID
+                    : ZO_DEX_MAINNET_PROGRAM_ID,
                   rent: SYSVAR_RENT_PUBKEY,
                   systemProgram: SystemProgram.programId,
                 },
@@ -647,7 +678,9 @@ export default class Margin extends BaseAccount<Schema> {
           marketBids: market.bidsAddress,
           marketAsks: market.asksAddress,
           eventQ: market.eventQueueAddress,
-          dexProgram: ZO_DEX_PROGRAM_ID,
+          dexProgram: this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
+            ? ZO_DEX_DEVNET_PROGRAM_ID
+            : ZO_DEX_MAINNET_PROGRAM_ID,
         },
       },
     );
@@ -695,7 +728,9 @@ export default class Margin extends BaseAccount<Schema> {
       this.connection,
       serumMarket,
       {},
-      SERUM_SPOT_PROGRAM_ID,
+      this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
+        ? SERUM_DEVNET_SPOT_PROGRAM_ID
+        : SERUM_MAINNET_SPOT_PROGRAM_ID,
     );
 
     const colIdx = this.state.getCollateralIndex(tokenMint);
@@ -730,7 +765,9 @@ export default class Margin extends BaseAccount<Schema> {
         market.address.toBuffer(),
         market.decoded.vaultSignerNonce.toArrayLike(Buffer, "le", 8),
       ],
-      SERUM_SPOT_PROGRAM_ID,
+      this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
+        ? SERUM_DEVNET_SPOT_PROGRAM_ID
+        : SERUM_MAINNET_SPOT_PROGRAM_ID,
     );
 
     return await this.program.rpc.swap(buy, allowBorrow, amount, minRate, {
@@ -755,7 +792,11 @@ export default class Margin extends BaseAccount<Schema> {
         serumCoinVault: market.decoded.baseVault,
         serumPcVault: market.decoded.quoteVault,
         serumVaultSigner: vaultSigner,
-        srmSpotProgram: SERUM_SPOT_PROGRAM_ID,
+        srmSpotProgram: this.program.programId.equals(
+          ZERO_ONE_DEVNET_PROGRAM_ID,
+        )
+          ? SERUM_DEVNET_SPOT_PROGRAM_ID
+          : SERUM_MAINNET_SPOT_PROGRAM_ID,
         tokenProgram: TOKEN_PROGRAM_ID,
         rent: SYSVAR_RENT_PUBKEY,
       },
@@ -780,7 +821,9 @@ export default class Margin extends BaseAccount<Schema> {
         control: this.data.control,
         openOrders: oo!.key,
         dexMarket: market.address,
-        dexProgram: ZO_DEX_PROGRAM_ID,
+        dexProgram: this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
+          ? ZO_DEX_DEVNET_PROGRAM_ID
+          : ZO_DEX_MAINNET_PROGRAM_ID,
       },
     });
   }

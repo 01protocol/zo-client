@@ -1,6 +1,6 @@
 {
   "name": "@zero_one/client",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "license": "Apache-2.0",
   "description": "TypeScript Client API",
   "main": "dist/cjs/index.js",
@@ -42,5 +42,6 @@
   },
   "prettier": {
     "trailingComma": "all"
-  }
+  },
+  "author": ""
 }
