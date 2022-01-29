@@ -2114,6 +2114,11 @@ export type Zo = {
       "name": "SwapLog",
       "fields": [
         {
+          "name": "marginKey",
+          "type": "publicKey",
+          "index": false
+        },
+        {
           "name": "baseIndex",
           "type": "u8",
           "index": false
@@ -4790,6 +4795,11 @@ export const IDL: Zo = {
     {
       "name": "SwapLog",
       "fields": [
+        {
+          "name": "marginKey",
+          "type": "publicKey",
+          "index": false
+        },
         {
           "name": "baseIndex",
           "type": "u8",

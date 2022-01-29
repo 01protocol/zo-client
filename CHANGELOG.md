@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2022-01-28 
+- Events: Added `marginKey` to `SwapLog` event
+
 ## [0.5.0] - 2022-01-27
 
 - Mainnet: Mainnet keys added
