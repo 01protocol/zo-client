@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Cache: Fix mark cache's `lastSampleStartTime` decoding
+
 ## [0.5.1] - 2022-01-28 
 - Events: Added `marginKey` to `SwapLog` event
 

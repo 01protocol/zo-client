@@ -101,7 +101,7 @@ export default class Cache extends BaseAccount<Schema> {
             low: Num.fromWI80F48(c.twap.low, decimals),
             close: Num.fromWI80F48(c.twap.close, decimals),
             lastSampleStartTime: new Date(
-              c.twap.lastSampleStartTime.toNumber(),
+              c.twap.lastSampleStartTime.toNumber() * 1000,
             ),
           },
         };
