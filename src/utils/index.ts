@@ -21,7 +21,6 @@ import BN from "bn.js";
 import Decimal from "decimal.js";
 import { blob, struct, u8 } from "buffer-layout";
 import { Zo } from "../types";
-export * from "../types/dataTypes";
 import {
   IDL,
   RENT_PROGRAM_ID,
@@ -29,6 +28,8 @@ import {
   ZERO_ONE_DEVNET_PROGRAM_ID,
   ZERO_ONE_MAINNET_PROGRAM_ID,
 } from "../config";
+
+export * from "../types/dataTypes";
 
 export * from "./rpc";
 export * from "./units";

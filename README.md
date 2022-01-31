@@ -1,6 +1,7 @@
 # 01 TypeScript Client SDK
 
-TypeScript SDK for interacting with the 01 Solana program, built on top of [Project Serum](https://github.com/project-serum).
+TypeScript SDK for interacting with the 01 Solana program, built on top
+of [Project Serum](https://github.com/project-serum).
 
 [SDK Docs](https://01protocol.github.io/zo-client/)
 
@@ -12,10 +13,11 @@ TypeScript SDK for interacting with the 01 Solana program, built on top of [Proj
 | State      | `KwcWW7WvgSXLJcyjKZJBHLbfriErggzYHpjS9qjVD5F` | `71yykwxq1zQqy99PgRsgZJXi2HHK2UDx9G4va7pH6qRv` |
 
 ## Note
+
 - **01 is in active development so all APIs and protocols are subject to change.**
 - **The code is unaudited. Use at your own risk.**
 
-## Getting Started 
+## Getting Started
 
 ### Installation
 
@@ -27,17 +29,20 @@ npm install
 
 ### Devnet token faucet
 
-You can use the Devnet token faucet to get Devnet only tokens to test on the Devnet program.
-Replace `<WALLET>`, `<MINT>`, and `<AMOUNT>`
+You can use the Devnet token faucet to get Devnet only tokens to test on the Devnet program. Replace `<WALLET>`
+, `<MINT>`, and `<AMOUNT>`
 
 ```bash
 curl -XPOST 'https://devnet-faucet.01.xyz?owner=<WALLET>&mint=<MINT>&amount=<AMOUNT>'
 ```
 
-SOL is deposited directly using native lamports. You can get SOL either through Solana cli airdrop or at any airdrop faucet.
+SOL is deposited directly using native lamports. You can get SOL either through Solana cli airdrop or at any airdrop
+faucet.
 
 ### Derivatives Markets
-For markets specs on Mainnet, please visit [docs.01.xyz/trading/perpetual-futures/perpetuals-specs](https://docs.01.xyz/trading/perpetual-futures/perpetuals-specs)
+
+For markets specs on Mainnet, please
+visit [docs.01.xyz/trading/perpetual-futures/perpetuals-specs](https://docs.01.xyz/trading/perpetual-futures/perpetuals-specs)
 
 | Symbol      | Cluster | Base Lots | Quote Lots | Base Decimals |
 | ----------- | ------- | --------- | ---------- | ------------- |
@@ -61,7 +66,6 @@ For collateral specs on Mainnet, please visit [docs.01.xyz/margin/collateral](ht
 | BTC-USDC | Devnet  | `9vNzQmmG7c3aXuTdKKULQW2oGrYsfGZ1uRsMtgZ2APJF` |
 | SOL-USDC | Devnet  | `E5gEK3WUVHzGDB6JSWZEwemJ7JZDZqHmG5gGX6NjgW2v` |
 
-
 ## Usage examples
 
 [Setup](#setup) | [Deposit/ Withdraw/ Swap](#deposit) | [Trading](#trading)
@@ -73,6 +77,7 @@ The following example shows how to run basic setup instructions.
 ```typescript
 // Setup provider (see anchor docs for more instructions on setting up a provider using your wallet)
 import * as anchor from "@project-serum/anchor";
+
 const provider = anchor.Provider.local("https://api.devnet.solana.com"); // or your own endpoint
 
 // Setup the program
@@ -180,10 +185,10 @@ for (const order of asks) {
 // Cancel an order by order id
 const orderIsLong = true;
 const orderId = orders[0]; // or whichever order that is being cancelled
-await margin.cancelPerpOrder({symbol: MARKET_SYMBOL, isLong: orderIsLong, orderId: orderId});
+await margin.cancelPerpOrder({ symbol: MARKET_SYMBOL, isLong: orderIsLong, orderId: orderId });
 
 // Cancel an order by client id
-await margin.cancelPerpOrder({symbol: MARKET_SYMBOL, clientId: clientId});
+await margin.cancelPerpOrder({ symbol: MARKET_SYMBOL, clientId: clientId });
 
 // Settle funds
 await margin.settleFunds(MARKET_SYMBOL);
@@ -193,6 +198,5 @@ await margin.settleFunds(MARKET_SYMBOL);
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
-Please make sure to update tests as appropriate.
-\_
-\_
+Please make sure to update tests as appropriate. \_ \_
+_

@@ -46,6 +46,7 @@ export interface OOInfo {
  *   @pubKey: public key
  *   @symbol: symbol
  *   @indexPrice: index price
+ *   @indexTwap: twap index price
  *   @markPrice: mark price
  *   @pmmf: position margin fraction
  *   @baseImf: base asset IMF
@@ -61,6 +62,7 @@ export interface MarketInfo {
   symbol: string;
   indexPrice: Num;
   markPrice: Num;
+  indexTwap: Num;
   pmmf: Decimal;
   baseImf: Decimal;
   fundingIndex: Decimal;
@@ -104,8 +106,8 @@ export type AssetInfo = {
   ogFee: number,
   isSwappable: boolean,
   serumOpenOrders: PublicKey,
-  maxDeposit: BN,
-  dustThreshold: BN,
+  maxDeposit: Decimal,
+  dustThreshold: Num,
   symbol: string;
   indexPrice: Num;
   supply: Decimal;
@@ -136,7 +138,7 @@ export interface OrderInfo {
   long: boolean;
 }
 
-export enum OrderType {
+export enum OrderTypeInfo {
   Market,
   Limit,
 }
@@ -160,6 +162,5 @@ export interface TradeInfo {
   price: number;
   postOrder: boolean;
   iocOrder: boolean;
-  marketKey: string;
-  orderType: OrderType;
+  orderType: OrderTypeInfo;
 }

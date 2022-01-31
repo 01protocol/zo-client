@@ -4,7 +4,7 @@ export * from "./utils";
 
 export { default as Num } from "./Num";
 
-export { default as State } from "./accounts/state/State";
+export { default as State } from "./accounts/State";
 export { default as Margin } from "./accounts/margin/Margin";
 export { default as Cache } from "./accounts/Cache";
 export { default as Control } from "./accounts/Control";

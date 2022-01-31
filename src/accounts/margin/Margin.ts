@@ -212,11 +212,6 @@ export default abstract class Margin extends MarginWeb3 {
     return false;
   }
 
-  /* -------------------------------------------------------------------------- */
-  /*                               account fractions                       */
-
-  /* -------------------------------------------------------------------------- */
-
   /**
    * Should account liquidate perp or spot(based on the weight of the position)
    */
@@ -228,6 +223,11 @@ export default abstract class Margin extends MarginWeb3 {
     }
     return false;
   }
+
+  /* -------------------------------------------------------------------------- */
+  /*                               account fractions                       */
+
+  /* -------------------------------------------------------------------------- */
 
   /**
    * Total position Notional
@@ -265,11 +265,6 @@ export default abstract class Margin extends MarginWeb3 {
     );
   }
 
-  /* -------------------------------------------------------------------------- */
-  /*                               Borrow & Withdrawal Infos                       */
-
-  /* -------------------------------------------------------------------------- */
-
   /**
    * Collateral of the free value
    */
@@ -281,10 +276,15 @@ export default abstract class Margin extends MarginWeb3 {
     return Decimal.max(new Decimal(0), freeCollateral);
   }
 
+  /* -------------------------------------------------------------------------- */
+  /*                               Borrow & Withdrawal Infos                       */
+
+  /* -------------------------------------------------------------------------- */
+
   /**
    * returns the total unrealized pnl for all positions
    */
-  private get cumulativeUnrealizedPnL() {
+  get cumulativeUnrealizedPnL() {
     let totalPnL = new Decimal(0);
     for (const position of this.positions) {
       totalPnL = totalPnL.add(this.positionPnL(position));
@@ -293,15 +293,10 @@ export default abstract class Margin extends MarginWeb3 {
     return totalPnL;
   }
 
-  /* -------------------------------------------------------------------------- */
-  /*                               Trade Information                      */
-
-  /* -------------------------------------------------------------------------- */
-
   /**
    * get WEIGHTED collateral value in USD terms
    */
-  private get weightedCollateralValue() {
+  get weightedCollateralValue() {
     let depositedCollateral = new Decimal(0);
     for (const assetKey of Object.keys(this.balances)) {
       if (this.balances[assetKey]!.number >= 0) {
@@ -320,6 +315,18 @@ export default abstract class Margin extends MarginWeb3 {
     }
 
     return depositedCollateral;
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                               Trade Information                      */
+
+  /* -------------------------------------------------------------------------- */
+
+  /**
+   * Account value(with weighted collateral, lower than the actual account value)
+   */
+  get weightedAccountValue() {
+    return this.weightedCollateralValue.add(this.cumulativeUnrealizedPnL);
   }
 
   /**
@@ -374,13 +381,6 @@ export default abstract class Margin extends MarginWeb3 {
       }
     }
     return bnlPositionNotional.abs();
-  }
-
-  /**
-   * Account value(with weighted collateral, lower than the actual account value)
-   */
-  private get weightedAccountValue() {
-    return this.weightedCollateralValue.add(this.cumulativeUnrealizedPnL);
   }
 
   /**
@@ -443,11 +443,6 @@ export default abstract class Margin extends MarginWeb3 {
     return tiedCollateral;
   }
 
-  /* -------------------------------------------------------------------------- */
-  /*                                General Margin Info                       */
-
-  /* -------------------------------------------------------------------------- */
-
   /**
    * returns infos about open orders accounts(position size + asks&bids on the book)
    */
@@ -485,6 +480,11 @@ export default abstract class Margin extends MarginWeb3 {
 
     return posInfos;
   }
+
+  /* -------------------------------------------------------------------------- */
+  /*                                General Margin Info                       */
+
+  /* -------------------------------------------------------------------------- */
 
   static async load(
     program: Program<Zo>,
@@ -557,11 +557,6 @@ export default abstract class Margin extends MarginWeb3 {
     return margins;
   }
 
-  /* -------------------------------------------------------------------------- */
-  /*                                Private Helper Functions                    */
-
-  /* -------------------------------------------------------------------------- */
-
   private static printMarginsLoadProgress(index: number, len: number) {
     const size = 21;
     const i = (index * size) / len;
@@ -573,6 +568,28 @@ export default abstract class Margin extends MarginWeb3 {
         2,
       )}% ${index}/${len} Loaded`,
     );
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                                Private Helper Functions                    */
+
+  /* -------------------------------------------------------------------------- */
+
+  liqPrice(position: PositionInfo) {
+    const marketKey = position.marketKey;
+    const pmmf = this.state.markets[marketKey]!.pmmf;
+    const markPrice = this.state.markets[marketKey]!.markPrice.decimal;
+
+    const priceChange = this.marginFraction
+      .sub(this.maintenanceMarginFraction)
+      .mul(this.totalOpenPositionNotional)
+      .div(position.coins.decimal.mul(new Decimal(1).sub(pmmf)));
+    if (position.isLong) {
+      const price = markPrice.sub(priceChange).toNumber();
+      return price > 0 ? price : Infinity;
+    }
+    const price = markPrice.add(priceChange).toNumber();
+    return price > 0 ? price : Infinity;
   }
 
   /**
@@ -702,9 +719,10 @@ export default abstract class Margin extends MarginWeb3 {
   /**
    * Max Contracts Purchaseable for the trade
    * @param trade
+   * @marketKey marketKey
    */
-  maxContractsPurchaseable(trade: TradeInfo) {
-    const marketInfo = this.state.markets[trade.marketKey]!;
+  maxContractsPurchaseable(trade: TradeInfo, marketKey: string) {
+    const marketInfo = this.state.markets[marketKey]!;
     const markPrice = marketInfo.markPrice;
     const TAKER_TRADE_FEE = 0.1;
     const MAKER_TRADE_FEE = 0.0;
@@ -759,9 +777,10 @@ export default abstract class Margin extends MarginWeb3 {
   /**
    * Max Collateral Purchaseable for the trade
    * @param trade
+   * @marketKey marketKey
    */
-  maxCollateralSpendable(trade: TradeInfo) {
-    return trade.price * this.maxContractsPurchaseable(trade);
+  maxCollateralSpendable(trade: TradeInfo, marketKey: string) {
+    return trade.price * this.maxContractsPurchaseable(trade, marketKey);
   }
 
   /**

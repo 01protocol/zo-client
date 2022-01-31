@@ -10,7 +10,6 @@ import {
   ZERO_ONE_DEVNET_PROGRAM_ID,
   ZO_DEX_DEVNET_PROGRAM_ID,
   ZO_DEX_MAINNET_PROGRAM_ID,
-  ZO_DEX_PROGRAM_ID,
 } from "../config";
 import { AssetInfo, MarketInfo, MarketType } from "../types/dataTypes";
 import Decimal from "decimal.js";
@@ -141,6 +140,35 @@ export default class State extends BaseAccount<Schema> {
     };
   }
 
+  /**
+   * computes supply and borrow apys
+   * @param utilization
+   * @param optimalUtility
+   * @param maxRate
+   * @param optimalRate
+   * @private
+   */
+  private static computeSupplyAndBorrowApys(
+    utilization: Decimal,
+    optimalUtility: Decimal,
+    maxRate: Decimal,
+    optimalRate: Decimal,
+  ) {
+    let ir;
+    if (utilization.mul(1000).greaterThan(optimalUtility)) {
+      const extraUtil = utilization.mul(1000).sub(optimalUtility);
+      const slope = maxRate
+        .sub(optimalRate)
+        .div(new Decimal(1000).sub(optimalUtility));
+      ir = optimalRate.add(slope.mul(extraUtil)).div(1000);
+    } else {
+      ir = optimalRate.div(optimalUtility).mul(utilization);
+    }
+    const borrowApy = ir.mul(100);
+    const supplyApy = ir.mul(utilization).mul(100);
+    return { borrowApy, supplyApy };
+  }
+
   async refresh(): Promise<void> {
     this._getMarketBySymbol = {};
     [this.data] = await Promise.all([
@@ -221,6 +249,13 @@ export default class State extends BaseAccount<Schema> {
     return this._getMarketBySymbol[sym] as ZoMarket;
   }
 
+  /* -------------------------------------------------------------------------- */
+  /*                                                                            */
+  /*                                Data stuff below                            */
+  /*                                                                            */
+
+  /* -------------------------------------------------------------------------- */
+
   /**
    * Called by the keepers every hour to update the funding on each market.
    * @param symbol The market symbol. Ex:("BTC-PERP")
@@ -241,13 +276,6 @@ export default class State extends BaseAccount<Schema> {
       },
     });
   }
-
-  /* -------------------------------------------------------------------------- */
-  /*                                                                            */
-  /*                                Data stuff below                            */
-  /*                                                                            */
-
-  /* -------------------------------------------------------------------------- */
 
   /**
    * Called by the keepers regularly to cache the oracle prices.
@@ -301,11 +329,11 @@ export default class State extends BaseAccount<Schema> {
       this.program.provider.connection,
       market.pubKey,
       { commitment: "recent" },
-      ZO_DEX_PROGRAM_ID,
+      this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
+        ? ZO_DEX_DEVNET_PROGRAM_ID
+        : ZO_DEX_MAINNET_PROGRAM_ID,
     );
-    console.log(
-      await dexMarket.loadEventQueue(this.program.provider.connection),
-    );
+
     const bids = await dexMarket.loadBids(
       this.program.provider.connection,
       "recent",
@@ -343,18 +371,12 @@ export default class State extends BaseAccount<Schema> {
       const optimalUtility = new Decimal(collateral.optimalUtil.toString());
       const optimalRate = new Decimal(collateral.optimalRate.toString());
       const maxRate = new Decimal(collateral.maxRate.toString());
-      let ir;
-      if (utilization.mul(1000).greaterThan(optimalUtility)) {
-        const extraUtil = utilization.mul(1000).sub(optimalUtility);
-        const slope = maxRate
-          .sub(optimalRate)
-          .div(new Decimal(1000).sub(optimalUtility));
-        ir = optimalRate.add(slope.mul(extraUtil)).div(1000);
-      } else {
-        ir = optimalRate.div(optimalUtility).mul(utilization);
-      }
-      const borrowApy = ir.mul(100);
-      const supplyApy = ir.mul(utilization).mul(100);
+      const { borrowApy, supplyApy } = State.computeSupplyAndBorrowApys(
+        utilization,
+        optimalUtility,
+        maxRate,
+        optimalRate,
+      );
       const price = this.cache.getOracleBySymbol(collateral.oracleSymbol).price;
 
       // @ts-ignore
@@ -365,8 +387,10 @@ export default class State extends BaseAccount<Schema> {
         vault: this.data.vaults[index]!,
         supply: this.cache.data.borrowCache[index]!.actualSupply.decimal,
         borrows: this.cache.data.borrowCache[index]!.actualBorrows.decimal,
-        supplyApy: supplyApy.number,
-        borrowsApy: borrowApy.number,
+        supplyApy: supplyApy.toNumber(),
+        borrowsApy: borrowApy.toNumber(),
+        maxDeposit: new Num(collateral.maxDeposit, collateral.decimals).decimal,
+        dustThreshold: new Num(collateral.dustThreshold, collateral.decimals),
       };
 
       index++;
@@ -393,17 +417,20 @@ export default class State extends BaseAccount<Schema> {
    * Load all market infos
    */
   loadMarkets() {
-    const markets = {};
+    const markets: { [key: string]: MarketInfo } = {};
     let index = 0;
     for (const perpMarket of this.data.perpMarkets) {
       const marketType = this._getMarketType(perpMarket.perpType);
       const price = this.cache.getOracleBySymbol(perpMarket.oracleSymbol).price;
+      const oracle = this.cache.getOracleBySymbol(perpMarket.oracleSymbol);
+      const twap = oracle.twap;
 
       markets[perpMarket.symbol] = {
         symbol: perpMarket.symbol,
         pubKey: perpMarket.dexMarket,
         //todo:  price adjustment for powers and evers
         indexPrice: price,
+        indexTwap: twap,
         markPrice: this.cache.data.marks[index]!.price,
         baseImf: new Decimal(perpMarket.baseImf / BASE_IMF_DIVIDER),
         pmmf: new Decimal(

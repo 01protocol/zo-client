@@ -17,6 +17,9 @@ export const USD_DECIMALS = 6;
 export const ZO_STATE_KEY = new PublicKey(
   "KwcWW7WvgSXLJcyjKZJBHLbfriErggzYHpjS9qjVD5F",
 );
+export const ZO_DEVNET_STATE_KEY = new PublicKey(
+  "KwcWW7WvgSXLJcyjKZJBHLbfriErggzYHpjS9qjVD5F",
+);
 export const ZO_MAINNET_STATE_KEY = new PublicKey(
   "71yykwxq1zQqy99PgRsgZJXi2HHK2UDx9G4va7pH6qRv",
 );
@@ -51,9 +54,6 @@ export const ZO_TAKER_FEE = 0.001; // 10bps
 export const ZERO_ONE_PROGRAM_ID = new PublicKey(
   "DuSPvazsfthvWRuJ8TUs984VXCeUfJ1qbzd8NwkRLEpd",
 );
-export const ZO_DEX_PROGRAM_ID = new PublicKey(
-  "CX8xiCu9uBrLX5v3DSeHX5SEvGT36PSExES2LmzVcyJd",
-);
 export const SERUM_SPOT_PROGRAM_ID = new PublicKey(
   "DESVgJVGajEgKGXhb6XmqDHGz3VjdgP7rEVESBgxmroY",
 );
@@ -81,3 +81,13 @@ export const WRAPPED_SOL_MINT = new PublicKey(
 // == CLUSTERS ==
 export const DEV_ENDPOINT = "https://api.devnet.solana.com";
 export const MAINNET_ENDPOINT = "https://ssc-dao.genesysgo.net/";
+
+// == USDC ==
+
+export const USDC_MAINNET_MINT_ADDRESS = new PublicKey(
+  "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+);
+
+export const USDC_DEVNET_MINT_ADDRESS = new PublicKey(
+  "7UT1javY6X1M9R2UrPGrwcZ78SX3huaXyETff5hm5YdX",
+);

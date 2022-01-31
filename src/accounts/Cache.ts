@@ -2,7 +2,7 @@ import { PublicKey } from "@solana/web3.js";
 import { BN, Program } from "@project-serum/anchor";
 import Decimal from "decimal.js";
 import BaseAccount from "./BaseAccount";
-import { Schema as StateSchema } from "./state/State";
+import { Schema as StateSchema } from "./State";
 import Num from "../Num";
 import { CacheSchema, Zo } from "../types";
 import { loadSymbol, loadWI80F48 } from "../utils";
@@ -78,11 +78,13 @@ export default class Cache extends BaseAccount<Schema> {
     return {
       ...data,
       oracles: data.oracles
+        //@ts-ignore
         .filter((c) => !c.symbol.data.every((x) => x === 0))
         .map((c) => {
           const decimals = c.quoteDecimals - c.baseDecimals;
           return {
             ...c,
+            //@ts-ignore
             symbol: loadSymbol(c.symbol),
             price: Num.fromWI80F48(c.price, decimals),
             twap: Num.fromWI80F48(c.twap, decimals),
