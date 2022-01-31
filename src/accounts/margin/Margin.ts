@@ -1,4 +1,10 @@
-import { PublicKey } from "@solana/web3.js";
+import {
+  Commitment,
+  Keypair,
+  PublicKey,
+  SystemProgram,
+  SYSVAR_RENT_PUBKEY,
+} from "@solana/web3.js";
 import { Program, ProgramAccount } from "@project-serum/anchor";
 import State from "../State";
 import Num from "../../Num";
@@ -8,6 +14,7 @@ import MarginWeb3 from "./MarginWeb3";
 import { Zo } from "../../types/zo";
 import Cache from "../Cache";
 import { ControlSchema, MarginSchema } from "../../types";
+import { CONTROL_ACCOUNT_SIZE } from "../../config";
 
 /**
  * The margin account is a PDA generated using
@@ -16,6 +23,19 @@ import { ControlSchema, MarginSchema } from "../../types";
  * ```.
  */
 export default abstract class Margin extends MarginWeb3 {
+  /**
+   * Creates a margin account.
+   * @param program The Zo Program
+   * @param st The Zo State object, overrides the default config.
+   * @param commitment commitment of the transaction, finalized is used as default
+   */
+  static async create(
+    program: Program<Zo>,
+    st: State,
+    commitment: Commitment = "finalized",
+  ): Promise<MarginWeb3> {
+    return (await MarginWeb3.create(program, st, commitment)) as Margin;
+  }
   /**
    * get total funding amount from all the markets
    */

@@ -80,7 +80,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
   /**
    * Loads a new Margin object.
    */
-  static async load(
+  protected static async load(
     program: Program<Zo>,
     st: State,
     ch: Cache,
@@ -100,7 +100,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
   /**
    * Loads a new Margin object from prefetched schema;
    */
-  static async loadPrefetched(
+  protected static async loadPrefetched(
     program: Program<Zo>,
     st: State,
     ch: Cache,
@@ -139,7 +139,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
    * @param st The Zo State object, overrides the default config.
    * @param commitment commitment of the transaction, finalized is used as default
    */
-  static async create(
+  protected static async create(
     program: Program<Zo>,
     st: State,
     commitment: Commitment = "finalized",
@@ -181,7 +181,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
    * Gets the Margin account's PDA and bump.
    * @returns An array consisting of [PDA, bump]
    */
-  static async getPda(
+  protected static async getPda(
     st: State,
     traderKey: PublicKey,
     programId: PublicKey,
@@ -312,8 +312,6 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 
   /**
    * load all active orders across all markets
-   * @param markets
-   * @param connection
    */
   async loadOrders() {
     const markets = this.state.markets;
