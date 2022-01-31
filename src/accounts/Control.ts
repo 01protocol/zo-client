@@ -1,7 +1,7 @@
 import { PublicKey } from "@solana/web3.js";
 import { Program } from "@project-serum/anchor";
 import BaseAccount from "./BaseAccount";
-import { ControlSchema as Schema, Zo } from "../types";
+import { ControlSchema, ControlSchema as Schema, Zo } from "../types";
 
 /**
  * The Control account tracks a user's open orders and positions across all markets.
@@ -13,6 +13,18 @@ export default class Control extends BaseAccount<Schema> {
    */
   static async load(program: Program<Zo>, k: PublicKey) {
     return new this(program, k, await Control.fetch(program, k));
+  }
+
+  /**
+   * Loads a new Control from existing data
+   * @param k The control account's public key.
+   */
+  static async loadPrefetched(
+    program: Program<Zo>,
+    k: PublicKey,
+    prefetchedControlData: ControlSchema,
+  ) {
+    return new this(program, k, prefetchedControlData);
   }
 
   private static async fetch(

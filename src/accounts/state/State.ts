@@ -1,15 +1,23 @@
 import { PublicKey } from "@solana/web3.js";
 import { BN, Program } from "@project-serum/anchor";
-import { loadSymbol } from "../utils";
-import BaseAccount from "./BaseAccount";
-import Cache from "./Cache";
-import { ZoMarket } from "../zoDex/zoMarket";
-import { StateSchema, Zo } from "../types";
+import Cache from "../Cache";
+import { Orderbook, ZoMarket } from "../../zoDex/zoMarket";
+import { StateSchema, Zo } from "../../types";
 import {
+  BASE_IMF_DIVIDER,
+  MMF_MULTIPLIER,
+  USD_DECIMALS,
   ZERO_ONE_DEVNET_PROGRAM_ID,
   ZO_DEX_DEVNET_PROGRAM_ID,
   ZO_DEX_MAINNET_PROGRAM_ID,
-} from "../config";
+  ZO_DEX_PROGRAM_ID,
+} from "../../config";
+import { AssetInfo, MarketInfo, MarketType } from "../../types/dataTypes";
+import Decimal from "decimal.js";
+import _ from "lodash";
+import Num from "../../Num";
+import { loadSymbol } from "../../utils";
+import BaseAccount from "../BaseAccount";
 
 type CollateralInfo = Omit<StateSchema["collaterals"][0], "oracleSymbol"> & {
   oracleSymbol: string;
@@ -66,7 +74,10 @@ export default class State extends BaseAccount<Schema> {
       throw Error("Invalid state signer nonce");
     }
     const cache = await Cache.load(program, data.cache, data);
-    return new this(program, k, data, signer, cache);
+    const state = new this(program, k, data, signer, cache);
+    await state.loadAssets();
+    await state.loadMarkets();
+    return state;
   }
 
   private static async fetch(
@@ -116,6 +127,16 @@ export default class State extends BaseAccount<Schema> {
       );
     }
     return i;
+  }
+
+  getMintBySymbol(symbol: string): PublicKey {
+    const i = this.data.collaterals.findIndex((x) => x.oracleSymbol === symbol);
+    if (i < 0) {
+      throw RangeError(
+        `Invalid symbol ${symbol} for <State ${this.pubkey.toBase58()}>`,
+      );
+    }
+    return this.data.collaterals[i]!.mint;
   }
 
   /**
@@ -225,5 +246,153 @@ export default class State extends BaseAccount<Schema> {
         cache: this.data.cache,
       },
     });
+  }
+
+  zoMarketAccounts: {
+    [key: string]: { dexMarket: ZoMarket; bids: Orderbook; asks: Orderbook };
+  } = {};
+
+  async getZoMarketAccounts(market: MarketInfo) {
+    if (this.zoMarketAccounts[market.symbol]) {
+      return this.zoMarketAccounts[market.symbol]!;
+    }
+    const dexMarket = await ZoMarket.load(
+      this.program.provider.connection,
+      market.pubKey,
+      { commitment: "recent" },
+      ZO_DEX_PROGRAM_ID,
+    );
+    console.log(
+      await dexMarket.loadEventQueue(this.program.provider.connection),
+    );
+    const bids = await dexMarket.loadBids(
+      this.program.provider.connection,
+      "recent",
+    );
+    const asks = await dexMarket.loadAsks(
+      this.program.provider.connection,
+      "recent",
+    );
+    this.zoMarketAccounts[market.symbol] = { dexMarket, bids, asks };
+    return this.zoMarketAccounts[market.symbol]!;
+  }
+
+  //  Math related stuff:
+
+  assets: { [key: string]: AssetInfo } = {};
+  markets: { [key: string]: MarketInfo } = {};
+
+  loadAssets() {
+    const assets: { [key: string]: AssetInfo } = {};
+    let index = 0;
+
+    for (const collateral of this.data.collaterals) {
+      const supply =
+        // @ts-ignore
+        this.cache.data.borrowCache[index].actualSupply.decimal;
+      const borrows =
+        // @ts-ignore
+        this.cache.data.borrowCache[index].actualBorrows.decimal;
+      const utilization = supply.greaterThanOrEqualTo(new Decimal(1))
+        ? borrows.div(supply)
+        : new Decimal(0);
+      const optimalUtility = new Decimal(collateral.optimalUtil.toString());
+      const optimalRate = new Decimal(collateral.optimalRate.toString());
+      const maxRate = new Decimal(collateral.maxRate.toString());
+      let ir;
+      if (utilization.mul(1000).greaterThan(optimalUtility)) {
+        const extraUtil = utilization.mul(1000).sub(optimalUtility);
+        const slope = maxRate
+          .sub(optimalRate)
+          .div(new Decimal(1000).sub(optimalUtility));
+        ir = optimalRate.add(slope.mul(extraUtil)).div(1000);
+      } else {
+        ir = optimalRate.div(optimalUtility).mul(utilization);
+      }
+      const borrowApy = ir.mul(100);
+      const supplyApy = ir.mul(utilization).mul(100);
+      const price = this.cache.getOracleBySymbol(collateral.oracleSymbol).price;
+
+      assets[collateral.oracleSymbol] = {
+        ...collateral,
+        symbol: collateral.oracleSymbol,
+        indexPrice: price,
+        // @ts-ignore
+        vault: this.data.vaults[index],
+        // @ts-ignore
+        supply: this.cache.data.borrowCache[index].actualSupply.decimal,
+        // @ts-ignore
+        borrows: this.cache.data.borrowCache[index].actualBorrows.decimal,
+        supplyApy: supplyApy,
+        borrowsApy: borrowApy,
+      };
+
+      index++;
+    }
+    this.assets = assets;
+  }
+
+  _getMarketType(perpType) {
+    if (_.isEqual(perpType, { future: {} })) {
+      return MarketType.Perp;
+    } else if (_.isEqual(perpType, { callOption: {} })) {
+      return MarketType.EverCall;
+    } else if (_.isEqual(perpType, { putOption: {} })) {
+      return MarketType.EverPut;
+    }
+    return MarketType.Perp;
+  }
+
+  async loadMarkets() {
+    const markets = {};
+    let index = 0;
+    for (const perpMarket of this.data.perpMarkets) {
+      const marketType = this._getMarketType(perpMarket.perpType);
+      const price = this.cache.getOracleBySymbol(perpMarket.oracleSymbol).price;
+
+      markets[perpMarket.symbol] = {
+        symbol: perpMarket.symbol,
+        pubKey: perpMarket.dexMarket,
+        //todo:  price adjustment for powers and evers
+        indexPrice: price,
+        markPrice: this.cache.data.marks[index]!.price,
+        baseImf: new Decimal(perpMarket.baseImf / BASE_IMF_DIVIDER),
+        pmmf: new Decimal(
+          perpMarket.baseImf / BASE_IMF_DIVIDER / MMF_MULTIPLIER,
+        ),
+        fundingIndex: new Num(
+          this.cache.data.fundingCache[index]!,
+          USD_DECIMALS,
+        ).decimal,
+        marketType: marketType,
+        assetDecimals: perpMarket.assetDecimals,
+        assetLotSize: Math.round(
+          Math.log(new Num(perpMarket.assetLotSize, 0).number) / Math.log(10),
+        ),
+        quoteLotSize: Math.round(
+          Math.log(new Num(perpMarket.quoteLotSize, 0).number) / Math.log(10),
+        ),
+        strike: new Num(perpMarket.strike, USD_DECIMALS).number,
+      };
+      index++;
+    }
+
+    this.markets = markets;
+  }
+
+  get indexToAssetKey() {
+    const index: string[] = [];
+    for (const collateral of this.data.collaterals) {
+      index.push(collateral.oracleSymbol);
+    }
+    return index;
+  }
+
+  get indexToMarketKey() {
+    const index: any[] = [];
+    for (const perpMarket of this.data.perpMarkets) {
+      index.push(perpMarket.symbol);
+    }
+    return index;
   }
 }

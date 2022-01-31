@@ -2,7 +2,7 @@ import { PublicKey } from "@solana/web3.js";
 import { BN, Program } from "@project-serum/anchor";
 import Decimal from "decimal.js";
 import BaseAccount from "./BaseAccount";
-import { Schema as StateSchema } from "./State";
+import { Schema as StateSchema } from "./state/State";
 import Num from "../Num";
 import { CacheSchema, Zo } from "../types";
 import { loadSymbol, loadWI80F48 } from "../utils";

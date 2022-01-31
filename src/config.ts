@@ -1,10 +1,8 @@
 import { PublicKey } from "@solana/web3.js";
 
 export { IDL } from "./types/zo";
-export { DEX_IDL } from "./types/dex";
 
-// == ACCOUNT SIZES ==
-export const CONTROL_ACCOUNT_SIZE = 8 + 4482;
+export { DEX_IDL } from "./types/dex";
 
 // == PARAMS ==
 export const ZO_FUTURE_TAKER_FEE = 0.001; // 10bps
@@ -12,6 +10,9 @@ export const ZO_OPTION_TAKER_FEE = 0.001; // temporary value, not actual
 export const ZO_SQUARE_TAKER_FEE = 0.0015; // 15bps, not actual
 export const USDC_DECIMALS = 6;
 
+export const BASE_IMF_DIVIDER = 1000;
+export const MMF_MULTIPLIER = 2;
+export const USD_DECIMALS = 6;
 // == 01 CONSTANTS ==
 export const ZO_STATE_KEY = new PublicKey(
   "KwcWW7WvgSXLJcyjKZJBHLbfriErggzYHpjS9qjVD5F",
@@ -40,6 +41,26 @@ export const SERUM_MAINNET_SPOT_PROGRAM_ID = new PublicKey(
   "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin",
 );
 
+// == ACCOUNT SIZES ==
+export const CONTROL_ACCOUNT_SIZE = 8 + 4482;
+
+// == PARAMS ==
+export const ZO_TAKER_FEE = 0.001; // 10bps
+
+// == 01 PROGRAM IDS ==
+export const ZERO_ONE_PROGRAM_ID = new PublicKey(
+  "DuSPvazsfthvWRuJ8TUs984VXCeUfJ1qbzd8NwkRLEpd",
+);
+export const ZO_DEX_PROGRAM_ID = new PublicKey(
+  "CX8xiCu9uBrLX5v3DSeHX5SEvGT36PSExES2LmzVcyJd",
+);
+export const SERUM_SPOT_PROGRAM_ID = new PublicKey(
+  "DESVgJVGajEgKGXhb6XmqDHGz3VjdgP7rEVESBgxmroY",
+);
+export const SERUM_SWAP_PROGRAM_ID = new PublicKey(
+  "BiUikS42eRsdmkGBu3qXDy8Tu4cuWYYnuFVZzKzjVEET",
+);
+
 // == SOLANA PROGRAM IDS ==
 export const SYSTEM_PROGRAM_ID = new PublicKey(
   "11111111111111111111111111111111",
@@ -59,3 +80,4 @@ export const WRAPPED_SOL_MINT = new PublicKey(
 
 // == CLUSTERS ==
 export const DEV_ENDPOINT = "https://api.devnet.solana.com";
+export const MAINNET_ENDPOINT = "https://ssc-dao.genesysgo.net/";
