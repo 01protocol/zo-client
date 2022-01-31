@@ -12,7 +12,7 @@ import { Market as SerumMarket } from "@zero_one/lite-serum";
 import BN from "bn.js";
 import { Buffer } from "buffer";
 import BaseAccount from "../BaseAccount";
-import State from "../state/State";
+import State from "../State";
 import Control from "../Control";
 import Num from "../../Num";
 import {
@@ -62,6 +62,10 @@ export interface MarginClassSchema extends Omit<MarginSchema, "collateral"> {
  * ```.
  */
 export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
+  positions: PositionInfo[] = [];
+  orders: OrderInfo[] = [];
+  _balances: { [key: string]: Num } = {};
+
   protected constructor(
     program: Program<Zo>,
     pubkey: PublicKey,
@@ -71,102 +75,6 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     public readonly owner?: PublicKey,
   ) {
     super(program, pubkey, data);
-  }
-
-  positions: PositionInfo[] = [];
-  orders: OrderInfo[] = [];
-  _balances: { [key: string]: Num } = {};
-
-  updateState(state: State) {
-    this.state = state;
-  }
-
-  loadBalances() {
-    const balances = {};
-    let index = 0;
-    const indexToAssetKey = this.state.indexToAssetKey;
-    for (const collateral of this.data.actualCollateral) {
-      balances[indexToAssetKey[index]!] = collateral;
-      index++;
-    }
-    this._balances = balances;
-  }
-
-  loadPositions() {
-    const markets = this.state.markets;
-    const positions: PositionInfo[] = [];
-    const recordedMarkets = {};
-    let index = 0;
-    for (const oo of this.control.data.openOrdersAgg) {
-      if (oo.key.toString() != PublicKey.default.toString()) {
-        // @ts-ignore
-        const market = markets[this.state.indexToMarketKey[index]]!;
-        const coins = new Num(oo.posSize, market.assetDecimals);
-        const pCoins = new Num(oo.nativePcTotal, USD_DECIMALS);
-        const realizedPnl = new Num(oo.realizedPnl, market.assetDecimals);
-        const fundingIndex = new Num(oo.fundingIndex, USD_DECIMALS).decimal;
-
-        positions.push({
-          coins: new Num(coins.n.abs(), coins.decimals),
-          pCoins: new Num(pCoins.n.abs(), pCoins.decimals),
-          realizedPnL: realizedPnl,
-          fundingIndex: fundingIndex,
-          marketKey: market.symbol,
-          isLong: coins.number > 0,
-        });
-
-        recordedMarkets[market.symbol] = true;
-      }
-      index++;
-    }
-
-    for (const market of Object.values(markets)) {
-      if (recordedMarkets[market.symbol] == null) {
-        positions.push({
-          coins: new Num(0, market.assetDecimals),
-          pCoins: new Num(0, USD_DECIMALS),
-          realizedPnL: new Num(0, 0),
-          fundingIndex: new Decimal(1),
-          marketKey: market.symbol,
-          isLong: true,
-        });
-      }
-    }
-    this.positions = positions;
-  }
-
-  /**
-   * load all active orders across all markets
-   * @param markets
-   * @param connection
-   */
-  async loadOrders() {
-    const markets = this.state.markets;
-    const orders: OrderInfo[] = [];
-    for (const market of Object.values(markets)) {
-      const marketOrders: OrderInfo[] = [];
-      const { dexMarket, bids, asks } = await this.state.getZoMarketAccounts(
-        market,
-      );
-      const activeOrders = dexMarket.filterForOpenOrders(
-        bids,
-        asks,
-        this.control.pubkey,
-      );
-      for (const order of activeOrders) {
-        marketOrders.push({
-          price: new Num(order.price, USD_DECIMALS),
-          coins: new Num(Math.abs(order.size), market.assetDecimals),
-          pCoins: new Num(Math.abs(order.size * order.price), USD_DECIMALS),
-          orderId: order.orderId,
-          marketKey: market.symbol,
-          long: order.side == "buy",
-          symbol: market.symbol,
-        });
-      }
-      orders.push(...marketOrders);
-    }
-    this.orders = orders;
   }
 
   /**
@@ -187,21 +95,6 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     margin.loadPositions();
     await margin.loadOrders();
     return margin;
-  }
-
-  protected static async loadAllMarginAndControlSchemas(program: Program<Zo>) {
-    const marginSchemas = (await program.account["margin"].all()).map(
-      (t) => t as ProgramAccount<MarginSchema>,
-    );
-    const controlSchemas = (await program.account["control"].all()).map(
-      (t) => t as ProgramAccount<ControlSchema>,
-    );
-    return marginSchemas.map((ms) => ({
-      marginSchema: ms,
-      controlSchema: controlSchemas.find((cs) =>
-        cs.publicKey.equals(ms.account.control),
-      ) as ProgramAccount<ControlSchema>,
-    }));
   }
 
   /**
@@ -299,6 +192,21 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     );
   }
 
+  protected static async loadAllMarginAndControlSchemas(program: Program<Zo>) {
+    const marginSchemas = (await program.account["margin"].all()).map(
+      (t) => t as ProgramAccount<MarginSchema>,
+    );
+    const controlSchemas = (await program.account["control"].all()).map(
+      (t) => t as ProgramAccount<ControlSchema>,
+    );
+    return marginSchemas.map((ms) => ({
+      marginSchema: ms,
+      controlSchema: controlSchemas.find((cs) =>
+        cs.publicKey.equals(ms.account.control),
+      ) as ProgramAccount<ControlSchema>,
+    }));
+  }
+
   private static async fetch(
     program: Program<Zo>,
     k: PublicKey,
@@ -342,6 +250,98 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
         );
       }),
     };
+  }
+
+  updateState(state: State) {
+    this.state = state;
+  }
+
+  loadBalances() {
+    const balances = {};
+    let index = 0;
+    const indexToAssetKey = this.state.indexToAssetKey;
+    for (const collateral of this.data.actualCollateral) {
+      balances[indexToAssetKey[index]!] = collateral;
+      index++;
+    }
+    this._balances = balances;
+  }
+
+  loadPositions() {
+    const markets = this.state.markets;
+    const positions: PositionInfo[] = [];
+    const recordedMarkets = {};
+    let index = 0;
+    for (const oo of this.control.data.openOrdersAgg) {
+      if (oo.key.toString() != PublicKey.default.toString()) {
+        // @ts-ignore
+        const market = markets[this.state.indexToMarketKey[index]]!;
+        const coins = new Num(oo.posSize, market.assetDecimals);
+        const pCoins = new Num(oo.nativePcTotal, USD_DECIMALS);
+        const realizedPnl = new Num(oo.realizedPnl, market.assetDecimals);
+        const fundingIndex = new Num(oo.fundingIndex, USD_DECIMALS).decimal;
+
+        positions.push({
+          coins: new Num(coins.n.abs(), coins.decimals),
+          pCoins: new Num(pCoins.n.abs(), pCoins.decimals),
+          realizedPnL: realizedPnl,
+          fundingIndex: fundingIndex,
+          marketKey: market.symbol,
+          isLong: coins.number > 0,
+        });
+
+        recordedMarkets[market.symbol] = true;
+      }
+      index++;
+    }
+
+    for (const market of Object.values(markets)) {
+      if (recordedMarkets[market.symbol] == null) {
+        positions.push({
+          coins: new Num(0, market.assetDecimals),
+          pCoins: new Num(0, USD_DECIMALS),
+          realizedPnL: new Num(0, 0),
+          fundingIndex: new Decimal(1),
+          marketKey: market.symbol,
+          isLong: true,
+        });
+      }
+    }
+    this.positions = positions;
+  }
+
+  /**
+   * load all active orders across all markets
+   * @param markets
+   * @param connection
+   */
+  async loadOrders() {
+    const markets = this.state.markets;
+    const orders: OrderInfo[] = [];
+    for (const market of Object.values(markets)) {
+      const marketOrders: OrderInfo[] = [];
+      const { dexMarket, bids, asks } = await this.state.getZoMarketAccounts(
+        market,
+      );
+      const activeOrders = dexMarket.filterForOpenOrders(
+        bids,
+        asks,
+        this.control.pubkey,
+      );
+      for (const order of activeOrders) {
+        marketOrders.push({
+          price: new Num(order.price, USD_DECIMALS),
+          coins: new Num(Math.abs(order.size), market.assetDecimals),
+          pCoins: new Num(Math.abs(order.size * order.price), USD_DECIMALS),
+          orderId: order.orderId,
+          marketKey: market.symbol,
+          long: order.side == "buy",
+          symbol: market.symbol,
+        });
+      }
+      orders.push(...marketOrders);
+    }
+    this.orders = orders;
   }
 
   /**

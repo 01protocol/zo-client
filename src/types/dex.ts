@@ -1,8 +1,7 @@
 export const DEX_IDL = {
   "version": "0.1.0",
   "name": "dex",
-  "instructions": [
-  ],
+  "instructions": [],
   "events": [
     {
       "name": "RealizedPnlLog",
@@ -10,38 +9,38 @@ export const DEX_IDL = {
         {
           "name": "marketKey",
           "type": {
-            "array": ["u64", 4]
+            "array": ["u64", 4],
           },
-          "index": false
+          "index": false,
         },
         {
           "name": "margin",
           "type": {
-            "array": ["u64", 4]
+            "array": ["u64", 4],
           },
-          "index": false
+          "index": false,
         },
         {
           "name": "isLong",
           "type": "bool",
-          "index": false
+          "index": false,
         },
         {
           "name": "pnl",
           "type": "i64",
-          "index": false
+          "index": false,
         },
         {
           "name": "qtyPaid",
           "type": "i64",
-          "index": false
+          "index": false,
         },
         {
           "name": "qtyReceived",
           "type": "i64",
-          "index": false
-        }
-      ]
+          "index": false,
+        },
+      ],
     },
     {
       "name": "OpenOrdersSnapLog",
@@ -49,49 +48,49 @@ export const DEX_IDL = {
         {
           "name": "nativePcFree",
           "type": "i64",
-          "index": false
+          "index": false,
         },
         {
           "name": "nativePcTotal",
           "type": "i64",
-          "index": false
+          "index": false,
         },
         {
           "name": "nativeCoinFree",
           "type": "i64",
-          "index": false
+          "index": false,
         },
         {
           "name": "nativeCoinTotal",
           "type": "i64",
-          "index": false
+          "index": false,
         },
         {
           "name": "realizedPnl",
           "type": "i64",
-          "index": false
+          "index": false,
         },
         {
           "name": "coinOnBids",
           "type": "u64",
-          "index": false
+          "index": false,
         },
         {
           "name": "coinOnAsks",
           "type": "u64",
-          "index": false
+          "index": false,
         },
         {
           "name": "orderCount",
           "type": "u8",
-          "index": false
+          "index": false,
         },
         {
           "name": "fundingIndex",
           "type": "i128",
-          "index": false
-        }
-      ]
+          "index": false,
+        },
+      ],
     },
     {
       "name": "SettleFunding",
@@ -99,9 +98,9 @@ export const DEX_IDL = {
         {
           "name": "funding",
           "type": "i64",
-          "index": false
-        }
-      ]
+          "index": false,
+        },
+      ],
     },
     {
       "name": "UpdateFundingLog",
@@ -109,24 +108,24 @@ export const DEX_IDL = {
         {
           "name": "oraclePrice",
           "type": "i64",
-          "index": false
+          "index": false,
         },
         {
           "name": "indexPrice",
           "type": "i64",
-          "index": false
+          "index": false,
         },
         {
           "name": "marketFundingIndex",
           "type": "i128",
-          "index": false
+          "index": false,
         },
         {
           "name": "lastUpdated",
           "type": "u64",
-          "index": false
-        }
-      ]
-    }
-  ]
+          "index": false,
+        },
+      ],
+    },
+  ],
 }

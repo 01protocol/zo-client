@@ -2687,71 +2687,71 @@ export const IDL: Zo = {
     {
       "name": "SPOT_INITIAL_MARGIN_REQ",
       "type": "u64",
-      "value": "1_100_000"
+      "value": "1_100_000",
     },
     {
       "name": "SPOT_MAINT_MARGIN_REQ",
       "type": "u64",
-      "value": "1_030_000"
+      "value": "1_030_000",
     },
     {
       "name": "DUST_THRESHOLD",
       "type": "i64",
-      "value": "1_000_000"
+      "value": "1_000_000",
     },
     {
       "name": "ORACLE_STALENESS_THRESH",
       "type": "u64",
-      "value": "10"
+      "value": "10",
     },
     {
       "name": "TWAP_SAMPLE_DT",
       "type": "u64",
-      "value": "300"
+      "value": "300",
     },
     {
       "name": "TWAP_SAMPLES_PER_H",
       "type": "u64",
-      "value": "12"
+      "value": "12",
     },
     {
       "name": "DEFAULT_IR_MULTIPLIER",
       "type": "u64",
-      "value": "1_000_000"
+      "value": "1_000_000",
     },
     {
       "name": "VALID_DT",
       "type": "u64",
-      "value": "20"
+      "value": "20",
     },
     {
       "name": "MAX_ORACLE_SOURCES",
       "type": {
-        "defined": "usize"
+        "defined": "usize",
       },
-      "value": "3"
+      "value": "3",
     },
     {
       "name": "MAX_COLLATERALS",
       "type": {
-        "defined": "usize"
+        "defined": "usize",
       },
-      "value": "25"
+      "value": "25",
     },
     {
       "name": "MAX_MARKETS",
       "type": {
-        "defined": "usize"
+        "defined": "usize",
       },
-      "value": "50"
+      "value": "50",
     },
     {
       "name": "DEBUG_LOG",
       "type": {
-        "defined": "&str"
+        "defined": "&str",
       },
-      "value": "\"DEBUG\""
-    }
+      "value": "\"DEBUG\"",
+    },
   ],
   "instructions": [
     {
@@ -2760,45 +2760,45 @@ export const IDL: Zo = {
         {
           "name": "state",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "authority",
           "isMut": false,
-          "isSigner": true
+          "isSigner": true,
         },
         {
           "name": "payer",
           "isMut": false,
-          "isSigner": true
+          "isSigner": true,
         },
         {
           "name": "margin",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "control",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "rent",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "systemProgram",
           "isMut": false,
-          "isSigner": false
-        }
+          "isSigner": false,
+        },
       ],
       "args": [
         {
           "name": "nonce",
-          "type": "u8"
-        }
-      ]
+          "type": "u8",
+        },
+      ],
     },
     {
       "name": "deposit",
@@ -2806,54 +2806,54 @@ export const IDL: Zo = {
         {
           "name": "state",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "stateSigner",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "cache",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "authority",
           "isMut": false,
-          "isSigner": true
+          "isSigner": true,
         },
         {
           "name": "margin",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "tokenAccount",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "vault",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "tokenProgram",
           "isMut": false,
-          "isSigner": false
-        }
+          "isSigner": false,
+        },
       ],
       "args": [
         {
           "name": "repayOnly",
-          "type": "bool"
+          "type": "bool",
         },
         {
           "name": "amount",
-          "type": "u64"
-        }
-      ]
+          "type": "u64",
+        },
+      ],
     },
     {
       "name": "withdraw",
@@ -2861,59 +2861,59 @@ export const IDL: Zo = {
         {
           "name": "state",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "stateSigner",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "cache",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "authority",
           "isMut": false,
-          "isSigner": true
+          "isSigner": true,
         },
         {
           "name": "margin",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "control",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "tokenAccount",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "vault",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "tokenProgram",
           "isMut": false,
-          "isSigner": false
-        }
+          "isSigner": false,
+        },
       ],
       "args": [
         {
           "name": "allowBorrow",
-          "type": "bool"
+          "type": "bool",
         },
         {
           "name": "amount",
-          "type": "u64"
-        }
-      ]
+          "type": "u64",
+        },
+      ],
     },
     {
       "name": "createPerpOpenOrders",
@@ -2921,60 +2921,60 @@ export const IDL: Zo = {
         {
           "name": "state",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "stateSigner",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "authority",
           "isMut": false,
-          "isSigner": true
+          "isSigner": true,
         },
         {
           "name": "payer",
           "isMut": false,
-          "isSigner": true
+          "isSigner": true,
         },
         {
           "name": "margin",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "control",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "openOrders",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "dexMarket",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "dexProgram",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "rent",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "systemProgram",
           "isMut": false,
-          "isSigner": false
-        }
+          "isSigner": false,
+        },
       ],
-      "args": []
+      "args": [],
     },
     {
       "name": "placePerpOrder",
@@ -2982,106 +2982,106 @@ export const IDL: Zo = {
         {
           "name": "state",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "stateSigner",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "cache",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "authority",
           "isMut": false,
-          "isSigner": true
+          "isSigner": true,
         },
         {
           "name": "margin",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "control",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "openOrders",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "dexMarket",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "reqQ",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "eventQ",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "marketBids",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "marketAsks",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "dexProgram",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "rent",
           "isMut": false,
-          "isSigner": false
-        }
+          "isSigner": false,
+        },
       ],
       "args": [
         {
           "name": "isLong",
-          "type": "bool"
+          "type": "bool",
         },
         {
           "name": "limitPrice",
-          "type": "u64"
+          "type": "u64",
         },
         {
           "name": "maxBaseQuantity",
-          "type": "u64"
+          "type": "u64",
         },
         {
           "name": "maxQuoteQuantity",
-          "type": "u64"
+          "type": "u64",
         },
         {
           "name": "orderType",
           "type": {
-            "defined": "OrderType"
-          }
+            "defined": "OrderType",
+          },
         },
         {
           "name": "limit",
-          "type": "u16"
+          "type": "u16",
         },
         {
           "name": "clientId",
-          "type": "u64"
-        }
-      ]
+          "type": "u64",
+        },
+      ],
     },
     {
       "name": "cancelPerpOrder",
@@ -3089,79 +3089,79 @@ export const IDL: Zo = {
         {
           "name": "state",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "cache",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "authority",
           "isMut": false,
-          "isSigner": true
+          "isSigner": true,
         },
         {
           "name": "margin",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "control",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "openOrders",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "dexMarket",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "marketBids",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "marketAsks",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "eventQ",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "dexProgram",
           "isMut": false,
-          "isSigner": false
-        }
+          "isSigner": false,
+        },
       ],
       "args": [
         {
           "name": "orderId",
           "type": {
-            "option": "u128"
-          }
+            "option": "u128",
+          },
         },
         {
           "name": "isLong",
           "type": {
-            "option": "bool"
-          }
+            "option": "bool",
+          },
         },
         {
           "name": "clientId",
           "type": {
-            "option": "u64"
-          }
-        }
-      ]
+            "option": "u64",
+          },
+        },
+      ],
     },
     {
       "name": "updatePerpFunding",
@@ -3169,40 +3169,40 @@ export const IDL: Zo = {
         {
           "name": "state",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "stateSigner",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "cache",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "dexMarket",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "marketBids",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "marketAsks",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "dexProgram",
           "isMut": false,
-          "isSigner": false
-        }
+          "isSigner": false,
+        },
       ],
-      "args": []
+      "args": [],
     },
     {
       "name": "settleFunds",
@@ -3210,50 +3210,50 @@ export const IDL: Zo = {
         {
           "name": "authority",
           "isMut": false,
-          "isSigner": true
+          "isSigner": true,
         },
         {
           "name": "state",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "stateSigner",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "cache",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "margin",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "control",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "openOrders",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "dexMarket",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "dexProgram",
           "isMut": false,
-          "isSigner": false
-        }
+          "isSigner": false,
+        },
       ],
-      "args": []
+      "args": [],
     },
     {
       "name": "forceCancelAllPerpOrders",
@@ -3261,75 +3261,75 @@ export const IDL: Zo = {
         {
           "name": "pruner",
           "isMut": false,
-          "isSigner": true
+          "isSigner": true,
         },
         {
           "name": "state",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "cache",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "stateSigner",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "liqeeMargin",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "liqeeControl",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "liqeeOo",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "dexMarket",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "reqQ",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "eventQ",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "marketBids",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "marketAsks",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "dexProgram",
           "isMut": false,
-          "isSigner": false
-        }
+          "isSigner": false,
+        },
       ],
       "args": [
         {
           "name": "limit",
-          "type": "u16"
-        }
-      ]
+          "type": "u16",
+        },
+      ],
     },
     {
       "name": "liquidatePerpPosition",
@@ -3337,95 +3337,95 @@ export const IDL: Zo = {
         {
           "name": "state",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "cache",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "stateSigner",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "liqor",
           "isMut": false,
-          "isSigner": true
+          "isSigner": true,
         },
         {
           "name": "liqorMargin",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "liqorControl",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "liqorOo",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "liqee",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "liqeeMargin",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "liqeeControl",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "liqeeOo",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "dexMarket",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "reqQ",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "eventQ",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "marketBids",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "marketAsks",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "dexProgram",
           "isMut": false,
-          "isSigner": false
-        }
+          "isSigner": false,
+        },
       ],
       "args": [
         {
           "name": "assetTransferLots",
-          "type": "u64"
-        }
-      ]
+          "type": "u64",
+        },
+      ],
     },
     {
       "name": "liquidateSpotPosition",
@@ -3433,55 +3433,55 @@ export const IDL: Zo = {
         {
           "name": "state",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "cache",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "liqor",
           "isMut": false,
-          "isSigner": true
+          "isSigner": true,
         },
         {
           "name": "liqorMargin",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "liqorControl",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "liqeeMargin",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "liqeeControl",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "assetMint",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "quoteMint",
           "isMut": false,
-          "isSigner": false
-        }
+          "isSigner": false,
+        },
       ],
       "args": [
         {
           "name": "assetTransferAmount",
-          "type": "i64"
-        }
-      ]
+          "type": "i64",
+        },
+      ],
     },
     {
       "name": "settleBankruptcy",
@@ -3489,50 +3489,50 @@ export const IDL: Zo = {
         {
           "name": "state",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "stateSigner",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "cache",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "liqor",
           "isMut": false,
-          "isSigner": true
+          "isSigner": true,
         },
         {
           "name": "liqorMargin",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "liqorControl",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "liqeeMargin",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "liqeeControl",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "assetMint",
           "isMut": false,
-          "isSigner": false
-        }
+          "isSigner": false,
+        },
       ],
-      "args": []
+      "args": [],
     },
     {
       "name": "swap",
@@ -3540,137 +3540,137 @@ export const IDL: Zo = {
         {
           "name": "authority",
           "isMut": false,
-          "isSigner": true
+          "isSigner": true,
         },
         {
           "name": "state",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "stateSigner",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "cache",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "margin",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "control",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "quoteMint",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "quoteVault",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "assetMint",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "assetVault",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "swapFeeVault",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "serumOpenOrders",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "serumMarket",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "serumRequestQueue",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "serumEventQueue",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "serumBids",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "serumAsks",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "serumCoinVault",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "serumPcVault",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "serumVaultSigner",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "srmSpotProgram",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "tokenProgram",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "rent",
           "isMut": false,
-          "isSigner": false
-        }
+          "isSigner": false,
+        },
       ],
       "args": [
         {
           "name": "buy",
-          "type": "bool"
+          "type": "bool",
         },
         {
           "name": "allowBorrow",
-          "type": "bool"
+          "type": "bool",
         },
         {
           "name": "amount",
-          "type": "u64"
+          "type": "u64",
         },
         {
           "name": "minRate",
-          "type": "u64"
-        }
-      ]
+          "type": "u64",
+        },
+      ],
     },
     {
       "name": "cacheOracle",
@@ -3678,32 +3678,32 @@ export const IDL: Zo = {
         {
           "name": "signer",
           "isMut": false,
-          "isSigner": true
+          "isSigner": true,
         },
         {
           "name": "cache",
           "isMut": true,
-          "isSigner": false
-        }
+          "isSigner": false,
+        },
       ],
       "args": [
         {
           "name": "symbols",
           "type": {
-            "vec": "string"
-          }
+            "vec": "string",
+          },
         },
         {
           "name": "mockPrices",
           "type": {
             "option": {
               "vec": {
-                "option": "u64"
-              }
-            }
-          }
-        }
-      ]
+                "option": "u64",
+              },
+            },
+          },
+        },
+      ],
     },
     {
       "name": "cacheInterestRates",
@@ -3711,29 +3711,29 @@ export const IDL: Zo = {
         {
           "name": "signer",
           "isMut": false,
-          "isSigner": true
+          "isSigner": true,
         },
         {
           "name": "state",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "cache",
           "isMut": true,
-          "isSigner": false
-        }
+          "isSigner": false,
+        },
       ],
       "args": [
         {
           "name": "start",
-          "type": "u8"
+          "type": "u8",
         },
         {
           "name": "end",
-          "type": "u8"
-        }
-      ]
+          "type": "u8",
+        },
+      ],
     },
     {
       "name": "consumeEvents",
@@ -3741,35 +3741,35 @@ export const IDL: Zo = {
         {
           "name": "state",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "stateSigner",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "dexProgram",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "market",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "eventQueue",
           "isMut": true,
-          "isSigner": false
-        }
+          "isSigner": false,
+        },
       ],
       "args": [
         {
           "name": "limit",
-          "type": "u16"
-        }
-      ]
+          "type": "u16",
+        },
+      ],
     },
     {
       "name": "crankPnl",
@@ -3777,31 +3777,31 @@ export const IDL: Zo = {
         {
           "name": "state",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "stateSigner",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "cache",
           "isMut": true,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "dexProgram",
           "isMut": false,
-          "isSigner": false
+          "isSigner": false,
         },
         {
           "name": "market",
           "isMut": true,
-          "isSigner": false
-        }
+          "isSigner": false,
+        },
       ],
-      "args": []
-    }
+      "args": [],
+    },
   ],
   "accounts": [
     {
@@ -3814,45 +3814,45 @@ export const IDL: Zo = {
             "type": {
               "array": [
                 {
-                  "defined": "OracleCache"
+                  "defined": "OracleCache",
                 },
-                25
-              ]
-            }
+                25,
+              ],
+            },
           },
           {
             "name": "marks",
             "type": {
               "array": [
                 {
-                  "defined": "MarkCache"
+                  "defined": "MarkCache",
                 },
-                50
-              ]
-            }
+                50,
+              ],
+            },
           },
           {
             "name": "fundingCache",
             "type": {
               "array": [
                 "i128",
-                50
-              ]
-            }
+                50,
+              ],
+            },
           },
           {
             "name": "borrowCache",
             "type": {
               "array": [
                 {
-                  "defined": "BorrowCache"
+                  "defined": "BorrowCache",
                 },
-                25
-              ]
-            }
-          }
-        ]
-      }
+                25,
+              ],
+            },
+          },
+        ],
+      },
     },
     {
       "name": "control",
@@ -3861,21 +3861,21 @@ export const IDL: Zo = {
         "fields": [
           {
             "name": "authority",
-            "type": "publicKey"
+            "type": "publicKey",
           },
           {
             "name": "openOrdersAgg",
             "type": {
               "array": [
                 {
-                  "defined": "OpenOrdersInfo"
+                  "defined": "OpenOrdersInfo",
                 },
-                50
-              ]
-            }
-          }
-        ]
-      }
+                50,
+              ],
+            },
+          },
+        ],
+      },
     },
     {
       "name": "globalState",
@@ -3884,23 +3884,23 @@ export const IDL: Zo = {
         "fields": [
           {
             "name": "globalNonce",
-            "type": "u8"
+            "type": "u8",
           },
           {
             "name": "state",
-            "type": "publicKey"
+            "type": "publicKey",
           },
           {
             "name": "padding",
             "type": {
               "array": [
                 "u8",
-                1024
-              ]
-            }
-          }
-        ]
-      }
+                1024,
+              ],
+            },
+          },
+        ],
+      },
     },
     {
       "name": "margin",
@@ -3909,38 +3909,38 @@ export const IDL: Zo = {
         "fields": [
           {
             "name": "nonce",
-            "type": "u8"
+            "type": "u8",
           },
           {
             "name": "authority",
-            "type": "publicKey"
+            "type": "publicKey",
           },
           {
             "name": "collateral",
             "type": {
               "array": [
                 {
-                  "defined": "WrappedI80F48"
+                  "defined": "WrappedI80F48",
                 },
-                25
-              ]
-            }
+                25,
+              ],
+            },
           },
           {
             "name": "control",
-            "type": "publicKey"
+            "type": "publicKey",
           },
           {
             "name": "padding",
             "type": {
               "array": [
                 "u8",
-                320
-              ]
-            }
-          }
-        ]
-      }
+                320,
+              ],
+            },
+          },
+        ],
+      },
     },
     {
       "name": "state",
@@ -3949,84 +3949,84 @@ export const IDL: Zo = {
         "fields": [
           {
             "name": "signerNonce",
-            "type": "u8"
+            "type": "u8",
           },
           {
             "name": "admin",
-            "type": "publicKey"
+            "type": "publicKey",
           },
           {
             "name": "cache",
-            "type": "publicKey"
+            "type": "publicKey",
           },
           {
             "name": "swapFeeVault",
-            "type": "publicKey"
+            "type": "publicKey",
           },
           {
             "name": "insurance",
-            "type": "u64"
+            "type": "u64",
           },
           {
             "name": "feesAccrued",
             "type": {
               "array": [
                 "u64",
-                25
-              ]
-            }
+                25,
+              ],
+            },
           },
           {
             "name": "vaults",
             "type": {
               "array": [
                 "publicKey",
-                25
-              ]
-            }
+                25,
+              ],
+            },
           },
           {
             "name": "collaterals",
             "type": {
               "array": [
                 {
-                  "defined": "CollateralInfo"
+                  "defined": "CollateralInfo",
                 },
-                25
-              ]
-            }
+                25,
+              ],
+            },
           },
           {
             "name": "perpMarkets",
             "type": {
               "array": [
                 {
-                  "defined": "PerpMarketInfo"
+                  "defined": "PerpMarketInfo",
                 },
-                50
-              ]
-            }
+                50,
+              ],
+            },
           },
           {
             "name": "totalCollaterals",
-            "type": "u16"
+            "type": "u16",
           },
           {
             "name": "totalMarkets",
-            "type": "u16"
+            "type": "u16",
           },
           {
             "name": "padding",
             "type": {
               "array": [
                 "u8",
-                1280
-              ]
-            }
-          }
-        ]
-      }
-    }
+                1280,
+              ],
+            },
+          },
+        ],
+      },
+    },
   ],
   "types": [
     {
@@ -4036,46 +4036,46 @@ export const IDL: Zo = {
         "fields": [
           {
             "name": "oracleSymbol",
-            "type": "string"
+            "type": "string",
           },
           {
             "name": "weight",
-            "type": "u16"
+            "type": "u16",
           },
           {
             "name": "isBorrowable",
-            "type": "bool"
+            "type": "bool",
           },
           {
             "name": "optimalUtil",
-            "type": "u16"
+            "type": "u16",
           },
           {
             "name": "optimalRate",
-            "type": "u16"
+            "type": "u16",
           },
           {
             "name": "maxRate",
-            "type": "u16"
+            "type": "u16",
           },
           {
             "name": "liqFee",
-            "type": "u16"
+            "type": "u16",
           },
           {
             "name": "ogFee",
-            "type": "u16"
+            "type": "u16",
           },
           {
             "name": "maxDeposit",
-            "type": "u64"
+            "type": "u64",
           },
           {
             "name": "dustThreshold",
-            "type": "u16"
-          }
-        ]
-      }
+            "type": "u16",
+          },
+        ],
+      },
     },
     {
       "name": "AddOracleArgs",
@@ -4084,26 +4084,26 @@ export const IDL: Zo = {
         "fields": [
           {
             "name": "symbol",
-            "type": "string"
+            "type": "string",
           },
           {
             "name": "baseDecimals",
-            "type": "u8"
+            "type": "u8",
           },
           {
             "name": "quoteDecimals",
-            "type": "u8"
+            "type": "u8",
           },
           {
             "name": "oracleTypes",
             "type": {
               "vec": {
-                "defined": "OracleType"
-              }
-            }
-          }
-        ]
-      }
+                "defined": "OracleType",
+              },
+            },
+          },
+        ],
+      },
     },
     {
       "name": "BorrowCache",
@@ -4113,33 +4113,33 @@ export const IDL: Zo = {
           {
             "name": "supply",
             "type": {
-              "defined": "WrappedI80F48"
-            }
+              "defined": "WrappedI80F48",
+            },
           },
           {
             "name": "borrows",
             "type": {
-              "defined": "WrappedI80F48"
-            }
+              "defined": "WrappedI80F48",
+            },
           },
           {
             "name": "supplyMultiplier",
             "type": {
-              "defined": "WrappedI80F48"
-            }
+              "defined": "WrappedI80F48",
+            },
           },
           {
             "name": "borrowMultiplier",
             "type": {
-              "defined": "WrappedI80F48"
-            }
+              "defined": "WrappedI80F48",
+            },
           },
           {
             "name": "lastUpdated",
-            "type": "u64"
-          }
-        ]
-      }
+            "type": "u64",
+          },
+        ],
+      },
     },
     {
       "name": "OracleCache",
@@ -4149,46 +4149,46 @@ export const IDL: Zo = {
           {
             "name": "symbol",
             "type": {
-              "defined": "Symbol"
-            }
+              "defined": "Symbol",
+            },
           },
           {
             "name": "sources",
             "type": {
               "array": [
                 {
-                  "defined": "OracleSource"
+                  "defined": "OracleSource",
                 },
-                3
-              ]
-            }
+                3,
+              ],
+            },
           },
           {
             "name": "lastUpdated",
-            "type": "u64"
+            "type": "u64",
           },
           {
             "name": "price",
             "type": {
-              "defined": "WrappedI80F48"
-            }
+              "defined": "WrappedI80F48",
+            },
           },
           {
             "name": "twap",
             "type": {
-              "defined": "WrappedI80F48"
-            }
+              "defined": "WrappedI80F48",
+            },
           },
           {
             "name": "baseDecimals",
-            "type": "u8"
+            "type": "u8",
           },
           {
             "name": "quoteDecimals",
-            "type": "u8"
-          }
-        ]
-      }
+            "type": "u8",
+          },
+        ],
+      },
     },
     {
       "name": "MarkCache",
@@ -4198,17 +4198,17 @@ export const IDL: Zo = {
           {
             "name": "price",
             "type": {
-              "defined": "WrappedI80F48"
-            }
+              "defined": "WrappedI80F48",
+            },
           },
           {
             "name": "twap",
             "type": {
-              "defined": "TwapInfo"
-            }
-          }
-        ]
-      }
+              "defined": "TwapInfo",
+            },
+          },
+        ],
+      },
     },
     {
       "name": "TwapInfo",
@@ -4218,39 +4218,39 @@ export const IDL: Zo = {
           {
             "name": "cumulAvg",
             "type": {
-              "defined": "WrappedI80F48"
-            }
+              "defined": "WrappedI80F48",
+            },
           },
           {
             "name": "open",
             "type": {
-              "defined": "WrappedI80F48"
-            }
+              "defined": "WrappedI80F48",
+            },
           },
           {
             "name": "high",
             "type": {
-              "defined": "WrappedI80F48"
-            }
+              "defined": "WrappedI80F48",
+            },
           },
           {
             "name": "low",
             "type": {
-              "defined": "WrappedI80F48"
-            }
+              "defined": "WrappedI80F48",
+            },
           },
           {
             "name": "close",
             "type": {
-              "defined": "WrappedI80F48"
-            }
+              "defined": "WrappedI80F48",
+            },
           },
           {
             "name": "lastSampleStartTime",
-            "type": "u64"
-          }
-        ]
-      }
+            "type": "u64",
+          },
+        ],
+      },
     },
     {
       "name": "OpenOrdersInfo",
@@ -4259,38 +4259,38 @@ export const IDL: Zo = {
         "fields": [
           {
             "name": "key",
-            "type": "publicKey"
+            "type": "publicKey",
           },
           {
             "name": "nativePcTotal",
-            "type": "i64"
+            "type": "i64",
           },
           {
             "name": "posSize",
-            "type": "i64"
+            "type": "i64",
           },
           {
             "name": "realizedPnl",
-            "type": "i64"
+            "type": "i64",
           },
           {
             "name": "coinOnBids",
-            "type": "u64"
+            "type": "u64",
           },
           {
             "name": "coinOnAsks",
-            "type": "u64"
+            "type": "u64",
           },
           {
             "name": "orderCount",
-            "type": "u8"
+            "type": "u8",
           },
           {
             "name": "fundingIndex",
-            "type": "i128"
-          }
-        ]
-      }
+            "type": "i128",
+          },
+        ],
+      },
     },
     {
       "name": "InitPerpMarketArgs",
@@ -4299,40 +4299,40 @@ export const IDL: Zo = {
         "fields": [
           {
             "name": "symbol",
-            "type": "string"
+            "type": "string",
           },
           {
             "name": "oracleSymbol",
-            "type": "string"
+            "type": "string",
           },
           {
             "name": "perpType",
             "type": {
-              "defined": "PerpType"
-            }
+              "defined": "PerpType",
+            },
           },
           {
             "name": "vAssetLotSize",
-            "type": "u64"
+            "type": "u64",
           },
           {
             "name": "vQuoteLotSize",
-            "type": "u64"
+            "type": "u64",
           },
           {
             "name": "strike",
-            "type": "u64"
+            "type": "u64",
           },
           {
             "name": "baseImf",
-            "type": "u16"
+            "type": "u16",
           },
           {
             "name": "liqFee",
-            "type": "u16"
-          }
-        ]
-      }
+            "type": "u16",
+          },
+        ],
+      },
     },
     {
       "name": "OracleSource",
@@ -4342,15 +4342,15 @@ export const IDL: Zo = {
           {
             "name": "ty",
             "type": {
-              "defined": "OracleType"
-            }
+              "defined": "OracleType",
+            },
           },
           {
             "name": "key",
-            "type": "publicKey"
-          }
-        ]
-      }
+            "type": "publicKey",
+          },
+        ],
+      },
     },
     {
       "name": "OraclePrice",
@@ -4360,17 +4360,17 @@ export const IDL: Zo = {
           {
             "name": "price",
             "type": {
-              "defined": "WrappedI80F48"
-            }
+              "defined": "WrappedI80F48",
+            },
           },
           {
             "name": "twap",
             "type": {
-              "defined": "WrappedI80F48"
-            }
-          }
-        ]
-      }
+              "defined": "WrappedI80F48",
+            },
+          },
+        ],
+      },
     },
     {
       "name": "CollateralInfo",
@@ -4379,73 +4379,73 @@ export const IDL: Zo = {
         "fields": [
           {
             "name": "mint",
-            "type": "publicKey"
+            "type": "publicKey",
           },
           {
             "name": "oracleSymbol",
             "type": {
-              "defined": "Symbol"
-            }
+              "defined": "Symbol",
+            },
           },
           {
             "name": "decimals",
-            "type": "u8"
+            "type": "u8",
           },
           {
             "name": "weight",
-            "type": "u16"
+            "type": "u16",
           },
           {
             "name": "liqFee",
-            "type": "u16"
+            "type": "u16",
           },
           {
             "name": "isBorrowable",
-            "type": "bool"
+            "type": "bool",
           },
           {
             "name": "optimalUtil",
-            "type": "u16"
+            "type": "u16",
           },
           {
             "name": "optimalRate",
-            "type": "u16"
+            "type": "u16",
           },
           {
             "name": "maxRate",
-            "type": "u16"
+            "type": "u16",
           },
           {
             "name": "ogFee",
-            "type": "u16"
+            "type": "u16",
           },
           {
             "name": "isSwappable",
-            "type": "bool"
+            "type": "bool",
           },
           {
             "name": "serumOpenOrders",
-            "type": "publicKey"
+            "type": "publicKey",
           },
           {
             "name": "maxDeposit",
-            "type": "u64"
+            "type": "u64",
           },
           {
             "name": "dustThreshold",
-            "type": "u16"
+            "type": "u16",
           },
           {
             "name": "padding",
             "type": {
               "array": [
                 "u8",
-                384
-              ]
-            }
-          }
-        ]
-      }
+                384,
+              ],
+            },
+          },
+        ],
+      },
     },
     {
       "name": "PerpMarketInfo",
@@ -4455,60 +4455,60 @@ export const IDL: Zo = {
           {
             "name": "symbol",
             "type": {
-              "defined": "Symbol"
-            }
+              "defined": "Symbol",
+            },
           },
           {
             "name": "oracleSymbol",
             "type": {
-              "defined": "Symbol"
-            }
+              "defined": "Symbol",
+            },
           },
           {
             "name": "perpType",
             "type": {
-              "defined": "PerpType"
-            }
+              "defined": "PerpType",
+            },
           },
           {
             "name": "assetDecimals",
-            "type": "u8"
+            "type": "u8",
           },
           {
             "name": "assetLotSize",
-            "type": "u64"
+            "type": "u64",
           },
           {
             "name": "quoteLotSize",
-            "type": "u64"
+            "type": "u64",
           },
           {
             "name": "strike",
-            "type": "u64"
+            "type": "u64",
           },
           {
             "name": "baseImf",
-            "type": "u16"
+            "type": "u16",
           },
           {
             "name": "liqFee",
-            "type": "u16"
+            "type": "u16",
           },
           {
             "name": "dexMarket",
-            "type": "publicKey"
+            "type": "publicKey",
           },
           {
             "name": "padding",
             "type": {
               "array": [
                 "u8",
-                320
-              ]
-            }
-          }
-        ]
-      }
+                320,
+              ],
+            },
+          },
+        ],
+      },
     },
     {
       "name": "Symbol",
@@ -4520,12 +4520,12 @@ export const IDL: Zo = {
             "type": {
               "array": [
                 "u8",
-                24
-              ]
-            }
-          }
-        ]
-      }
+                24,
+              ],
+            },
+          },
+        ],
+      },
     },
     {
       "name": "WrappedI80F48",
@@ -4534,10 +4534,10 @@ export const IDL: Zo = {
         "fields": [
           {
             "name": "data",
-            "type": "i128"
-          }
-        ]
-      }
+            "type": "i128",
+          },
+        ],
+      },
     },
     {
       "name": "UpdateCollateralArgs",
@@ -4547,59 +4547,59 @@ export const IDL: Zo = {
           {
             "name": "newOracleSymbol",
             "type": {
-              "option": "string"
-            }
+              "option": "string",
+            },
           },
           {
             "name": "newDecimals",
             "type": {
-              "option": "u8"
-            }
+              "option": "u8",
+            },
           },
           {
             "name": "newWeight",
             "type": {
-              "option": "u16"
-            }
+              "option": "u16",
+            },
           },
           {
             "name": "newLiqFee",
             "type": {
-              "option": "u16"
-            }
+              "option": "u16",
+            },
           },
           {
             "name": "newIsBorrowable",
             "type": {
-              "option": "bool"
-            }
+              "option": "bool",
+            },
           },
           {
             "name": "newOptimalUtil",
             "type": {
-              "option": "u16"
-            }
+              "option": "u16",
+            },
           },
           {
             "name": "newOptimalRate",
             "type": {
-              "option": "u16"
-            }
+              "option": "u16",
+            },
           },
           {
             "name": "newMaxRate",
             "type": {
-              "option": "u16"
-            }
+              "option": "u16",
+            },
           },
           {
             "name": "newOgFee",
             "type": {
-              "option": "u16"
-            }
-          }
-        ]
-      }
+              "option": "u16",
+            },
+          },
+        ],
+      },
     },
     {
       "name": "UpdateOracleArgs",
@@ -4608,22 +4608,22 @@ export const IDL: Zo = {
         "fields": [
           {
             "name": "symbol",
-            "type": "string"
+            "type": "string",
           },
           {
             "name": "newBaseDecimals",
             "type": {
-              "option": "u8"
-            }
+              "option": "u8",
+            },
           },
           {
             "name": "newQuoteDecimals",
             "type": {
-              "option": "u8"
-            }
-          }
-        ]
-      }
+              "option": "u8",
+            },
+          },
+        ],
+      },
     },
     {
       "name": "LiquidationEvent",
@@ -4631,13 +4631,13 @@ export const IDL: Zo = {
         "kind": "enum",
         "variants": [
           {
-            "name": "Perp"
+            "name": "Perp",
           },
           {
-            "name": "Spot"
-          }
-        ]
-      }
+            "name": "Spot",
+          },
+        ],
+      },
     },
     {
       "name": "MfReturnOption",
@@ -4645,19 +4645,19 @@ export const IDL: Zo = {
         "kind": "enum",
         "variants": [
           {
-            "name": "Imf"
+            "name": "Imf",
           },
           {
-            "name": "Mmf"
+            "name": "Mmf",
           },
           {
-            "name": "Cancel"
+            "name": "Cancel",
           },
           {
-            "name": "Both"
-          }
-        ]
-      }
+            "name": "Both",
+          },
+        ],
+      },
     },
     {
       "name": "OracleType",
@@ -4665,16 +4665,16 @@ export const IDL: Zo = {
         "kind": "enum",
         "variants": [
           {
-            "name": "Nil"
+            "name": "Nil",
           },
           {
-            "name": "Pyth"
+            "name": "Pyth",
           },
           {
-            "name": "Switchboard"
-          }
-        ]
-      }
+            "name": "Switchboard",
+          },
+        ],
+      },
     },
     {
       "name": "FractionType",
@@ -4682,16 +4682,16 @@ export const IDL: Zo = {
         "kind": "enum",
         "variants": [
           {
-            "name": "Maintenance"
+            "name": "Maintenance",
           },
           {
-            "name": "Initial"
+            "name": "Initial",
           },
           {
-            "name": "Cancel"
-          }
-        ]
-      }
+            "name": "Cancel",
+          },
+        ],
+      },
     },
     {
       "name": "OrderType",
@@ -4699,22 +4699,22 @@ export const IDL: Zo = {
         "kind": "enum",
         "variants": [
           {
-            "name": "Limit"
+            "name": "Limit",
           },
           {
-            "name": "ImmediateOrCancel"
+            "name": "ImmediateOrCancel",
           },
           {
-            "name": "PostOnly"
+            "name": "PostOnly",
           },
           {
-            "name": "ReduceOnlyIoc"
+            "name": "ReduceOnlyIoc",
           },
           {
-            "name": "ReduceOnlyLimit"
-          }
-        ]
-      }
+            "name": "ReduceOnlyLimit",
+          },
+        ],
+      },
     },
     {
       "name": "PerpType",
@@ -4722,19 +4722,19 @@ export const IDL: Zo = {
         "kind": "enum",
         "variants": [
           {
-            "name": "Future"
+            "name": "Future",
           },
           {
-            "name": "CallOption"
+            "name": "CallOption",
           },
           {
-            "name": "PutOption"
+            "name": "PutOption",
           },
           {
-            "name": "Square"
-          }
-        ]
-      }
+            "name": "Square",
+          },
+        ],
+      },
     },
     {
       "name": "Side",
@@ -4742,14 +4742,14 @@ export const IDL: Zo = {
         "kind": "enum",
         "variants": [
           {
-            "name": "Bid"
+            "name": "Bid",
           },
           {
-            "name": "Ask"
-          }
-        ]
-      }
-    }
+            "name": "Ask",
+          },
+        ],
+      },
+    },
   ],
   "events": [
     {
@@ -4758,19 +4758,19 @@ export const IDL: Zo = {
         {
           "name": "colIndex",
           "type": "u8",
-          "index": false
+          "index": false,
         },
         {
           "name": "depositAmount",
           "type": "u64",
-          "index": false
+          "index": false,
         },
         {
           "name": "marginKey",
           "type": "publicKey",
-          "index": false
-        }
-      ]
+          "index": false,
+        },
+      ],
     },
     {
       "name": "WithdrawLog",
@@ -4778,19 +4778,19 @@ export const IDL: Zo = {
         {
           "name": "colIndex",
           "type": "u8",
-          "index": false
+          "index": false,
         },
         {
           "name": "withdrawAmount",
           "type": "u64",
-          "index": false
+          "index": false,
         },
         {
           "name": "marginKey",
           "type": "publicKey",
-          "index": false
-        }
-      ]
+          "index": false,
+        },
+      ],
     },
     {
       "name": "SwapLog",
@@ -4798,29 +4798,29 @@ export const IDL: Zo = {
         {
           "name": "marginKey",
           "type": "publicKey",
-          "index": false
+          "index": false,
         },
         {
           "name": "baseIndex",
           "type": "u8",
-          "index": false
+          "index": false,
         },
         {
           "name": "quoteIndex",
           "type": "u8",
-          "index": false
+          "index": false,
         },
         {
           "name": "baseDelta",
           "type": "i64",
-          "index": false
+          "index": false,
         },
         {
           "name": "quoteDelta",
           "type": "i64",
-          "index": false
-        }
-      ]
+          "index": false,
+        },
+      ],
     },
     {
       "name": "CollateralBalanceLog",
@@ -4828,16 +4828,16 @@ export const IDL: Zo = {
         {
           "name": "colIndex",
           "type": "u8",
-          "index": false
+          "index": false,
         },
         {
           "name": "col",
           "type": {
-            "defined": "WrappedI80F48"
+            "defined": "WrappedI80F48",
           },
-          "index": false
-        }
-      ]
+          "index": false,
+        },
+      ],
     },
     {
       "name": "ForceCancelLog",
@@ -4845,14 +4845,14 @@ export const IDL: Zo = {
         {
           "name": "cancelledBids",
           "type": "u64",
-          "index": false
+          "index": false,
         },
         {
           "name": "cancelledAsks",
           "type": "u64",
-          "index": false
-        }
-      ]
+          "index": false,
+        },
+      ],
     },
     {
       "name": "LiquidationLog",
@@ -4860,43 +4860,43 @@ export const IDL: Zo = {
         {
           "name": "liquidationEvent",
           "type": {
-            "defined": "LiquidationEvent"
+            "defined": "LiquidationEvent",
           },
-          "index": false
+          "index": false,
         },
         {
           "name": "baseSymbol",
           "type": "string",
-          "index": false
+          "index": false,
         },
         {
           "name": "quoteSymbol",
           "type": {
-            "option": "string"
+            "option": "string",
           },
-          "index": false
+          "index": false,
         },
         {
           "name": "liqorMargin",
           "type": "publicKey",
-          "index": false
+          "index": false,
         },
         {
           "name": "liqeeMargin",
           "type": "publicKey",
-          "index": false
+          "index": false,
         },
         {
           "name": "assetsToLiqor",
           "type": "i64",
-          "index": false
+          "index": false,
         },
         {
           "name": "quoteToLiqor",
           "type": "i64",
-          "index": false
-        }
-      ]
+          "index": false,
+        },
+      ],
     },
     {
       "name": "BankruptcyLog",
@@ -4904,39 +4904,39 @@ export const IDL: Zo = {
         {
           "name": "baseSymbol",
           "type": "string",
-          "index": false
+          "index": false,
         },
         {
           "name": "liqorMargin",
           "type": "publicKey",
-          "index": false
+          "index": false,
         },
         {
           "name": "liqeeMargin",
           "type": "publicKey",
-          "index": false
+          "index": false,
         },
         {
           "name": "assetsToLiqor",
           "type": "i64",
-          "index": false
+          "index": false,
         },
         {
           "name": "quoteToLiqor",
           "type": "i64",
-          "index": false
+          "index": false,
         },
         {
           "name": "insuranceLoss",
           "type": "i64",
-          "index": false
+          "index": false,
         },
         {
           "name": "socializedLoss",
           "type": "i64",
-          "index": false
-        }
-      ]
+          "index": false,
+        },
+      ],
     },
     {
       "name": "CacheOracleLog",
@@ -4944,29 +4944,29 @@ export const IDL: Zo = {
         {
           "name": "symbols",
           "type": {
-            "vec": "string"
+            "vec": "string",
           },
-          "index": false
+          "index": false,
         },
         {
           "name": "prices",
           "type": {
             "vec": {
-              "defined": "WrappedI80F48"
-            }
+              "defined": "WrappedI80F48",
+            },
           },
-          "index": false
+          "index": false,
         },
         {
           "name": "twaps",
           "type": {
             "vec": {
-              "defined": "WrappedI80F48"
-            }
+              "defined": "WrappedI80F48",
+            },
           },
-          "index": false
-        }
-      ]
+          "index": false,
+        },
+      ],
     },
     {
       "name": "CacheOracleNoops",
@@ -4974,11 +4974,11 @@ export const IDL: Zo = {
         {
           "name": "symbols",
           "type": {
-            "vec": "string"
+            "vec": "string",
           },
-          "index": false
-        }
-      ]
+          "index": false,
+        },
+      ],
     },
     {
       "name": "CacheIRLog",
@@ -4986,378 +4986,378 @@ export const IDL: Zo = {
         {
           "name": "ir",
           "type": {
-            "defined": "WrappedI80F48"
+            "defined": "WrappedI80F48",
           },
-          "index": false
+          "index": false,
         },
         {
           "name": "util",
           "type": {
-            "defined": "WrappedI80F48"
+            "defined": "WrappedI80F48",
           },
-          "index": false
+          "index": false,
         },
         {
           "name": "supMul",
           "type": {
-            "defined": "WrappedI80F48"
+            "defined": "WrappedI80F48",
           },
-          "index": false
+          "index": false,
         },
         {
           "name": "borMul",
           "type": {
-            "defined": "WrappedI80F48"
+            "defined": "WrappedI80F48",
           },
-          "index": false
-        }
-      ]
+          "index": false,
+        },
+      ],
     },
     {
       "name": "ControlStateLog",
-      "fields": []
-    }
+      "fields": [],
+    },
   ],
   "errors": [
     {
       "code": 6000,
       "name": "MathFailure",
-      "msg": "A math failure occured, likely due to overflow"
+      "msg": "A math failure occured, likely due to overflow",
     },
     {
       "code": 6001,
       "name": "InsufficientFunds",
-      "msg": "The amount you are withdrawing exceeds the available collateral"
+      "msg": "The amount you are withdrawing exceeds the available collateral",
     },
     {
       "code": 6002,
       "name": "Unauthorized",
-      "msg": "Unauthorized to perform the operation"
+      "msg": "Unauthorized to perform the operation",
     },
     {
       "code": 6003,
       "name": "InvalidArgument",
-      "msg": "Arguments passed were invalid"
+      "msg": "Arguments passed were invalid",
     },
     {
       "code": 6004,
       "name": "InvalidMint",
-      "msg": "Invalid mint for transaction"
+      "msg": "Invalid mint for transaction",
     },
     {
       "code": 6005,
       "name": "InvalidOrderState",
-      "msg": "Everlasting account state is invalid"
+      "msg": "Everlasting account state is invalid",
     },
     {
       "code": 6006,
       "name": "BelowMarginMaintenance",
-      "msg": "Going below Margin maintenance"
+      "msg": "Going below Margin maintenance",
     },
     {
       "code": 6007,
       "name": "AboveMMF",
-      "msg": "Above Margin maintenance"
+      "msg": "Above Margin maintenance",
     },
     {
       "code": 6008,
       "name": "PositionValueCalculationFailure",
-      "msg": "Couldn't calculate the position value"
+      "msg": "Couldn't calculate the position value",
     },
     {
       "code": 6009,
       "name": "InvalidPythAccount",
-      "msg": "Pyth account is invalid"
+      "msg": "Pyth account is invalid",
     },
     {
       "code": 6010,
       "name": "IncompleteLiquidation",
-      "msg": "Liquidation has not fully completed"
+      "msg": "Liquidation has not fully completed",
     },
     {
       "code": 6011,
       "name": "NotMarkedLiquidate",
-      "msg": "The account has not been marked for liquidation"
+      "msg": "The account has not been marked for liquidation",
     },
     {
       "code": 6012,
       "name": "UnderLiquidation",
-      "msg": "Account is under liquidation"
+      "msg": "Account is under liquidation",
     },
     {
       "code": 6013,
       "name": "LoadDexMarketFailure",
-      "msg": "Failed to load dex market"
+      "msg": "Failed to load dex market",
     },
     {
       "code": 6014,
       "name": "LoadOpenOrdersFailure",
-      "msg": "Failed to load open orders"
+      "msg": "Failed to load open orders",
     },
     {
       "code": 6015,
       "name": "CalculateMarginRatioFailure",
-      "msg": "Failed to calculate margin ratio"
+      "msg": "Failed to calculate margin ratio",
     },
     {
       "code": 6016,
       "name": "BelowInitialMarginFraction",
-      "msg": "Current margin fraction is below position initial margin fraction"
+      "msg": "Current margin fraction is below position initial margin fraction",
     },
     {
       "code": 6017,
       "name": "NoPositionToLiquidate",
-      "msg": "No active positions to close"
+      "msg": "No active positions to close",
     },
     {
       "code": 6018,
       "name": "CollateralAlreadyExists",
-      "msg": "The collateral pair already exists in the collateral array"
+      "msg": "The collateral pair already exists in the collateral array",
     },
     {
       "code": 6019,
       "name": "CollateralAtCapacity",
-      "msg": "The collateral array is at full capacity"
+      "msg": "The collateral array is at full capacity",
     },
     {
       "code": 6020,
       "name": "CollateralDoesNotExist",
-      "msg": "The collateral pair does not exist in the collateral array"
+      "msg": "The collateral pair does not exist in the collateral array",
     },
     {
       "code": 6021,
       "name": "DexMarketKeyAlreadyExists",
-      "msg": "The DEX Market key already exists in perp markets array"
+      "msg": "The DEX Market key already exists in perp markets array",
     },
     {
       "code": 6022,
       "name": "SymbolAlreadyExists",
-      "msg": "The symbol already exists in perp markets array"
+      "msg": "The symbol already exists in perp markets array",
     },
     {
       "code": 6023,
       "name": "MarketsAtCapacity",
-      "msg": "The perp markets array is at full capacity"
+      "msg": "The perp markets array is at full capacity",
     },
     {
       "code": 6024,
       "name": "InvalidVault",
-      "msg": "The given vault does not match the state vault"
+      "msg": "The given vault does not match the state vault",
     },
     {
       "code": 6025,
       "name": "InvalidDexMarketKey",
-      "msg": "The given DEX market key does not match any keys in the perp markets array"
+      "msg": "The given DEX market key does not match any keys in the perp markets array",
     },
     {
       "code": 6026,
       "name": "OpenOrdersAlreadyInitialized",
-      "msg": "The open orders account is already initialized"
+      "msg": "The open orders account is already initialized",
     },
     {
       "code": 6027,
       "name": "InvalidLimitPrice",
-      "msg": "The limit price is invalid"
+      "msg": "The limit price is invalid",
     },
     {
       "code": 6028,
       "name": "InvalidMaxBaseQuantity",
-      "msg": "The max base quantity is invalid"
+      "msg": "The max base quantity is invalid",
     },
     {
       "code": 6029,
       "name": "InvalidMaxQuoteQuantity",
-      "msg": "The max quote quantity is invalid"
+      "msg": "The max quote quantity is invalid",
     },
     {
       "code": 6030,
       "name": "OracleAlreadyExists",
-      "msg": "The oracle already exists in the oracle cache"
+      "msg": "The oracle already exists in the oracle cache",
     },
     {
       "code": 6031,
       "name": "OracleCacheFull",
-      "msg": "Oracle cache is at full capacity"
+      "msg": "Oracle cache is at full capacity",
     },
     {
       "code": 6032,
       "name": "OracleDoesNotExist",
-      "msg": "The given oracle does not exist"
+      "msg": "The given oracle does not exist",
     },
     {
       "code": 6033,
       "name": "InvalidOracleKey",
-      "msg": "The given oracle key is invalid"
+      "msg": "The given oracle key is invalid",
     },
     {
       "code": 6034,
       "name": "InvalidOracleType",
-      "msg": "The given oracle type is invalid"
+      "msg": "The given oracle type is invalid",
     },
     {
       "code": 6035,
       "name": "PriceOracleIssue",
-      "msg": "Oracle encountered an issue when fetching accurate price."
+      "msg": "Oracle encountered an issue when fetching accurate price.",
     },
     {
       "code": 6036,
       "name": "InvalidPythStatus",
-      "msg": "Pyth oracle is not in trading status."
+      "msg": "Pyth oracle is not in trading status.",
     },
     {
       "code": 6037,
       "name": "InvalidRemainingAccounts",
-      "msg": "The remaining accounts passed are invalid"
+      "msg": "The remaining accounts passed are invalid",
     },
     {
       "code": 6038,
       "name": "DifferentExpo",
-      "msg": "Expo is different"
+      "msg": "Expo is different",
     },
     {
       "code": 6039,
       "name": "InsufficientInsurance",
-      "msg": "Insufficient funds in insurance"
+      "msg": "Insufficient funds in insurance",
     },
     {
       "code": 6040,
       "name": "InvalidOracle",
-      "msg": "The oracle is invalid"
+      "msg": "The oracle is invalid",
     },
     {
       "code": 6041,
       "name": "OracleNeedsUpdating",
-      "msg": "Oracle last updated time is beyond the valid time since last update"
+      "msg": "Oracle last updated time is beyond the valid time since last update",
     },
     {
       "code": 6042,
       "name": "InvalidSymbol",
-      "msg": "The symbol is invalid"
+      "msg": "The symbol is invalid",
     },
     {
       "code": 6043,
       "name": "NegativeCollateral",
-      "msg": "Negative collateral value"
+      "msg": "Negative collateral value",
     },
     {
       "code": 6044,
       "name": "NothingToRepay",
-      "msg": "There is nothing to repay, cannot use repay only"
+      "msg": "There is nothing to repay, cannot use repay only",
     },
     {
       "code": 6045,
       "name": "NothingToWithdraw",
-      "msg": "There is nothing to repay, cannot use without allow borrow"
+      "msg": "There is nothing to repay, cannot use without allow borrow",
     },
     {
       "code": 6046,
       "name": "InsufficientWithdrawalLiquidity",
-      "msg": "There is not enough liquidity in the vault to withdraw"
+      "msg": "There is not enough liquidity in the vault to withdraw",
     },
     {
       "code": 6047,
       "name": "UncancelledOpenOrders",
-      "msg": "There are open orders that have not been cancelled yet"
+      "msg": "There are open orders that have not been cancelled yet",
     },
     {
       "code": 6048,
       "name": "InvalidOpenOrdersKey",
-      "msg": "Invalid open orders key"
+      "msg": "Invalid open orders key",
     },
     {
       "code": 6049,
       "name": "NotBorrowable",
-      "msg": "The asset is not borrowable"
+      "msg": "The asset is not borrowable",
     },
     {
       "code": 6050,
       "name": "InvalidOracleSymbol",
-      "msg": "The oracle symbol is invalid"
+      "msg": "The oracle symbol is invalid",
     },
     {
       "code": 6051,
       "name": "UnliquidatedActivePositions",
-      "msg": "There are active positions that have not been closed"
+      "msg": "There are active positions that have not been closed",
     },
     {
       "code": 6052,
       "name": "UnliquidatedSpotPositions",
-      "msg": "There are spot/ borrow positions that have not been liquidated"
+      "msg": "There are spot/ borrow positions that have not been liquidated",
     },
     {
       "code": 6053,
       "name": "InvalidTimestamp",
-      "msg": "Timestamp is invalid"
+      "msg": "Timestamp is invalid",
     },
     {
       "code": 6054,
       "name": "CollateralSwappable",
-      "msg": "Collateral is already swappable"
+      "msg": "Collateral is already swappable",
     },
     {
       "code": 6055,
       "name": "CollateralNotSwappable",
-      "msg": "Collateral is not swappable"
+      "msg": "Collateral is not swappable",
     },
     {
       "code": 6056,
       "name": "SwapNegative",
-      "msg": "Swap did the opposite of what it should have"
+      "msg": "Swap did the opposite of what it should have",
     },
     {
       "code": 6057,
       "name": "SelfSwap",
-      "msg": "Can't swap to and from the same collateral"
+      "msg": "Can't swap to and from the same collateral",
     },
     {
       "code": 6058,
       "name": "InsufficientSupply",
-      "msg": "Insufficient supply"
+      "msg": "Insufficient supply",
     },
     {
       "code": 6059,
       "name": "OracleCacheStale",
-      "msg": "Oracle has not been recently updated"
+      "msg": "Oracle has not been recently updated",
     },
     {
       "code": 6060,
       "name": "ZeroSwap",
-      "msg": "No tokens received when swapping"
+      "msg": "No tokens received when swapping",
     },
     {
       "code": 6061,
       "name": "SlippageExceeded",
-      "msg": "Slippage tolerance exceeded"
+      "msg": "Slippage tolerance exceeded",
     },
     {
       "code": 6062,
       "name": "ReduceOnlyViolated",
-      "msg": "Reduce only order was violated"
+      "msg": "Reduce only order was violated",
     },
     {
       "code": 6063,
       "name": "Unimplemented",
-      "msg": "Unimplemented"
+      "msg": "Unimplemented",
     },
     {
       "code": 6064,
       "name": "Bankrupt",
-      "msg": "Currently bankrupt"
+      "msg": "Currently bankrupt",
     },
     {
       "code": 6065,
       "name": "AboveDepositLimit",
-      "msg": "Deposit exceeds deposit limit for the collateral"
+      "msg": "Deposit exceeds deposit limit for the collateral",
     },
     {
       "code": 6066,
       "name": "BelowDustThreshold",
-      "msg": "Below the dust threshold"
+      "msg": "Below the dust threshold",
     },
     {
       "code": 6067,
       "name": "InvalidLiquidation",
-      "msg": "The liquidation is invalid"
-    }
-  ]
-};
+      "msg": "The liquidation is invalid",
+    },
+  ],
+}

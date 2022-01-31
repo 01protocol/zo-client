@@ -1,8 +1,8 @@
 import { PublicKey } from "@solana/web3.js";
 import { BN, Program } from "@project-serum/anchor";
-import Cache from "../Cache";
-import { Orderbook, ZoMarket } from "../../zoDex/zoMarket";
-import { StateSchema, Zo } from "../../types";
+import Cache from "./Cache";
+import { Orderbook, ZoMarket } from "../zoDex/zoMarket";
+import { StateSchema, Zo } from "../types";
 import {
   BASE_IMF_DIVIDER,
   MMF_MULTIPLIER,
@@ -11,13 +11,13 @@ import {
   ZO_DEX_DEVNET_PROGRAM_ID,
   ZO_DEX_MAINNET_PROGRAM_ID,
   ZO_DEX_PROGRAM_ID,
-} from "../../config";
-import { AssetInfo, MarketInfo, MarketType } from "../../types/dataTypes";
+} from "../config";
+import { AssetInfo, MarketInfo, MarketType } from "../types/dataTypes";
 import Decimal from "decimal.js";
 import _ from "lodash";
-import Num from "../../Num";
-import { loadSymbol } from "../../utils";
-import BaseAccount from "../BaseAccount";
+import Num from "../Num";
+import { loadSymbol } from "../utils";
+import BaseAccount from "./BaseAccount";
 
 type CollateralInfo = Omit<StateSchema["collaterals"][0], "oracleSymbol"> & {
   oracleSymbol: string;
@@ -42,6 +42,14 @@ export interface Schema
  */
 export default class State extends BaseAccount<Schema> {
   _getMarketBySymbol: { [k: string]: ZoMarket } = {};
+  /**
+   * zo market infos
+   */
+  zoMarketAccounts: {
+    [key: string]: { dexMarket: ZoMarket; bids: Orderbook; asks: Orderbook };
+  } = {};
+  assets: { [key: string]: AssetInfo } = {};
+  markets: { [key: string]: MarketInfo } = {};
 
   private constructor(
     program: Program<Zo>,
@@ -51,6 +59,28 @@ export default class State extends BaseAccount<Schema> {
     public readonly cache: Cache,
   ) {
     super(program, pubkey, data);
+  }
+
+  /**
+   * map asset index to asset key
+   */
+  get indexToAssetKey() {
+    const index: string[] = [];
+    for (const collateral of this.data.collaterals) {
+      index.push(collateral.oracleSymbol);
+    }
+    return index;
+  }
+
+  /**
+   * map market index to market key
+   */
+  get indexToMarketKey() {
+    const index: string[] = [];
+    for (const perpMarket of this.data.perpMarkets) {
+      index.push(perpMarket.symbol);
+    }
+    return index;
   }
 
   /**
@@ -65,6 +95,7 @@ export default class State extends BaseAccount<Schema> {
   }
 
   /**
+   * @param program
    * @param k The state's public key.
    */
   static async load(program: Program<Zo>, k: PublicKey): Promise<State> {
@@ -84,7 +115,7 @@ export default class State extends BaseAccount<Schema> {
     program: Program<Zo>,
     k: PublicKey,
   ): Promise<Schema> {
-    const data = (await program.account["state"].fetch(
+    const data = (await program.account["state"]!.fetch(
       k,
       "recent",
     )) as StateSchema;
@@ -97,11 +128,14 @@ export default class State extends BaseAccount<Schema> {
         .slice(0, data.totalCollaterals)
         .map((x) => ({
           ...x,
+          // @ts-ignore
           oracleSymbol: loadSymbol(x.oracleSymbol),
         })),
       perpMarkets: data.perpMarkets.slice(0, data.totalMarkets).map((x) => ({
         ...x,
+        // @ts-ignore
         symbol: loadSymbol(x.symbol),
+        // @ts-ignore
         oracleSymbol: loadSymbol(x.oracleSymbol),
       })),
     };
@@ -208,6 +242,13 @@ export default class State extends BaseAccount<Schema> {
     });
   }
 
+  /* -------------------------------------------------------------------------- */
+  /*                                                                            */
+  /*                                Data stuff below                            */
+  /*                                                                            */
+
+  /* -------------------------------------------------------------------------- */
+
   /**
    * Called by the keepers regularly to cache the oracle prices.
    * @param mockPrices Only used for testing purposes. An array of user-set prices.
@@ -248,10 +289,10 @@ export default class State extends BaseAccount<Schema> {
     });
   }
 
-  zoMarketAccounts: {
-    [key: string]: { dexMarket: ZoMarket; bids: Orderbook; asks: Orderbook };
-  } = {};
-
+  /**
+   * Get the ZoMarket DEX accounts for a market using the market object (  { dexMarket: ZoMarket; bids: Orderbook; asks: Orderbook } )
+   * @param market
+   */
   async getZoMarketAccounts(market: MarketInfo) {
     if (this.zoMarketAccounts[market.symbol]) {
       return this.zoMarketAccounts[market.symbol]!;
@@ -277,22 +318,25 @@ export default class State extends BaseAccount<Schema> {
     return this.zoMarketAccounts[market.symbol]!;
   }
 
-  //  Math related stuff:
+  /**
+   * Load all ZoMarket DEX Accounts
+   */
+  async loadZoMarkets() {
+    for (const marketInfo of Object.values(this.markets)) {
+      await this.getZoMarketAccounts(marketInfo);
+    }
+  }
 
-  assets: { [key: string]: AssetInfo } = {};
-  markets: { [key: string]: MarketInfo } = {};
-
+  /**
+   * Load all assets
+   */
   loadAssets() {
     const assets: { [key: string]: AssetInfo } = {};
     let index = 0;
 
     for (const collateral of this.data.collaterals) {
-      const supply =
-        // @ts-ignore
-        this.cache.data.borrowCache[index].actualSupply.decimal;
-      const borrows =
-        // @ts-ignore
-        this.cache.data.borrowCache[index].actualBorrows.decimal;
+      const supply = this.cache.data.borrowCache[index]!.actualSupply.decimal;
+      const borrows = this.cache.data.borrowCache[index]!.actualBorrows.decimal;
       const utilization = supply.greaterThanOrEqualTo(new Decimal(1))
         ? borrows.div(supply)
         : new Decimal(0);
@@ -313,18 +357,16 @@ export default class State extends BaseAccount<Schema> {
       const supplyApy = ir.mul(utilization).mul(100);
       const price = this.cache.getOracleBySymbol(collateral.oracleSymbol).price;
 
+      // @ts-ignore
       assets[collateral.oracleSymbol] = {
         ...collateral,
         symbol: collateral.oracleSymbol,
         indexPrice: price,
-        // @ts-ignore
-        vault: this.data.vaults[index],
-        // @ts-ignore
-        supply: this.cache.data.borrowCache[index].actualSupply.decimal,
-        // @ts-ignore
-        borrows: this.cache.data.borrowCache[index].actualBorrows.decimal,
-        supplyApy: supplyApy,
-        borrowsApy: borrowApy,
+        vault: this.data.vaults[index]!,
+        supply: this.cache.data.borrowCache[index]!.actualSupply.decimal,
+        borrows: this.cache.data.borrowCache[index]!.actualBorrows.decimal,
+        supplyApy: supplyApy.number,
+        borrowsApy: borrowApy.number,
       };
 
       index++;
@@ -332,6 +374,10 @@ export default class State extends BaseAccount<Schema> {
     this.assets = assets;
   }
 
+  /**
+   * gets market type
+   * @param perpType
+   */
   _getMarketType(perpType) {
     if (_.isEqual(perpType, { future: {} })) {
       return MarketType.Perp;
@@ -343,7 +389,10 @@ export default class State extends BaseAccount<Schema> {
     return MarketType.Perp;
   }
 
-  async loadMarkets() {
+  /**
+   * Load all market infos
+   */
+  loadMarkets() {
     const markets = {};
     let index = 0;
     for (const perpMarket of this.data.perpMarkets) {
@@ -376,23 +425,6 @@ export default class State extends BaseAccount<Schema> {
       };
       index++;
     }
-
     this.markets = markets;
-  }
-
-  get indexToAssetKey() {
-    const index: string[] = [];
-    for (const collateral of this.data.collaterals) {
-      index.push(collateral.oracleSymbol);
-    }
-    return index;
-  }
-
-  get indexToMarketKey() {
-    const index: any[] = [];
-    for (const perpMarket of this.data.perpMarkets) {
-      index.push(perpMarket.symbol);
-    }
-    return index;
   }
 }

@@ -1,9 +1,9 @@
 import { PublicKey } from "@solana/web3.js";
 import { Program, ProgramAccount } from "@project-serum/anchor";
-import State from "../state/State";
+import State from "../State";
 import Num from "../../Num";
 import Decimal from "decimal.js";
-import { PositionInfo, TradeInfo } from "../../types/dataTypes";
+import { OOInfo, PositionInfo, TradeInfo } from "../../types/dataTypes";
 import MarginWeb3 from "./MarginWeb3";
 import { Zo } from "../../types/zo";
 import Cache from "../Cache";
@@ -16,6 +16,476 @@ import { ControlSchema, MarginSchema } from "../../types";
  * ```.
  */
 export default abstract class Margin extends MarginWeb3 {
+  /**
+   * get total funding amount from all the markets
+   */
+  get funding() {
+    let funding = new Decimal(0);
+    for (const position of this.positions) {
+      if (position.isLong) {
+        const fundingDifference = this.state.markets[
+          position.marketKey
+        ]!.fundingIndex.sub(position.fundingIndex);
+        funding = funding.sub(position.coins.decimal.mul(fundingDifference));
+      } else {
+        const fundingDifference = this.state.markets[
+          position.marketKey
+        ]!.fundingIndex.sub(position.fundingIndex);
+        funding = funding.add(position.coins.decimal.mul(fundingDifference));
+      }
+    }
+    return funding;
+  }
+
+  /**
+   * get all balances for the account (adjusts usdc balance for realized pnl and funding)
+   */
+  get balances(): { [key: string]: Num } {
+    const balances: { [key: string]: Num } = { ...this._balances };
+    balances["USDC"] = new Num(
+      this._balances["USDC"]!.decimal.add(this.realizedPnL).add(this.funding),
+      this._balances["USDC"]!.decimals,
+    );
+    return balances;
+  }
+
+  /**
+   * get deposited collateral value in USD terms
+   */
+  get unweightedCollateralValue() {
+    let depositedCollateral = new Decimal(0);
+    for (const marketKey of Object.keys(this.balances)) {
+      depositedCollateral = depositedCollateral.add(
+        this.balances[marketKey]!.decimal.mul(
+          this.state.assets[marketKey]!.indexPrice.decimal,
+        ),
+      );
+    }
+
+    return depositedCollateral;
+  }
+
+  /**
+   * Account value(with unweighted collateral)
+   */
+  get unweightedAccountValue() {
+    return this.unweightedCollateralValue.add(this.cumulativeUnrealizedPnL);
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                                                                            */
+  /*                                Math&Data stuff below                       */
+  /*                                                                            */
+  /* -------------------------------------------------------------------------- */
+
+  /* -------------------------------------------------------------------------- */
+  /*                                Market Position Infos                       */
+
+  /* -------------------------------------------------------------------------- */
+
+  /**
+   * Maintenance Margin Fraction
+   */
+  get maintenanceMarginFraction() {
+    let [mmfWeightedTotal, mmfWeight] = this.collateralMaintenanceMarginInfo;
+
+    for (const marketKey of Object.keys(this.state.markets)) {
+      const { posNotional, positionWeighted } =
+        this.positionWeighted(marketKey);
+
+      mmfWeight = mmfWeight.add(posNotional);
+      mmfWeightedTotal = mmfWeightedTotal.add(positionWeighted);
+    }
+
+    if (mmfWeight.toNumber() === 0) {
+      return new Decimal(0);
+    }
+
+    return mmfWeightedTotal.div(mmfWeight);
+  }
+
+  /**
+   * Open Margin Fraction
+   */
+  get openMarginFraction() {
+    if (this.totalOpenPositionNotional.toNumber() == 0) {
+      return new Decimal(1);
+    }
+    return Decimal.min(
+      this.weightedAccountValue,
+      this.weightedCollateralValue,
+    ).div(this.totalOpenPositionNotional);
+  }
+
+  /**
+   * Margin Fraction
+   */
+  get marginFraction() {
+    if (this.totalPositionNotional.toNumber() === 0) {
+      return new Decimal(1);
+    }
+    return this.weightedAccountValue.div(this.totalPositionNotional);
+  }
+
+  /**
+   * Largest position by weight
+   */
+  get largestWeightedPosition() {
+    let symbol = "";
+    let maxWeightedPosition = new Decimal(0);
+    for (const marketKey of Object.keys(this.state.markets)) {
+      const { positionWeighted } = this.positionWeighted(marketKey);
+      if (positionWeighted.gt(maxWeightedPosition)) {
+        symbol = marketKey;
+        maxWeightedPosition = positionWeighted;
+      }
+    }
+    return { symbol, weightedPosition: maxWeightedPosition };
+  }
+
+  /**
+   * Largest borrow by weight
+   */
+  get largestWeightedBorrow() {
+    let symbol = "";
+    let maxWeightedBorrow = new Decimal(0);
+    for (const assetKey of Object.keys(this.balances)) {
+      if (this.balances[assetKey]!.number < 0) {
+        const { weightedBorrow } = this.getWeightedBorrow(assetKey);
+        if (weightedBorrow.gt(maxWeightedBorrow)) {
+          symbol = assetKey;
+          maxWeightedBorrow = weightedBorrow;
+        }
+      }
+    }
+    return { symbol, weightedBorrow: maxWeightedBorrow };
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                 Collateral & Account Value information                     */
+
+  /* -------------------------------------------------------------------------- */
+
+  /**
+   * Largest balance
+   */
+  get largestBalanceSymbol() {
+    let symbol = "USDC";
+    let maxBalance = new Decimal(0);
+    for (const assetKey of Object.keys(this.balances)) {
+      if (this.balances[assetKey]!.number > 0) {
+        if (this.balances[assetKey]!.decimal.gt(maxBalance)) {
+          symbol = assetKey;
+          maxBalance = this.balances[assetKey]!.decimal;
+        }
+      }
+    }
+    return symbol;
+  }
+
+  /**
+   * Is Liquidatable
+   */
+  get isLiquidatable() {
+    return this.maintenanceMarginFraction.gt(this.marginFraction);
+  }
+
+  /**
+   * Is Bankrupt
+   */
+  get isBankrupt() {
+    if (this.isLiquidatable) {
+      for (const position of this.positions) {
+        if (position.coins.number != 0) {
+          return false;
+        }
+      }
+      for (const assetKey of Object.keys(this.state.assets)) {
+        const price = this.state.assets[assetKey]!.indexPrice.number;
+        const value = this.balances[assetKey]!.decimal.mul(price).toNumber();
+        if (value > 1) {
+          return false;
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                               account fractions                       */
+
+  /* -------------------------------------------------------------------------- */
+
+  /**
+   * Should account liquidate perp or spot(based on the weight of the position)
+   */
+  get isPerpLiquidation() {
+    const largestPosition = this.largestWeightedPosition;
+    const largestBorrow = this.largestWeightedBorrow;
+    if (largestPosition.weightedPosition.gt(largestBorrow.weightedBorrow)) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Total position Notional
+   */
+  get totalPositionNotional() {
+    let res = new Decimal(0);
+    for (const position of this.positions) {
+      const market = this.state.markets[position.marketKey]!;
+      const size = position.coins.decimal.mul(market.markPrice.decimal);
+      res = res.add(size);
+    }
+    return res.add(this.borrowPositionNotionalValue);
+  }
+
+  /**
+   * Total open position notional
+   */
+  get totalOpenPositionNotional() {
+    let res = new Decimal(0);
+    for (const order of this.orders) {
+      const market = this.state.markets[order.marketKey]!;
+
+      const size = order.coins.decimal.mul(market.markPrice.decimal);
+      res = res.add(size);
+    }
+    return res.add(this.totalPositionNotional);
+  }
+
+  /**
+   * Tied collateral value
+   */
+  get tiedCollateral() {
+    return this.borrowLendingTiedCollateralValue.add(
+      this.positionsTiedCollateral,
+    );
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                               Borrow & Withdrawal Infos                       */
+
+  /* -------------------------------------------------------------------------- */
+
+  /**
+   * Collateral of the free value
+   */
+  get freeCollateralValue() {
+    const freeCollateral = Decimal.min(
+      this.weightedAccountValue,
+      this.weightedCollateralValue,
+    ).minus(this.tiedCollateral);
+    return Decimal.max(new Decimal(0), freeCollateral);
+  }
+
+  /**
+   * returns the total unrealized pnl for all positions
+   */
+  private get cumulativeUnrealizedPnL() {
+    let totalPnL = new Decimal(0);
+    for (const position of this.positions) {
+      totalPnL = totalPnL.add(this.positionPnL(position));
+    }
+
+    return totalPnL;
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                               Trade Information                      */
+
+  /* -------------------------------------------------------------------------- */
+
+  /**
+   * get WEIGHTED collateral value in USD terms
+   */
+  private get weightedCollateralValue() {
+    let depositedCollateral = new Decimal(0);
+    for (const assetKey of Object.keys(this.balances)) {
+      if (this.balances[assetKey]!.number >= 0) {
+        depositedCollateral = depositedCollateral.add(
+          this.balances[assetKey]!.decimal.mul(
+            this.state.assets[assetKey]!.indexPrice.decimal,
+          ).mul(this.state.assets[assetKey]!.weight / 1000),
+        );
+      } else {
+        depositedCollateral = depositedCollateral.add(
+          this.balances[assetKey]!.decimal.mul(
+            this.state.assets[assetKey]!.indexPrice.decimal,
+          ),
+        );
+      }
+    }
+
+    return depositedCollateral;
+  }
+
+  /**
+   * returns total realized pnl in case it hasn't been cranked
+   */
+  private get realizedPnL() {
+    let realizedPnL = new Decimal(0);
+    for (const position of this.positions) {
+      realizedPnL = realizedPnL.add(position.realizedPnL.number);
+    }
+    return realizedPnL;
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                               Liquidation Helpers                      */
+
+  /* -------------------------------------------------------------------------- */
+
+  /**
+   * get the USD value of the collateral tied in Borrows & Lending
+   */
+  private get borrowLendingTiedCollateralValue() {
+    let tiedCollateral = new Decimal(0);
+    for (const marketKey of Object.keys(this.balances)) {
+      if (this.balances[marketKey]!.number < 0) {
+        const borrowNotional = this.balances[marketKey]!.decimal.mul(
+          this.state.assets[marketKey]!.indexPrice.decimal,
+        );
+        tiedCollateral = tiedCollateral.add(
+          new Decimal(1.1)
+            .div(this.state.assets[marketKey]!.weight / 1000)
+            .minus(1)
+            .mul(borrowNotional.abs()),
+        );
+      }
+    }
+    return tiedCollateral;
+  }
+
+  /**
+   * Get Borrow Position Notional Value
+   */
+  private get borrowPositionNotionalValue() {
+    let bnlPositionNotional = new Decimal(0);
+    for (const marketKey of Object.keys(this.balances)) {
+      if (this.balances[marketKey]!.number < 0) {
+        bnlPositionNotional = bnlPositionNotional.add(
+          this.balances[marketKey]!.decimal.mul(
+            this.state.assets[marketKey]!.indexPrice.decimal,
+          ),
+        );
+      }
+    }
+    return bnlPositionNotional.abs();
+  }
+
+  /**
+   * Account value(with weighted collateral, lower than the actual account value)
+   */
+  private get weightedAccountValue() {
+    return this.weightedCollateralValue.add(this.cumulativeUnrealizedPnL);
+  }
+
+  /**
+   * Get collateral Initial Margin Fraction Information
+   */
+  private get collateralInitialMarginInfo(): [Decimal, Decimal] {
+    let [imfWeightedTotal, imfWeight] = [new Decimal(0), new Decimal(0)];
+
+    for (const marketKey of Object.keys(this.balances)) {
+      if (this.balances[marketKey]!.number < 0) {
+        const factor = new Decimal(1.1)
+          .div(this.state.assets[marketKey]!.weight / 1000)
+          .minus(new Decimal(1));
+        const weight = this.balances[marketKey]!.decimal.mul(
+          this.state.assets[marketKey]!.indexPrice.decimal,
+        );
+        imfWeightedTotal = imfWeightedTotal.add(weight.mul(factor));
+        imfWeight = imfWeight.add(weight);
+      }
+    }
+    return [imfWeightedTotal.abs(), imfWeight.abs()];
+  }
+
+  /**
+   * Get Collateral MMF info
+   * @private
+   */
+  private get collateralMaintenanceMarginInfo(): [Decimal, Decimal] {
+    let [mmfWeightedTotal, mmfWeight] = [new Decimal(0), new Decimal(0)];
+    for (const marketKey of Object.keys(this.balances)) {
+      if (this.balances[marketKey]!.number < 0) {
+        const { weight, weightedBorrow } = this.getWeightedBorrow(marketKey);
+        mmfWeightedTotal = mmfWeightedTotal.add(weightedBorrow);
+        mmfWeight = mmfWeight.add(weight);
+      }
+    }
+
+    return [mmfWeightedTotal.abs(), mmfWeight.abs()];
+  }
+
+  /**
+   * Value of the collateral tied in positions
+   */
+  private get positionsTiedCollateral() {
+    const posInfos = this._ooInfos;
+
+    let tiedCollateral = new Decimal(0);
+    for (const marketKey of Object.keys(this.state.markets)) {
+      const posNotional = posInfos[marketKey]!.posSize.mul(
+        this.state.markets[marketKey]!.markPrice.decimal,
+      );
+      const openSize = Decimal.max(
+        posInfos[marketKey]!.long,
+        posInfos[marketKey]!.short,
+      );
+      tiedCollateral = tiedCollateral.add(
+        this.state.markets[marketKey]!.baseImf.mul(openSize.add(posNotional)),
+      );
+    }
+    return tiedCollateral;
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                                General Margin Info                       */
+
+  /* -------------------------------------------------------------------------- */
+
+  /**
+   * returns infos about open orders accounts(position size + asks&bids on the book)
+   */
+  private get _ooInfos() {
+    const posInfos: { [key: string]: OOInfo } = {};
+    for (const marketKey of Object.keys(this.state.markets)) {
+      posInfos[marketKey] = {
+        long: new Decimal(0),
+        short: new Decimal(0),
+        posSize: new Decimal(0),
+        isLong: false,
+      };
+    }
+    for (const position of this.positions) {
+      posInfos[position.marketKey]!.posSize = position.coins.decimal;
+      posInfos[position.marketKey]!.isLong = position.isLong;
+      if (position.isLong) {
+        posInfos[position.marketKey]!.long = position.coins.decimal;
+      } else {
+        posInfos[position.marketKey]!.short = position.coins.decimal;
+      }
+    }
+
+    for (const order of this.orders) {
+      if (order.long) {
+        posInfos[order.marketKey]!.long = posInfos[order.marketKey]!.long.add(
+          order.coins.decimal,
+        );
+      } else {
+        posInfos[order.marketKey]!.short = posInfos[order.marketKey]!.short.add(
+          order.coins.decimal,
+        );
+      }
+    }
+
+    return posInfos;
+  }
+
   static async load(
     program: Program<Zo>,
     st: State,
@@ -43,6 +513,14 @@ export default abstract class Margin extends MarginWeb3 {
     )) as Margin;
   }
 
+  /**
+   * loads all margin accounts
+   * @param program
+   * @param st state
+   * @param ch cache
+   * @param verbose
+   * @param withOrders - load orders for each margin account
+   */
   static async loadAllMargins(
     program: Program<Zo>,
     st: State,
@@ -79,6 +557,11 @@ export default abstract class Margin extends MarginWeb3 {
     return margins;
   }
 
+  /* -------------------------------------------------------------------------- */
+  /*                                Private Helper Functions                    */
+
+  /* -------------------------------------------------------------------------- */
+
   private static printMarginsLoadProgress(index: number, len: number) {
     const size = 21;
     const i = (index * size) / len;
@@ -93,52 +576,17 @@ export default abstract class Margin extends MarginWeb3 {
   }
 
   /**
-   * Math stuff below:
+   * returns the position info for the specific market key
+   * @marketKey  market key
    */
-
-  // Positions Info
-
   position(marketKey: string) {
     return this.positions.find((el) => el.marketKey === marketKey)!;
   }
 
-  get positionInfos() {
-    const posInfos = {};
-    for (const marketKey of Object.keys(this.state.markets)) {
-      posInfos[marketKey] = {
-        long: new Decimal(0),
-        short: new Decimal(0),
-        posSize: new Decimal(0),
-        isLong: false,
-      };
-    }
-    for (const position of this.positions) {
-      posInfos[position.marketKey].posSize = position.coins.decimal;
-      posInfos[position.marketKey].isLong = position.isLong;
-      if (position.isLong) {
-        posInfos[position.marketKey].long = position.coins.decimal;
-      } else {
-        posInfos[position.marketKey].short = position.coins.decimal;
-      }
-    }
-
-    for (const order of this.orders) {
-      if (order.long) {
-        posInfos[order.marketKey].long = posInfos[order.marketKey].long.add(
-          order.coins.decimal,
-        );
-      } else {
-        posInfos[order.marketKey].short = posInfos[order.marketKey].short.add(
-          order.coins.decimal,
-        );
-      }
-    }
-
-    return posInfos;
-  }
-
-  // pnL & funding info
-
+  /**
+   * returns unrealized pnl for the position
+   * @param position
+   */
   positionPnL(position: PositionInfo): Decimal {
     const market = this.state.markets[position.marketKey]!;
     const diff = position.coins.decimal
@@ -149,41 +597,10 @@ export default abstract class Margin extends MarginWeb3 {
     return diff.mul(-1);
   }
 
-  get cumulativePnL() {
-    let totalPnL = new Decimal(0);
-    for (const position of this.positions) {
-      totalPnL = totalPnL.add(this.positionPnL(position));
-    }
-
-    return totalPnL;
-  }
-
-  get realizedPnL() {
-    let realizedPnL = new Decimal(0);
-    for (const position of this.positions) {
-      realizedPnL = realizedPnL.add(position.realizedPnL.number);
-    }
-    return realizedPnL;
-  }
-
-  get funding() {
-    let funding = new Decimal(0);
-    for (const position of this.positions) {
-      if (position.isLong) {
-        const fundingDifference = this.state.markets[
-          position.marketKey
-        ]!.fundingIndex.sub(position.fundingIndex);
-        funding = funding.sub(position.coins.decimal.mul(fundingDifference));
-      } else {
-        const fundingDifference = this.state.markets[
-          position.marketKey
-        ]!.fundingIndex.sub(position.fundingIndex);
-        funding = funding.add(position.coins.decimal.mul(fundingDifference));
-      }
-    }
-    return funding;
-  }
-
+  /**
+   * get funding for the position
+   * @param position
+   */
   positionFunding(position: PositionInfo) {
     let funding = new Decimal(0);
     if (position.isLong) {
@@ -200,215 +617,18 @@ export default abstract class Margin extends MarginWeb3 {
     return funding;
   }
 
-  // balances info
-
-  get balances() {
-    const balances: any = { ...this._balances };
-    balances["USDC"] = new Num(
-      this._balances["USDC"]!.decimal.add(this.realizedPnL).add(this.funding),
-      this._balances["USDC"]!.decimals,
-    );
-    return balances;
-  }
-
-  get depositedCollateralValue() {
-    let depositedCollateral = new Decimal(0);
-    for (const asset of Object.values(this.state.assets)) {
-      //@ts-ignore
-      if (this.balances[asset.symbol]) {
-        depositedCollateral = depositedCollateral.add(
-          //@ts-ignore
-          this.balances[asset.symbol].decimal.mul(asset.indexPrice.decimal),
-        );
-      }
-    }
-    return depositedCollateral;
-  }
-
-  // collateral info
-
-  get weightedCollateralValue() {
-    let depositedCollateral = new Decimal(0);
-    for (const assetKey of Object.keys(this.balances)) {
-      if (this.balances[assetKey].number >= 0) {
-        depositedCollateral = depositedCollateral.add(
-          this.balances[assetKey].decimal
-            .mul(this.state.assets[assetKey]!.indexPrice.decimal)
-            .mul(this.state.assets[assetKey]!.weight / 1000),
-        );
-      } else {
-        depositedCollateral = depositedCollateral.add(
-          this.balances[assetKey].decimal.mul(
-            this.state.assets[assetKey]!.indexPrice.decimal,
-          ),
-        );
-      }
-    }
-
-    return depositedCollateral;
-  }
-
-  get unweightedCollateralValue() {
-    let depositedCollateral = new Decimal(0);
-    for (const marketKey of Object.keys(this.balances)) {
-      if (this.balances[marketKey].number >= 0) {
-        depositedCollateral = depositedCollateral.add(
-          this.balances[marketKey].decimal.mul(
-            this.state.assets[marketKey]!.indexPrice.decimal,
-          ),
-        );
-      } else {
-        depositedCollateral = depositedCollateral.add(
-          this.balances[marketKey].decimal.mul(
-            this.state.assets[marketKey]!.indexPrice.decimal,
-          ),
-        );
-      }
-    }
-
-    return depositedCollateral;
-  }
-
-  get borrowLendingTiedCollateralValue() {
-    let tiedCollateral = new Decimal(0);
-    for (const marketKey of Object.keys(this.balances)) {
-      if (this.balances[marketKey].number < 0) {
-        const borrowNotional = this.balances[marketKey].decimal.mul(
-          this.state.assets[marketKey]!.indexPrice.decimal,
-        );
-        tiedCollateral = tiedCollateral.add(
-          new Decimal(1.1)
-            .div(this.state.assets[marketKey]!.weight / 1000)
-            .minus(1)
-            .mul(borrowNotional.abs()),
-        );
-      }
-    }
-    return tiedCollateral;
-  }
-
-  get lendingPositionNotionalValue() {
-    let bnlPositionNotional = new Decimal(0);
-    for (const marketKey of Object.keys(this.balances)) {
-      if (this.balances[marketKey].number < 0) {
-        bnlPositionNotional = bnlPositionNotional.add(
-          this.balances[marketKey].decimal.mul(
-            this.state.assets[marketKey]!.indexPrice.decimal,
-          ),
-        );
-      }
-    }
-    return bnlPositionNotional.abs();
-  }
-
-  get collateralInitialMarginInfo(): [Decimal, Decimal] {
-    let [imfWeightedTotal, imfWeight] = [new Decimal(0), new Decimal(0)];
-
-    for (const marketKey of Object.keys(this.balances)) {
-      if (this.balances[marketKey].number < 0) {
-        const factor = new Decimal(1.1)
-          .div(this.state.assets[marketKey]!.weight / 1000)
-          .minus(new Decimal(1));
-        const weight = this.balances[marketKey].decimal.mul(
-          this.state.assets[marketKey]!.indexPrice.decimal,
-        );
-        imfWeightedTotal = imfWeightedTotal.add(weight.mul(factor));
-        imfWeight = imfWeight.add(weight);
-      }
-    }
-    return [imfWeightedTotal.abs(), imfWeight.abs()];
-  }
-
-  private getWeightedBorrow(marketKey: string) {
-    const factor = new Decimal(1.03)
-      .div(this.state.assets[marketKey]!.weight / 1000)
-      .minus(new Decimal(1));
-    const weight = this.balances[marketKey].decimal
-      .mul(this.state.assets[marketKey]!.indexPrice.decimal)
-      .abs();
-    const weightedBorrow = weight.mul(factor);
-    return { weight, weightedBorrow };
-  }
-
-  get collateralMaintenanceMarginInfo(): [Decimal, Decimal] {
-    let [mmfWeightedTotal, mmfWeight] = [new Decimal(0), new Decimal(0)];
-    for (const marketKey of Object.keys(this.balances)) {
-      if (this.balances[marketKey].number < 0) {
-        const { weight, weightedBorrow } = this.getWeightedBorrow(marketKey);
-        mmfWeightedTotal = mmfWeightedTotal.add(weightedBorrow);
-        mmfWeight = mmfWeight.add(weight);
-      }
-    }
-
-    return [mmfWeightedTotal.abs(), mmfWeight.abs()];
-  }
-
-  // margin info
-
-  get accountValue() {
-    return this.weightedCollateralValue.add(this.cumulativePnL);
-  }
-
-  get unweightedAccountValue() {
-    return this.unweightedCollateralValue.add(this.cumulativePnL);
-  }
-
-  get totalPositionNotional() {
-    let res = new Decimal(0);
-    for (const position of this.positions) {
-      const market = this.state.markets[position.marketKey]!;
-      const size = position.coins.decimal.mul(market.markPrice.decimal);
-      res = res.add(size);
-    }
-    return res.add(this.lendingPositionNotionalValue);
-  }
-
-  get totalOpenPositionNotional() {
-    let res = new Decimal(0);
-    for (const order of this.orders) {
-      const market = this.state.markets[order.marketKey]!;
-
-      const size = order.coins.decimal.mul(market.markPrice.decimal);
-      res = res.add(size);
-    }
-    return res.add(this.totalPositionNotional);
-  }
-
-  positionWeighted(marketKey: string) {
-    const posNotional = this.positionInfos[marketKey].posSize.mul(
-      this.state.markets[marketKey]!.markPrice.decimal,
-    );
-    const pmmf = this.state.markets[marketKey]!.pmmf;
-    const positionWeighted = pmmf.mul(posNotional);
-    return { posNotional, positionWeighted };
-  }
-
-  get maintenanceMarginFraction() {
-    let [mmfWeightedTotal, mmfWeight] = this.collateralMaintenanceMarginInfo;
-
-    for (const marketKey of Object.keys(this.state.markets)) {
-      const { posNotional, positionWeighted } =
-        this.positionWeighted(marketKey);
-
-      mmfWeight = mmfWeight.add(posNotional);
-      mmfWeightedTotal = mmfWeightedTotal.add(positionWeighted);
-    }
-
-    if (mmfWeight.toNumber() === 0) {
-      return new Decimal(0);
-    }
-
-    return mmfWeightedTotal.div(mmfWeight);
-  }
-
+  /**
+   * Initial Margin Fraction
+   */
   initialMarginFraction(trade?) {
     let [imfWeightedTotal, imfWeight] = this.collateralInitialMarginInfo;
 
     for (const marketKey of Object.keys(this.state.markets)) {
-      let addOn = this.positionInfos[marketKey].posSize;
+      let addOn = this._ooInfos[marketKey]!.posSize;
       if (trade && marketKey == trade.marketKey) {
-        addOn = this.positionInfos[marketKey].posSize
-          .mul(this.positionInfos[marketKey].isLong ? 1 : -1)
+        addOn = this._ooInfos[marketKey]!.posSize.mul(
+          this._ooInfos[marketKey]!.isLong ? 1 : -1,
+        )
           .add(trade.coins * (trade.long ? 1 : -1))
           .abs();
       }
@@ -426,85 +646,14 @@ export default abstract class Margin extends MarginWeb3 {
     return imfWeightedTotal.div(imfWeight);
   }
 
-  initialMarginFractionUnweighted(trade?) {
-    let [imfWeightedTotal, imfWeight] = this.collateralInitialMarginInfo;
+  /**
 
-    for (const marketKey of Object.keys(this.state.markets)) {
-      let addOn = this.positionInfos[marketKey].posSize;
-      if (trade && marketKey == trade.marketKey) {
-        addOn = this.positionInfos[marketKey].posSize
-          .mul(this.positionInfos[marketKey].isLong ? 1 : -1)
-          .add(trade.coins * (trade.long ? 1 : -1))
-          .abs();
-      }
-      const posNotional = addOn.mul(
-        this.state.markets[marketKey]!.markPrice.decimal,
-      );
-      imfWeight = imfWeight.add(posNotional);
-      const pimf = this.state.markets[marketKey]!.pmmf.mul(2);
-      imfWeightedTotal = imfWeightedTotal.add(pimf.mul(posNotional));
-    }
-
-    if (imfWeight.toNumber() === 0) {
-      return new Decimal(0);
-    }
-    return imfWeightedTotal;
-  }
-
-  get openMarginFraction() {
-    if (this.totalOpenPositionNotional.toNumber() == 0) {
-      return new Decimal(1);
-    }
-    return Decimal.min(this.accountValue, this.weightedCollateralValue).div(
-      this.totalOpenPositionNotional,
-    );
-  }
-
-  get marginFraction() {
-    if (this.totalPositionNotional.toNumber() === 0) {
-      return new Decimal(1);
-    }
-
-    return this.accountValue.div(this.totalPositionNotional);
-  }
-
-  // borrow/Lending info
-
-  get positionsTiedCollateral() {
-    const posInfos = this.positionInfos;
-
-    let tiedCollateral = new Decimal(0);
-    for (const marketKey of Object.keys(this.state.markets)) {
-      const posNotional = posInfos[marketKey].posSize.mul(
-        this.state.markets[marketKey]!.markPrice.decimal,
-      );
-      const openSize = Decimal.max(
-        posInfos[marketKey].long,
-        posInfos[marketKey].short,
-      );
-      tiedCollateral = tiedCollateral.add(
-        this.state.markets[marketKey]!.baseImf.mul(openSize.add(posNotional)),
-      );
-    }
-    return tiedCollateral;
-  }
-
-  get tiedCollateral() {
-    return this.borrowLendingTiedCollateralValue.add(
-      this.positionsTiedCollateral,
-    );
-  }
-
-  get freeCollateralValue() {
-    const freeCollateral = Decimal.min(
-      this.accountValue,
-      this.weightedCollateralValue,
-    ).minus(this.tiedCollateral);
-    return Decimal.max(new Decimal(0), freeCollateral);
-  }
-
+   /**
+   * Withdrawable collateral without borrow
+   * @param assetKey
+   */
   collateralWithdrawable(assetKey: string) {
-    const balance = this.balances[assetKey].decimal;
+    const balance = this.balances[assetKey]!.decimal;
     if (this.state.assets[assetKey]) {
       let res = Decimal.max(
         0,
@@ -516,7 +665,7 @@ export default abstract class Margin extends MarginWeb3 {
         ),
       );
 
-      if (res.toNumber() != balance) {
+      if (res.toNumber() != balance.toNumber()) {
         const VALUE_NERF = 0.02;
         res = res.mul(1 - VALUE_NERF);
       }
@@ -525,6 +674,10 @@ export default abstract class Margin extends MarginWeb3 {
     return new Decimal(0);
   }
 
+  /**
+   * Withdrawable collateral with borrow
+   * @param assetKey
+   */
   collateralWithdrawableWithBorrow(assetKey: string) {
     if (this.state.assets[assetKey]) {
       const availableFreeWithdrawalNotional = this.collateralWithdrawable(
@@ -546,8 +699,10 @@ export default abstract class Margin extends MarginWeb3 {
     return new Decimal(0);
   }
 
-  // trade margin info
-
+  /**
+   * Max Contracts Purchaseable for the trade
+   * @param trade
+   */
   maxContractsPurchaseable(trade: TradeInfo) {
     const marketInfo = this.state.markets[trade.marketKey]!;
     const markPrice = marketInfo.markPrice;
@@ -560,7 +715,10 @@ export default abstract class Margin extends MarginWeb3 {
       : 1 - TAKER_TRADE_FEE - VALUE_NERF;
 
     if (this.totalOpenPositionNotional.toNumber() === 0) {
-      return Decimal.min(this.accountValue, this.weightedCollateralValue)
+      return Decimal.min(
+        this.weightedAccountValue,
+        this.weightedCollateralValue,
+      )
         .div(marketInfo.baseImf)
         .mul(
           trade.postOrder
@@ -576,8 +734,8 @@ export default abstract class Margin extends MarginWeb3 {
       .div(marketInfo.baseImf)
       .div(markPrice.decimal);
     const maxOpenSize = Decimal.max(
-      this.positionInfos[marketInfo.symbol].long,
-      this.positionInfos[marketInfo.symbol].short,
+      this._ooInfos[marketInfo.symbol]!.long,
+      this._ooInfos[marketInfo.symbol]!.short,
     ).add(changeInOpenSizeAllowed);
 
     if (trade.long) {
@@ -585,7 +743,7 @@ export default abstract class Margin extends MarginWeb3 {
         feeMultiplier *
         Decimal.max(
           new Decimal(0),
-          maxOpenSize.minus(this.positionInfos[marketInfo.symbol].long),
+          maxOpenSize.minus(this._ooInfos[marketInfo.symbol]!.long),
         ).toNumber()
       );
     }
@@ -593,86 +751,44 @@ export default abstract class Margin extends MarginWeb3 {
       feeMultiplier *
       Decimal.max(
         new Decimal(0),
-        maxOpenSize.minus(this.positionInfos[marketInfo.symbol].short),
+        maxOpenSize.minus(this._ooInfos[marketInfo.symbol]!.short),
       ).toNumber()
     );
   }
 
+  /**
+   * Max Collateral Purchaseable for the trade
+   * @param trade
+   */
   maxCollateralSpendable(trade: TradeInfo) {
     return trade.price * this.maxContractsPurchaseable(trade);
   }
 
-  get largestWeightedPosition() {
-    let symbol = "";
-    let maxWeightedPosition = new Decimal(0);
-    for (const marketKey of Object.keys(this.state.markets)) {
-      const { positionWeighted } = this.positionWeighted(marketKey);
-      if (positionWeighted.gt(maxWeightedPosition)) {
-        symbol = marketKey;
-        maxWeightedPosition = positionWeighted;
-      }
-    }
-    return { symbol, weightedPosition: maxWeightedPosition };
+  /**
+   * Position weighted
+   */
+  private positionWeighted(marketKey: string) {
+    const posNotional = this._ooInfos[marketKey]!.posSize.mul(
+      this.state.markets[marketKey]!.markPrice.decimal,
+    );
+    const pmmf = this.state.markets[marketKey]!.pmmf;
+    const positionWeighted = pmmf.mul(posNotional);
+    return { posNotional, positionWeighted };
   }
 
-  get largestWeightedBorrow() {
-    let symbol = "";
-    let maxWeightedBorrow = new Decimal(0);
-    for (const assetKey of Object.keys(this.balances)) {
-      if (this.balances[assetKey].number < 0) {
-        const { weightedBorrow } = this.getWeightedBorrow(assetKey);
-        if (weightedBorrow.gt(maxWeightedBorrow)) {
-          symbol = assetKey;
-          maxWeightedBorrow = weightedBorrow;
-        }
-      }
-    }
-    return { symbol, weightedBorrow: maxWeightedBorrow };
-  }
-
-  get largestBalanceSymbol() {
-    let symbol = "USDC";
-    let maxBalance = new Decimal(0);
-    for (const assetKey of Object.keys(this.balances)) {
-      if (this.balances[assetKey].number > 0) {
-        if (this.balances[assetKey].decimal.gt(maxBalance)) {
-          symbol = assetKey;
-          maxBalance = this.balances[assetKey].decimal;
-        }
-      }
-    }
-    return symbol;
-  }
-
-  get isLiquidatable() {
-    return this.maintenanceMarginFraction.gt(this.marginFraction);
-  }
-
-  get isBankrupt() {
-    if (this.isLiquidatable) {
-      for (const position of this.positions) {
-        if (position.coins.number != 0) {
-          return false;
-        }
-      }
-      for (const assetKey of Object.keys(this.state.assets)) {
-        const price = this.state.assets[assetKey]!.indexPrice.number;
-        const value = this.balances[assetKey].decimal.mul(price).toNumber();
-        if (value > 1) {
-          return false;
-        }
-      }
-      return true;
-    }
-    return false;
-  }
-
-  get isPerpLiq() {
-    const largestPosition = this.largestWeightedPosition;
-    const largestBorrow = this.largestWeightedBorrow;
-    if (largestPosition.weightedPosition.gt(largestBorrow.weightedBorrow)) {
-      return true;
-    }
-    return false;
+  /**
+   * Get the value of the weighted borrow
+   * @param marketKey
+   * @private
+   */
+  private getWeightedBorrow(marketKey: string) {
+    const factor = new Decimal(1.03)
+      .div(this.state.assets[marketKey]!.weight / 1000)
+      .minus(new Decimal(1));
+    const weight = this.balances[marketKey]!.decimal.mul(
+      this.state.assets[marketKey]!.indexPrice.decimal,
+    ).abs();
+    const weightedBorrow = weight.mul(factor);
+    return { weight, weightedBorrow };
   }
 }

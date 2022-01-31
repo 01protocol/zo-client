@@ -33,14 +33,14 @@ type OracleSource = IdlTypes<Zo>["OracleSource"] & {
   ty: OracleType;
 };
 type CollateralInfo = Omit<IdlTypes<Zo>["CollateralInfo"], "oracleSymbol"> & {
-  oracleSymbol: Symbol;
+  oracleSymbol: symbol;
 };
 type PerpMarketInfo = Omit<
   IdlTypes<Zo>["PerpMarketInfo"],
   "symbol" | "oracleSymbol" | "perpType"
 > & {
-  symbol: Symbol;
-  oracleSymbol: Symbol;
+  symbol: symbol;
+  oracleSymbol: symbol;
   perpType: PerpType;
 };
 type OpenOrdersInfo = IdlTypes<Zo>["OpenOrdersInfo"];
@@ -57,7 +57,7 @@ type TwapInfo = Omit<
 };
 
 type OracleCache = Omit<IdlTypes<Zo>["OracleCache"], "symbol"> & {
-  symbol: Symbol;
+  symbol: symbol;
   sources: OracleSource[];
   price: WrappedI80F48;
   twap: WrappedI80F48;
