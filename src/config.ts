@@ -14,6 +14,8 @@ export const BASE_IMF_DIVIDER = 1000;
 export const MMF_MULTIPLIER = 2;
 export const USD_DECIMALS = 6;
 // == 01 CONSTANTS ==
+
+// deprecated; here for backwards compatibility
 export const ZO_STATE_KEY = new PublicKey(
   "KwcWW7WvgSXLJcyjKZJBHLbfriErggzYHpjS9qjVD5F",
 );

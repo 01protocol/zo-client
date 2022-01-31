@@ -749,7 +749,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       ooKey = oo.key;
       createOo = false;
     }
-    if (maxBaseQtyBn.toNumber() == 0) return "";
+    if (maxBaseQtyBn.toNumber() == 0) throw new Error();
     return await this.program.rpc.placePerpOrder(
       isLong,
       limitPriceBn,
