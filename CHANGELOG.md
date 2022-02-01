@@ -7,6 +7,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.7.0] - 2022-01-31
+
+- Margin: Margin now inherits MarginWeb3 which contains all the web3 logic related to fetching and loading
+- Margin: now also contains math related logic for margin fractions calculation and other helper methods which can be use in liquidators & trading bots
+- Margin: now also loads open orders for the account, and positions information
+- State: now loads more detailed information about the markets & collaterals
 - Cache: Fix mark cache's `lastSampleStartTime` decoding
 
 ## [0.5.1] - 2022-01-28

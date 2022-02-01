@@ -63,6 +63,7 @@ export interface MarketInfo {
   indexPrice: Num;
   markPrice: Num;
   indexTwap: Num;
+  markTwap: Num;
   pmmf: Decimal;
   baseImf: Decimal;
   fundingIndex: Decimal;

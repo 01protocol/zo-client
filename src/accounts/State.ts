@@ -423,15 +423,30 @@ export default class State extends BaseAccount<Schema> {
       const marketType = this._getMarketType(perpMarket.perpType);
       const price = this.cache.getOracleBySymbol(perpMarket.oracleSymbol).price;
       const oracle = this.cache.getOracleBySymbol(perpMarket.oracleSymbol);
-      const twap = oracle.twap;
+      const indexTwap = oracle.twap;
+      const mark = this.cache.data.marks[index]!;
+      const num5MinIntervalsSinceLastTwapStartTime = Math.floor(
+        mark.twap.lastSampleStartTime.getMinutes() / 5,
+      );
+      const markPrice = this.cache.data.marks[index]!.price;
+      let markTwap = new Num(
+        mark.twap.cumulAvg.decimal
+          .div(num5MinIntervalsSinceLastTwapStartTime)
+          .div(4),
+        perpMarket.assetDecimals,
+      );
+      if (markTwap.number == 0) {
+        markTwap = markPrice;
+      }
 
       markets[perpMarket.symbol] = {
         symbol: perpMarket.symbol,
         pubKey: perpMarket.dexMarket,
         //todo:  price adjustment for powers and evers
         indexPrice: price,
-        indexTwap: twap,
-        markPrice: this.cache.data.marks[index]!.price,
+        indexTwap: indexTwap,
+        markTwap: markTwap,
+        markPrice: markPrice,
         baseImf: new Decimal(perpMarket.baseImf / BASE_IMF_DIVIDER),
         pmmf: new Decimal(
           perpMarket.baseImf / BASE_IMF_DIVIDER / MMF_MULTIPLIER,

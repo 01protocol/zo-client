@@ -1,6 +1,6 @@
 {
   "name": "@zero_one/client",
-  "version": "0.7.0-alpha.35",
+  "version": "0.7.0-alpha.42",
   "license": "Apache-2.0",
   "description": "TypeScript Client API",
   "main": "dist/cjs/index.js",
