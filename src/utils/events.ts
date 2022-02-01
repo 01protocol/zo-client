@@ -1,8 +1,43 @@
-import { Coder, Idl, Event } from "@project-serum/anchor";
+import { Coder, Idl } from "@project-serum/anchor";
+import { DEX_IDL } from "../types/dex";
+import { IDL } from "../types/zo";
 
-// t is a base64 encoded string
-export function decode(t: string, idl: Idl): Event | null {
-  const coder = new Coder(idl);
-  const event = coder.events.decode(t);
-  return event;
+function decodeMsg(coder: Coder<string>, msg: string) {
+  const event = coder.events.decode(msg);
+  if (event) {
+    return event;
+  }
+  return null;
+}
+
+export function decodeDexEvent(msg: string) {
+  try {
+    const coder = new Coder(DEX_IDL as Idl);
+    return decodeMsg(coder, msg);
+  } catch (_) {
+    return null;
+  }
+}
+
+export function decodeZoEvent(msg: string) {
+  try {
+    const coder = new Coder(IDL as Idl);
+    return decodeMsg(coder, msg);
+  } catch (_) {
+    return null;
+  }
+}
+
+export function decodeEvent(msgRaw: string) {
+  try {
+    const msg =
+      msgRaw.split("Program log: ")[msgRaw.split("Program log: ").length - 1]!;
+    const dexMsg = decodeDexEvent(msg);
+    if (dexMsg) {
+      return dexMsg;
+    }
+    return decodeZoEvent(msg);
+  } catch (_) {
+    return {};
+  }
 }

@@ -1,9 +1,9 @@
 name: lint
 on:
   push:
-    branches: [master]
+    branches: [ master ]
   pull_request:
-    branches: [master]
+    branches: [ master ]
 jobs:
   checkout:
     runs-on: ubuntu-latest

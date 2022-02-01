@@ -60,7 +60,9 @@ export default class Cache extends BaseAccount<Schema> {
 
   /**
    * Loads a new Cache object from its public key.
+   * @param program
    * @param k The cache account's public key.
+   * @param st
    */
   static async load(program: Program<Zo>, k: PublicKey, st: StateSchema) {
     return new this(program, k, await Cache.fetch(program, k, st), st);
@@ -78,11 +80,13 @@ export default class Cache extends BaseAccount<Schema> {
     return {
       ...data,
       oracles: data.oracles
+        //@ts-ignore
         .filter((c) => !c.symbol.data.every((x) => x === 0))
         .map((c) => {
           const decimals = c.quoteDecimals - c.baseDecimals;
           return {
             ...c,
+            //@ts-ignore
             symbol: loadSymbol(c.symbol),
             price: Num.fromWI80F48(c.price, decimals),
             twap: Num.fromWI80F48(c.twap, decimals),

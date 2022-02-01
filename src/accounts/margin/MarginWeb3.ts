@@ -7,26 +7,33 @@ import {
   SYSVAR_RENT_PUBKEY,
   TransactionInstruction,
 } from "@solana/web3.js";
-import { Program } from "@project-serum/anchor";
+import { Program, ProgramAccount } from "@project-serum/anchor";
 import { Market as SerumMarket } from "@zero_one/lite-serum";
 import BN from "bn.js";
 import { Buffer } from "buffer";
-import BaseAccount from "./BaseAccount";
-import State from "./State";
-import Control from "./Control";
-import Num from "../Num";
+import BaseAccount from "../BaseAccount";
+import State from "../State";
+import Control from "../Control";
+import Num from "../../Num";
 import {
   Cluster,
   findAssociatedTokenAddress,
   getAssociatedTokenTransactionWithPayer,
   getWrappedSolInstructionsAndKey,
   loadWI80F48,
-} from "../utils";
-import { MarginSchema, OrderType, TransactionId, Zo } from "../types";
+} from "../../utils";
+import {
+  ControlSchema,
+  MarginSchema,
+  OrderType,
+  TransactionId,
+  Zo,
+} from "../../types";
 import {
   CONTROL_ACCOUNT_SIZE,
-  SERUM_MAINNET_SPOT_PROGRAM_ID,
   SERUM_DEVNET_SPOT_PROGRAM_ID,
+  SERUM_MAINNET_SPOT_PROGRAM_ID,
+  USD_DECIMALS,
   USDC_DECIMALS,
   WRAPPED_SOL_MINT,
   ZERO_ONE_DEVNET_PROGRAM_ID,
@@ -35,12 +42,13 @@ import {
   ZO_FUTURE_TAKER_FEE,
   ZO_OPTION_TAKER_FEE,
   ZO_SQUARE_TAKER_FEE,
-} from "../config";
+} from "../../config";
 import Decimal from "decimal.js";
-import Cache from "./Cache";
+import Cache from "../Cache";
 import { getMintDecimals } from "@zero_one/lite-serum/lib/market";
+import { OrderInfo, PositionInfo } from "../../types/dataTypes";
 
-interface Schema extends Omit<MarginSchema, "collateral"> {
+export interface MarginClassSchema extends Omit<MarginSchema, "collateral"> {
   /** The deposit amount divided by the entry supply or borrow multiplier */
   rawCollateral: Decimal[];
   /** The collateral value after applying supply/ borrow APY (i.e. the raw collateral multiplied by the current supply or borrow multiplier). */
@@ -53,14 +61,18 @@ interface Schema extends Omit<MarginSchema, "collateral"> {
  * seeds=[userWalletKey, stateKey, "marginv1"]
  * ```.
  */
-export default class Margin extends BaseAccount<Schema> {
-  private constructor(
+export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
+  positions: PositionInfo[] = [];
+  orders: OrderInfo[] = [];
+  _balances: { [key: string]: Num } = {};
+
+  protected constructor(
     program: Program<Zo>,
     pubkey: PublicKey,
-    data: Schema,
+    data: MarginClassSchema,
     public readonly control: Control,
-    public readonly state: State,
-    public readonly owner: PublicKey,
+    public state: State,
+    public readonly owner?: PublicKey,
   ) {
     super(program, pubkey, data);
   }
@@ -68,17 +80,57 @@ export default class Margin extends BaseAccount<Schema> {
   /**
    * Loads a new Margin object.
    */
-  static async load(
+  protected static async load(
     program: Program<Zo>,
     st: State,
     ch: Cache,
     owner?: PublicKey,
-  ): Promise<Margin> {
+  ): Promise<MarginWeb3> {
     const marginOwner = owner || program.provider.wallet.publicKey;
-    const [key, _nonce] = await this.getPda(st, marginOwner, program.programId);
+    const [key] = await this.getPda(st, marginOwner, program.programId);
     const data = await this.fetch(program, key, st, ch);
     const control = await Control.load(program, data.control);
-    return new this(program, key, data, control, st, marginOwner);
+    const margin = new this(program, key, data, control, st, marginOwner);
+    margin.loadBalances();
+    margin.loadPositions();
+    await margin.loadOrders();
+    return margin;
+  }
+
+  /**
+   * Loads a new Margin object from prefetched schema;
+   */
+  protected static async loadPrefetched(
+    program: Program<Zo>,
+    st: State,
+    ch: Cache,
+    prefetchedMarginData: ProgramAccount<MarginSchema>,
+    prefetchedControlData: ProgramAccount<ControlSchema>,
+    withOrders: boolean,
+  ): Promise<MarginWeb3> {
+    const data = this.transformFetchedData(
+      st,
+      ch,
+      prefetchedMarginData.account,
+    );
+    const control = await Control.loadPrefetched(
+      program,
+      prefetchedControlData.publicKey,
+      prefetchedControlData.account,
+    );
+    const margin = new this(
+      program,
+      prefetchedMarginData.publicKey,
+      data,
+      control,
+      st,
+    );
+    margin.loadBalances();
+    margin.loadPositions();
+    if (withOrders) {
+      await margin.loadOrders();
+    }
+    return margin;
   }
 
   /**
@@ -87,11 +139,11 @@ export default class Margin extends BaseAccount<Schema> {
    * @param st The Zo State object, overrides the default config.
    * @param commitment commitment of the transaction, finalized is used as default
    */
-  static async create(
+  protected static async create(
     program: Program<Zo>,
     st: State,
     commitment: Commitment = "finalized",
-  ): Promise<Margin> {
+  ): Promise<MarginWeb3> {
     const conn = program.provider.connection;
     const [[key, nonce], control, controlLamports] = await Promise.all([
       this.getPda(st, program.provider.wallet.publicKey, program.programId),
@@ -122,14 +174,14 @@ export default class Margin extends BaseAccount<Schema> {
       }),
       commitment,
     );
-    return await Margin.load(program, st, st.cache);
+    return await MarginWeb3.load(program, st, st.cache);
   }
 
   /**
    * Gets the Margin account's PDA and bump.
    * @returns An array consisting of [PDA, bump]
    */
-  static async getPda(
+  protected static async getPda(
     st: State,
     traderKey: PublicKey,
     programId: PublicKey,
@@ -140,16 +192,39 @@ export default class Margin extends BaseAccount<Schema> {
     );
   }
 
+  protected static async loadAllMarginAndControlSchemas(program: Program<Zo>) {
+    const marginSchemas = (await program.account["margin"].all()).map(
+      (t) => t as ProgramAccount<MarginSchema>,
+    );
+    const controlSchemas = (await program.account["control"].all()).map(
+      (t) => t as ProgramAccount<ControlSchema>,
+    );
+    return marginSchemas.map((ms) => ({
+      marginSchema: ms,
+      controlSchema: controlSchemas.find((cs) =>
+        cs.publicKey.equals(ms.account.control),
+      ) as ProgramAccount<ControlSchema>,
+    }));
+  }
+
   private static async fetch(
     program: Program<Zo>,
     k: PublicKey,
     st: State,
     ch: Cache,
-  ): Promise<Schema> {
+  ): Promise<MarginClassSchema> {
     const data = (await program.account["margin"].fetch(
       k,
       "recent",
     )) as MarginSchema;
+    return MarginWeb3.transformFetchedData(st, ch, data);
+  }
+
+  private static transformFetchedData(
+    st: State,
+    ch: Cache,
+    data: MarginSchema,
+  ): MarginClassSchema {
     const rawCollateral = data.collateral
       .map((c) => loadWI80F48(c!))
       .slice(0, st.data.totalCollaterals);
@@ -177,15 +252,108 @@ export default class Margin extends BaseAccount<Schema> {
     };
   }
 
+  updateState(state: State) {
+    this.state = state;
+  }
+
+  loadBalances() {
+    const balances = {};
+    let index = 0;
+    const indexToAssetKey = this.state.indexToAssetKey;
+    for (const collateral of this.data.actualCollateral) {
+      balances[indexToAssetKey[index]!] = collateral;
+      index++;
+    }
+    this._balances = balances;
+  }
+
+  loadPositions() {
+    const markets = this.state.markets;
+    const positions: PositionInfo[] = [];
+    const recordedMarkets = {};
+    let index = 0;
+    for (const oo of this.control.data.openOrdersAgg) {
+      if (oo.key.toString() != PublicKey.default.toString()) {
+        // @ts-ignore
+        const market = markets[this.state.indexToMarketKey[index]]!;
+        const coins = new Num(oo.posSize, market.assetDecimals);
+        const pCoins = new Num(oo.nativePcTotal, USD_DECIMALS);
+        const realizedPnl = new Num(oo.realizedPnl, market.assetDecimals);
+        const fundingIndex = new Num(oo.fundingIndex, USD_DECIMALS).decimal;
+
+        positions.push({
+          coins: new Num(coins.n.abs(), coins.decimals),
+          pCoins: new Num(pCoins.n.abs(), pCoins.decimals),
+          realizedPnL: realizedPnl,
+          fundingIndex: fundingIndex,
+          marketKey: market.symbol,
+          isLong: coins.number > 0,
+        });
+
+        recordedMarkets[market.symbol] = true;
+      }
+      index++;
+    }
+
+    for (const market of Object.values(markets)) {
+      if (recordedMarkets[market.symbol] == null) {
+        positions.push({
+          coins: new Num(0, market.assetDecimals),
+          pCoins: new Num(0, USD_DECIMALS),
+          realizedPnL: new Num(0, 0),
+          fundingIndex: new Decimal(1),
+          marketKey: market.symbol,
+          isLong: true,
+        });
+      }
+    }
+    this.positions = positions;
+  }
+
+  /**
+   * load all active orders across all markets
+   */
+  async loadOrders() {
+    const markets = this.state.markets;
+    const orders: OrderInfo[] = [];
+    for (const market of Object.values(markets)) {
+      const marketOrders: OrderInfo[] = [];
+      const { dexMarket, bids, asks } = await this.state.getZoMarketAccounts(
+        market,
+      );
+      const activeOrders = dexMarket.filterForOpenOrders(
+        bids,
+        asks,
+        this.control.pubkey,
+      );
+      for (const order of activeOrders) {
+        marketOrders.push({
+          price: new Num(order.price, USD_DECIMALS),
+          coins: new Num(Math.abs(order.size), market.assetDecimals),
+          pCoins: new Num(Math.abs(order.size * order.price), USD_DECIMALS),
+          orderId: order.orderId,
+          marketKey: market.symbol,
+          long: order.side == "buy",
+          symbol: market.symbol,
+        });
+      }
+      orders.push(...marketOrders);
+    }
+    this.orders = orders;
+  }
+
   /**
    * Refreshes the data on the Margin, state, cache and control accounts.
    */
   async refresh(): Promise<void> {
     [this.data] = await Promise.all([
-      Margin.fetch(this.program, this.pubkey, this.state, this.state.cache),
+      MarginWeb3.fetch(this.program, this.pubkey, this.state, this.state.cache),
       this.control.refresh(),
       this.state.refresh(),
     ]);
+    this.loadBalances();
+    this.loadPositions();
+    await this.loadOrders();
   }
 
   /**
@@ -400,6 +568,7 @@ export default class Margin extends BaseAccount<Schema> {
     if (
       await this.program.provider.connection.getAccountInfo(
         associatedTokenAccount,
+        "recent",
       )
     ) {
       associatedTokenAccountExists = true;
@@ -580,7 +749,7 @@ export default class Margin extends BaseAccount<Schema> {
       ooKey = oo.key;
       createOo = false;
     }
-
+    if (maxBaseQtyBn.toNumber() == 0) throw new Error();
     return await this.program.rpc.placePerpOrder(
       isLong,
       limitPriceBn,

@@ -620,7 +620,7 @@ export class ZoMarket {
   ): Promise<TransactionId> {
     const limit = 32;
 
-    const eq = await this.loadEventQueue(program.provider.connection);
+    // const eq = await this.loadEventQueue(program.provider.connection);
     //console.log(eq);
 
     const signer = (

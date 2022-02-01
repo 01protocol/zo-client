@@ -23,12 +23,13 @@ import { blob, struct, u8 } from "buffer-layout";
 import { Zo } from "../types";
 import {
   IDL,
-  DEX_IDL,
   RENT_PROGRAM_ID,
   WRAPPED_SOL_MINT,
   ZERO_ONE_DEVNET_PROGRAM_ID,
   ZERO_ONE_MAINNET_PROGRAM_ID,
 } from "../config";
+
+export * from "../types/dataTypes";
 
 export * from "./rpc";
 export * from "./units";
