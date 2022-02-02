@@ -9,6 +9,7 @@ export enum MarketType {
   EverPut,
   EverVolCall,
   EverVolPut,
+  SquaredPerp,
 }
 
 /**

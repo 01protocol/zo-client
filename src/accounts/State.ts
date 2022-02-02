@@ -409,6 +409,8 @@ export default class State extends BaseAccount<Schema> {
       return MarketType.EverCall;
     } else if (_.isEqual(perpType, { putOption: {} })) {
       return MarketType.EverPut;
+    } else if (_.isEqual(perpType, { square: {} })) {
+      return MarketType.SquaredPerp;
     }
     return MarketType.Perp;
   }
@@ -440,7 +442,12 @@ export default class State extends BaseAccount<Schema> {
           perpMarket.assetDecimals,
         );
       }
-
+      if (marketType === MarketType.SquaredPerp) {
+        price.raiseToPower(2);
+        price.divN(perpMarket.strike);
+        indexTwap.raiseToPower(2);
+        indexTwap.divN(perpMarket.strike);
+      }
       markets[perpMarket.symbol] = {
         symbol: perpMarket.symbol,
         pubKey: perpMarket.dexMarket,

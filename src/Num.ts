@@ -3,7 +3,7 @@ import Decimal from "decimal.js";
 import { loadWI80F48 } from "./utils";
 
 export default class Num {
-  public readonly n: Readonly<BN>;
+  public n: Readonly<BN>;
   private precisionDecimals = 0;
 
   public constructor(
@@ -72,5 +72,25 @@ export default class Num {
     return new Decimal(this.n.toString())
       .div(new Decimal(10).toPower(this.decimals))
       .toString();
+  }
+
+  public raiseToPower(power: number) {
+    this.n = this.n.pow(new BN(power));
+  }
+
+  public div(m: number) {
+    this.n = this.n.div(new BN(m));
+  }
+
+  public mul(m: number) {
+    this.n = this.n.mul(new BN(m));
+  }
+
+  public divN(m: BN) {
+    this.n = this.n.div(m);
+  }
+
+  public mulN(m: BN) {
+    this.n = this.n.mul(m);
   }
 }
