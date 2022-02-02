@@ -429,14 +429,16 @@ export default class State extends BaseAccount<Schema> {
         mark.twap.lastSampleStartTime.getMinutes() / 5,
       );
       const markPrice = this.cache.data.marks[index]!.price;
-      let markTwap = new Num(
-        mark.twap.cumulAvg.decimal
-          .div(num5MinIntervalsSinceLastTwapStartTime)
-          .div(4),
-        perpMarket.assetDecimals,
-      );
-      if (markTwap.number == 0) {
+      let markTwap;
+      if (num5MinIntervalsSinceLastTwapStartTime == 0) {
         markTwap = markPrice;
+      } else {
+        markTwap = new Num(
+          mark.twap.cumulAvg.decimal
+            .div(num5MinIntervalsSinceLastTwapStartTime)
+            .div(4),
+          perpMarket.assetDecimals,
+        );
       }
 
       markets[perpMarket.symbol] = {
