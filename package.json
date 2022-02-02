@@ -20,7 +20,6 @@
     "@zero_one/lite-serum": "^0.1.1",
     "bn.js": "^5.2.0",
     "buffer-layout": "^1.2.2",
-    "csv-write-stream": "^2.0.0",
     "decimal.js": "^10.3.1"
   },
   "peerDependencies": {
