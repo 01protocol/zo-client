@@ -26,7 +26,7 @@ export type OrderType =
   | { postOnly: {} }
   | { reduceOnlyIoc: {} }
   | { reduceOnlyLimit: {} }
-  | { fillOrKill: {}};
+  | { fillOrKill: {} };
 
 type WrappedI80F48 = { data: BN };
 type Symbol = { data: number[] };
