@@ -7,7 +7,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-- Program: Add FillOrKill order type. Acts as an IoC which fails if not completely filled.
+- Program: Add FillOrKill order type. Acts as an IoC which fails if not completely filled ([#67](https://github.com/01protocol/zo-client/pull/67))
 
 ## [0.7.0] - 2022-01-31
 
