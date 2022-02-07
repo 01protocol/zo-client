@@ -284,7 +284,7 @@ export default abstract class Margin extends MarginWeb3 {
     let res = new Decimal(0);
     for (const position of this.positions) {
       const market = this.state.markets[position.marketKey]!;
-      const size = position.coins.decimal.mul(market.markPrice.decimal);
+      const size = position.coins.decimal.mul(market.indexPrice.decimal);
       res = res.add(size);
     }
     return res.add(this.borrowPositionNotionalValue);
@@ -298,7 +298,7 @@ export default abstract class Margin extends MarginWeb3 {
     for (const order of this.orders) {
       const market = this.state.markets[order.marketKey]!;
 
-      const size = order.coins.decimal.mul(market.markPrice.decimal);
+      const size = order.coins.decimal.mul(market.indexPrice.decimal);
       res = res.add(size);
     }
     return res.add(this.totalPositionNotional);
@@ -478,7 +478,7 @@ export default abstract class Margin extends MarginWeb3 {
     let tiedCollateral = new Decimal(0);
     for (const marketKey of Object.keys(this.state.markets)) {
       const posNotional = posInfos[marketKey]!.posSize.mul(
-        this.state.markets[marketKey]!.markPrice.decimal,
+        this.state.markets[marketKey]!.indexPrice.decimal,
       );
       const openSize = Decimal.max(
         posInfos[marketKey]!.long,
@@ -678,17 +678,17 @@ export default abstract class Margin extends MarginWeb3 {
   liqPrice(position: PositionInfo) {
     const marketKey = position.marketKey;
     const pmmf = this.state.markets[marketKey]!.pmmf;
-    const markPrice = this.state.markets[marketKey]!.markPrice.decimal;
+    const indexPrice = this.state.markets[marketKey]!.indexPrice.decimal;
 
     const priceChange = this.marginFraction
       .sub(this.maintenanceMarginFraction)
       .mul(this.totalOpenPositionNotional)
       .div(position.coins.decimal.mul(new Decimal(1).sub(pmmf)));
     if (position.isLong) {
-      const price = markPrice.sub(priceChange).toNumber();
+      const price = indexPrice.sub(priceChange).toNumber();
       return price > 0 ? price : Infinity;
     }
-    const price = markPrice.add(priceChange).toNumber();
+    const price = indexPrice.add(priceChange).toNumber();
     return price > 0 ? price : Infinity;
   }
 
@@ -705,6 +705,20 @@ export default abstract class Margin extends MarginWeb3 {
    * @param position
    */
   positionPnL(position: PositionInfo): Decimal {
+    const market = this.state.markets[position.marketKey]!;
+    const diff = position.coins.decimal
+      .mul(market.indexPrice.decimal)
+      .sub(position.pCoins.decimal);
+
+    if (position.isLong) return diff;
+    return diff.mul(-1);
+  }
+
+  /**
+   * returns unrealized pnl for the position
+   * @param position
+   */
+  positionPnLBasedOnMarkPrice(position: PositionInfo): Decimal {
     const market = this.state.markets[position.marketKey]!;
     const diff = position.coins.decimal
       .mul(market.markPrice.decimal)
@@ -750,7 +764,7 @@ export default abstract class Margin extends MarginWeb3 {
           .abs();
       }
       const posNotional = addOn.mul(
-        this.state.markets[marketKey]!.markPrice.decimal,
+        this.state.markets[marketKey]!.indexPrice.decimal,
       );
       imfWeight = imfWeight.add(posNotional);
       const pimf = this.state.markets[marketKey]!.pmmf.mul(2);
@@ -898,7 +912,7 @@ export default abstract class Margin extends MarginWeb3 {
    */
   private positionWeighted(marketKey: string) {
     const posNotional = this._ooInfos[marketKey]!.posSize.mul(
-      this.state.markets[marketKey]!.markPrice.decimal,
+      this.state.markets[marketKey]!.indexPrice.decimal,
     );
     const pmmf = this.state.markets[marketKey]!.pmmf;
     const positionWeighted = pmmf.mul(posNotional);
