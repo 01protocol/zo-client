@@ -1,5 +1,6 @@
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
+  AccountInfo,
   Commitment,
   Keypair,
   PublicKey,
@@ -44,7 +45,6 @@ import {
   ZO_SQUARE_TAKER_FEE,
 } from "../../config";
 import Decimal from "decimal.js";
-import Cache from "../Cache";
 import { getMintDecimals } from "@zero_one/lite-serum/lib/market";
 import { OrderInfo, PositionInfo } from "../../types/dataTypes";
 
@@ -80,15 +80,14 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
   /**
    * Loads a new Margin object.
    */
-  protected static async load(
+  protected static async loadWeb3(
     program: Program<Zo>,
     st: State,
-    ch: Cache,
     owner?: PublicKey,
   ): Promise<MarginWeb3> {
     const marginOwner = owner || program.provider.wallet.publicKey;
     const [key] = await this.getPda(st, marginOwner, program.programId);
-    const data = await this.fetch(program, key, st, ch);
+    const data = await this.fetch(program, key, st);
     const control = await Control.load(program, data.control);
     const margin = new this(program, key, data, control, st, marginOwner);
     margin.loadBalances();
@@ -100,19 +99,14 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
   /**
    * Loads a new Margin object from prefetched schema;
    */
-  protected static async loadPrefetched(
+  protected static async loadPrefetchedWeb3(
     program: Program<Zo>,
     st: State,
-    ch: Cache,
     prefetchedMarginData: ProgramAccount<MarginSchema>,
     prefetchedControlData: ProgramAccount<ControlSchema>,
     withOrders: boolean,
   ): Promise<MarginWeb3> {
-    const data = this.transformFetchedData(
-      st,
-      ch,
-      prefetchedMarginData.account,
-    );
+    const data = this.transformFetchedData(st, prefetchedMarginData.account);
     const control = await Control.loadPrefetched(
       program,
       prefetchedControlData.publicKey,
@@ -131,6 +125,52 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       await margin.loadOrders();
     }
     return margin;
+  }
+
+  static async loadFromAccountInfo(
+    program: Program<Zo>,
+    st: State,
+    accountInfo: AccountInfo<Buffer>,
+    withOrders: boolean,
+  ): Promise<MarginWeb3> {
+    const account = program.coder.accounts.decode("margin", accountInfo.data);
+    const data = this.transformFetchedData(st, account);
+    const control = await Control.load(program, data.control);
+    const margin = new this(program, account.publicKey, data, control, st);
+    margin.loadBalances();
+    margin.loadPositions();
+    if (withOrders) {
+      await margin.loadOrders();
+    }
+    return margin;
+  }
+
+  async updateWithAccountInfo(
+    accountInfo: AccountInfo<Buffer>,
+    withOrders = true,
+  ) {
+    const account = this.program.coder.accounts.decode(
+      "margin",
+      accountInfo.data,
+    );
+    this.data = MarginWeb3.transformFetchedData(this.state, account);
+    this.loadBalances();
+    this.loadPositions();
+    if (withOrders) {
+      await this.loadOrders();
+    }
+  }
+
+  async updateControlFromAccountInfo(
+    accountInfo: AccountInfo<Buffer>,
+    withOrders = true,
+  ) {
+    this.control.updateControlFromAccountInfo(accountInfo);
+    this.loadBalances();
+    this.loadPositions();
+    if (withOrders) {
+      await this.loadOrders();
+    }
   }
 
   /**
@@ -174,7 +214,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       }),
       commitment,
     );
-    return await MarginWeb3.load(program, st, st.cache);
+    return await MarginWeb3.loadWeb3(program, st);
   }
 
   /**
@@ -211,20 +251,19 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     program: Program<Zo>,
     k: PublicKey,
     st: State,
-    ch: Cache,
   ): Promise<MarginClassSchema> {
     const data = (await program.account["margin"].fetch(
       k,
       "recent",
     )) as MarginSchema;
-    return MarginWeb3.transformFetchedData(st, ch, data);
+    return MarginWeb3.transformFetchedData(st, data);
   }
 
   private static transformFetchedData(
     st: State,
-    ch: Cache,
     data: MarginSchema,
   ): MarginClassSchema {
+    const ch = st.cache;
     const rawCollateral = data.collateral
       .map((c) => loadWI80F48(c!))
       .slice(0, st.data.totalCollaterals);
@@ -345,12 +384,22 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
   /**
    * Refreshes the data on the Margin, state, cache and control accounts.
    */
-  async refresh(): Promise<void> {
-    [this.data] = await Promise.all([
-      MarginWeb3.fetch(this.program, this.pubkey, this.state, this.state.cache),
-      this.control.refresh(),
-      this.state.refresh(),
-    ]);
+  async refresh(refreshState = true, refreshMarginData = true): Promise<void> {
+    if (refreshMarginData) {
+      if (refreshState) {
+        [this.data] = await Promise.all([
+          MarginWeb3.fetch(this.program, this.pubkey, this.state),
+          this.control.refresh(),
+          this.state.refresh(),
+        ]);
+      } else {
+        this.data = await MarginWeb3.fetch(
+          this.program,
+          this.pubkey,
+          this.state,
+        );
+      }
+    }
     this.loadBalances();
     this.loadPositions();
     await this.loadOrders();
@@ -358,6 +407,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 
   /**
    * @param symbol The market symbol. Ex: ("BTC-PERP")
+   * @param cluster
    * @returns The OpenOrders account key for the given market.
    */
   async getOpenOrdersKeyBySymbol(
@@ -596,7 +646,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
    * @param symbol The market symbol. Ex: ("BTC-PERP")
    */
   async createPerpOpenOrders(symbol: string): Promise<string> {
-    const [ooKey, _] = await this.getOpenOrdersKeyBySymbol(
+    const [ooKey] = await this.getOpenOrdersKeyBySymbol(
       symbol,
       this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
         ? Cluster.Devnet
@@ -632,6 +682,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
    * @param maxBaseQty The maximum amount of base lots to buy or sell.
    * @param maxQuoteQty The maximum amount of native quote, including fees, to pay or receive.
    * @param limit If this order is taking, the limit sets the number of maker orders the fill will go through, until stopping and posting. If running into compute unit issues, then set this number lower.
+   * @param clientId
    */
   async placePerpOrderRaw({
     symbol,

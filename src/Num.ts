@@ -3,13 +3,10 @@ import Decimal from "decimal.js";
 import { loadWI80F48 } from "./utils";
 
 export default class Num {
-  public readonly n: Readonly<BN>;
+  public n: Readonly<BN>;
   private precisionDecimals = 0;
 
-  public constructor(
-    n: BN | Decimal | number,
-    public readonly decimals: number,
-  ) {
+  public constructor(n: BN | Decimal | number, public decimals: number) {
     if (!Number.isInteger(decimals)) {
       throw TypeError(`Invalid number of decimals ${decimals}`);
     }
@@ -72,5 +69,43 @@ export default class Num {
     return new Decimal(this.n.toString())
       .div(new Decimal(10).toPower(this.decimals))
       .toString();
+  }
+
+  public clone() {
+    const num = new Num(this.n, this.decimals);
+    num.precisionDecimals = this.precisionDecimals;
+    return num;
+  }
+
+  public raiseToPower(power: number) {
+    const num = this.clone();
+    num.n = num.n.pow(new BN(power));
+    num.precisionDecimals *= power;
+    num.decimals *= power;
+    return num;
+  }
+
+  public div(m: number) {
+    const num = this.clone();
+    num.n = num.n.div(new BN(m));
+    return num;
+  }
+
+  public mul(m: number) {
+    const num = this.clone();
+    num.n = num.n.mul(new BN(m));
+    return num;
+  }
+
+  public divN(m: BN) {
+    const num = this.clone();
+    num.n = num.n.div(m);
+    return num;
+  }
+
+  public mulN(m: BN) {
+    const num = this.clone();
+    num.n = num.n.mul(m);
+    return num;
   }
 }

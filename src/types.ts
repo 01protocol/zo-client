@@ -19,7 +19,11 @@ export type TransactionId = string;
 export { Zo } from "./types/zo";
 
 export type OracleType = { pyth: {} } | { switchboard: {} };
-export type PerpType = { future: {} } | { callOption: {} } | { putOption: {} };
+export type PerpType =
+  | { future: {} }
+  | { callOption: {} }
+  | { putOption: {} }
+  | { square: {} };
 export type OrderType =
   | { limit: {} }
   | { immediateOrCancel: {} }

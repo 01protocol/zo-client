@@ -77,6 +77,13 @@ export default class Cache extends BaseAccount<Schema> {
       k,
       "recent",
     )) as CacheSchema;
+    return Cache.processRawCacheData(data, st);
+  }
+
+  private static processRawCacheData(
+    data: CacheSchema,
+    st: StateSchema,
+  ): Schema {
     return {
       ...data,
       oracles: data.oracles
