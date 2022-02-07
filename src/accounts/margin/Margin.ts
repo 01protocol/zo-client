@@ -1,4 +1,4 @@
-import { Commitment, PublicKey } from "@solana/web3.js";
+import { AccountInfo, Commitment, PublicKey } from "@solana/web3.js";
 import { Program, ProgramAccount } from "@project-serum/anchor";
 import State from "../State";
 import Num from "../../Num";
@@ -26,7 +26,7 @@ export default abstract class Margin extends MarginWeb3 {
     program: Program<Zo>,
     st: State,
     commitment: Commitment = "finalized",
-  ): Promise<MarginWeb3> {
+  ): Promise<Margin> {
     return (await MarginWeb3.create(program, st, commitment)) as Margin;
   }
 
@@ -36,12 +36,19 @@ export default abstract class Margin extends MarginWeb3 {
   static async exists(
     program: Program<Zo>,
     st: State,
-    ch: Cache,
     owner?: PublicKey,
   ): Promise<boolean> {
     const marginOwner = owner || program.provider.wallet.publicKey;
-    const [key] = await this.getPda(st, marginOwner, program.programId);
+    const [key] = await this.getMarginKey(st, marginOwner, program);
     return null != (await program.provider.connection.getAccountInfo(key));
+  }
+
+  static async getMarginKey(
+    st: State,
+    marginOwner: PublicKey,
+    program: Program<Zo>,
+  ) {
+    return await this.getPda(st, marginOwner, program.programId);
   }
 
   /**
@@ -178,7 +185,7 @@ export default abstract class Margin extends MarginWeb3 {
     let symbol = "";
     let maxWeightedBorrow = new Decimal(0);
     for (const assetKey of Object.keys(this.balances)) {
-      if (this.balances[assetKey]!.number < 0) {
+      if (this._balances[assetKey]!.number < 0) {
         const { weightedBorrow } = this.getWeightedBorrow(assetKey);
         if (weightedBorrow.gt(maxWeightedBorrow)) {
           symbol = assetKey;
@@ -200,11 +207,11 @@ export default abstract class Margin extends MarginWeb3 {
   get largestBalanceSymbol() {
     let symbol = "USDC";
     let maxBalance = new Decimal(0);
-    for (const assetKey of Object.keys(this.balances)) {
-      if (this.balances[assetKey]!.number > 0) {
-        if (this.balances[assetKey]!.decimal.gt(maxBalance)) {
+    for (const assetKey of Object.keys(this._balances)) {
+      if (this._balances[assetKey]!.number > 0) {
+        if (this._balances[assetKey]!.decimal.gt(maxBalance)) {
           symbol = assetKey;
-          maxBalance = this.balances[assetKey]!.decimal;
+          maxBalance = this._balances[assetKey]!.decimal;
         }
       }
     }
@@ -216,6 +223,15 @@ export default abstract class Margin extends MarginWeb3 {
    */
   get isLiquidatable() {
     return this.maintenanceMarginFraction.gt(this.marginFraction);
+  }
+
+  /**
+   * Is Liquidatable with tolerance(mmf*tolerance>mf)
+   */
+  isLiquidatableWithTolerance(tolerance: number) {
+    return this.maintenanceMarginFraction
+      .mul(tolerance)
+      .gt(this.marginFraction);
   }
 
   /**
@@ -246,7 +262,11 @@ export default abstract class Margin extends MarginWeb3 {
   get isPerpLiquidation() {
     const largestPosition = this.largestWeightedPosition;
     const largestBorrow = this.largestWeightedBorrow;
-    if (largestPosition.weightedPosition.gt(largestBorrow.weightedBorrow)) {
+    if (
+      largestPosition.weightedPosition.gt(largestBorrow.weightedBorrow) ||
+      this.largestWeightedBorrow.symbol == this.largestBalanceSymbol ||
+      this._balances[this.largestBalanceSymbol]!.number <= 0
+    ) {
       return true;
     }
     return false;
@@ -472,6 +492,32 @@ export default abstract class Margin extends MarginWeb3 {
   }
 
   /**
+   * Value of the collateral tied in positions
+   *
+   */
+  getMaxSpotReducibleAsset(symbolBorrowed: string, symbolSupplied: string) {
+    const assetBorrowed = this.state.assets[symbolBorrowed]!;
+    const assetSupplied = this.state.assets[symbolSupplied]!;
+    const liquidationFee =
+      (1000 + assetBorrowed.liqFee) / (1000 - assetSupplied.liqFee) - 1;
+    const imfBase = (1.1 * 1000) / assetBorrowed.weight - 1;
+    const [initialMarginTotalWeighted, _] = this.initialMarginInfo(null);
+    const numerator = initialMarginTotalWeighted.minus(
+      Decimal.min(this.weightedAccountValue, this.weightedCollateralValue),
+    );
+
+    const denominator = assetBorrowed.indexPrice.decimal.mul(imfBase).mul(
+      new Decimal(1).minus(
+        new Decimal(assetBorrowed.weight / 1000)
+          .mul(1 + liquidationFee)
+          .minus(1)
+          .div(imfBase),
+      ),
+    );
+    return numerator.div(denominator);
+  }
+
+  /**
    * returns infos about open orders accounts(position size + asks&bids on the book)
    */
   private get _ooInfos() {
@@ -517,26 +563,47 @@ export default abstract class Margin extends MarginWeb3 {
   static async load(
     program: Program<Zo>,
     st: State,
-    ch: Cache,
+    ch?: Cache,
     owner?: PublicKey,
   ): Promise<Margin> {
-    return (await super.load(program, st, ch, owner)) as Margin;
+    if (ch)
+      console.warn(
+        "[DEPRECATED SOON: Cache param will soon be removed from here; cache is taken from state directly.]",
+      );
+    return (await super.loadWeb3(program, st, owner)) as Margin;
   }
 
   static async loadPrefetched(
     program: Program<Zo>,
     st: State,
-    ch: Cache,
+    ch: Cache | null,
     prefetchedMarginData: ProgramAccount<MarginSchema>,
     prefetchedControlData: ProgramAccount<ControlSchema>,
     withOrders: boolean,
   ): Promise<Margin> {
-    return (await super.loadPrefetched(
+    if (ch)
+      console.warn(
+        "[DEPRECATED SOON: Cache param will soon be removed from here; cache is taken from state directly.]",
+      );
+    return (await super.loadPrefetchedWeb3(
       program,
       st,
-      ch,
       prefetchedMarginData,
       prefetchedControlData,
+      withOrders,
+    )) as Margin;
+  }
+
+  static async loadFromAccountInfo(
+    program: Program<Zo>,
+    st: State,
+    accountInfo: AccountInfo<Buffer>,
+    withOrders: boolean,
+  ): Promise<Margin> {
+    return (await super.loadFromAccountInfo(
+      program,
+      st,
+      accountInfo,
       withOrders,
     )) as Margin;
   }
@@ -552,10 +619,15 @@ export default abstract class Margin extends MarginWeb3 {
   static async loadAllMargins(
     program: Program<Zo>,
     st: State,
-    ch: Cache,
+    ch: Cache | null = null,
     verbose = false,
     withOrders = true,
   ) {
+    if (ch) {
+      console.warn(
+        "[DEPRECATED SOON: Cache param will soon be removed from here, and will be fetched from state directly.]",
+      );
+    }
     const marginAndControlSchemas = await this.loadAllMarginAndControlSchemas(
       program,
     );
@@ -570,7 +642,7 @@ export default abstract class Margin extends MarginWeb3 {
         await this.loadPrefetched(
           program,
           st,
-          ch,
+          null,
           marginAndControlSchema.marginSchema,
           marginAndControlSchema.controlSchema,
           withOrders,
@@ -599,7 +671,7 @@ export default abstract class Margin extends MarginWeb3 {
   }
 
   /* -------------------------------------------------------------------------- */
-  /*                                Private Helper Functions                    */
+  /*                              Other  Helper Functions                    */
 
   /* -------------------------------------------------------------------------- */
 
@@ -665,7 +737,7 @@ export default abstract class Margin extends MarginWeb3 {
   /**
    * Initial Margin Fraction
    */
-  initialMarginFraction(trade?) {
+  initialMarginInfo(trade?): [Decimal, Decimal] {
     let [imfWeightedTotal, imfWeight] = this.collateralInitialMarginInfo;
 
     for (const marketKey of Object.keys(this.state.markets)) {
@@ -684,6 +756,14 @@ export default abstract class Margin extends MarginWeb3 {
       const pimf = this.state.markets[marketKey]!.pmmf.mul(2);
       imfWeightedTotal = imfWeightedTotal.add(pimf.mul(posNotional));
     }
+    return [imfWeightedTotal, imfWeight];
+  }
+
+  /**
+   * Initial Margin Fraction
+   */
+  initialMarginFraction(trade?) {
+    const [imfWeightedTotal, imfWeight] = this.initialMarginInfo(trade);
 
     if (imfWeight.toNumber() === 0) {
       return new Decimal(0);
@@ -747,6 +827,7 @@ export default abstract class Margin extends MarginWeb3 {
   /**
    * Max Contracts Purchaseable for the trade
    * @param trade
+   * @param marketKey
    * @marketKey marketKey
    */
   maxContractsPurchaseable(trade: TradeInfo, marketKey: string) {
@@ -805,6 +886,7 @@ export default abstract class Margin extends MarginWeb3 {
   /**
    * Max Collateral Purchaseable for the trade
    * @param trade
+   * @param marketKey
    * @marketKey marketKey
    */
   maxCollateralSpendable(trade: TradeInfo, marketKey: string) {

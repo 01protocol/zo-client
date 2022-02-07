@@ -5,6 +5,7 @@ import { Orderbook, ZoMarket } from "../zoDex/zoMarket";
 import { StateSchema, Zo } from "../types";
 import {
   BASE_IMF_DIVIDER,
+  CACHE_REFRESH_INTERVAL,
   MMF_MULTIPLIER,
   USD_DECIMALS,
   ZERO_ONE_DEVNET_PROGRAM_ID,
@@ -17,6 +18,8 @@ import _ from "lodash";
 import Num from "../Num";
 import { loadSymbol } from "../utils";
 import BaseAccount from "./BaseAccount";
+import EventEmitter from "eventemitter3";
+import { UpdateEvents } from "./margin/UpdateEvents";
 
 type CollateralInfo = Omit<StateSchema["collaterals"][0], "oracleSymbol"> & {
   oracleSymbol: string;
@@ -105,8 +108,8 @@ export default class State extends BaseAccount<Schema> {
     }
     const cache = await Cache.load(program, data.cache, data);
     const state = new this(program, k, data, signer, cache);
-    await state.loadAssets();
-    await state.loadMarkets();
+    state.loadAssets();
+    state.loadMarkets();
     return state;
   }
 
@@ -120,6 +123,10 @@ export default class State extends BaseAccount<Schema> {
     )) as StateSchema;
 
     // Convert StateSchema to Schema.
+    return State.processRawStateData(data);
+  }
+
+  private static processRawStateData(data: StateSchema): Schema {
     return {
       ...data,
       vaults: data.vaults.slice(0, data.totalCollaterals),
@@ -175,6 +182,8 @@ export default class State extends BaseAccount<Schema> {
       State.fetch(this.program, this.pubkey),
       this.cache.refresh(),
     ]);
+    this.loadAssets();
+    this.loadMarkets();
   }
 
   /**
@@ -247,6 +256,66 @@ export default class State extends BaseAccount<Schema> {
       );
     }
     return this._getMarketBySymbol[sym] as ZoMarket;
+  }
+
+  /* -------------------------------------------------------------------------- */
+  /*                                                                            */
+  /*                      Subscription related functions                        */
+  /*                                                                            */
+  /* -------------------------------------------------------------------------- */
+
+  cacheRefreshCycleId: any;
+
+  startCacheRefreshCycle(interval = CACHE_REFRESH_INTERVAL) {
+    const that = this;
+    this.cacheRefreshCycleId = setInterval(async () => {
+      await that.cache.refresh();
+      that.loadAssets();
+      that.loadMarkets();
+      if (that.eventEmitter) {
+        that.eventEmitter.emit(UpdateEvents.cacheModified, null);
+      }
+    }, interval);
+  }
+
+  async stopCacheRefreshCycle(): Promise<void> {
+    clearInterval(this.cacheRefreshCycleId);
+  }
+
+  subscriptionEventEmitter: EventEmitter | undefined;
+  eventEmitter: EventEmitter<UpdateEvents> | undefined;
+
+  async subscribe({
+    cacheRefreshInterval,
+    eventEmitter,
+  }: {
+    cacheRefreshInterval?: number;
+    eventEmitter?: EventEmitter<UpdateEvents>;
+  }) {
+    const that = this;
+    this.eventEmitter = eventEmitter;
+    this.startCacheRefreshCycle(cacheRefreshInterval);
+    this.subscriptionEventEmitter = this.program.account["state"].subscribe(
+      this.pubkey,
+    );
+    this.subscriptionEventEmitter.addListener("change", async (data) => {
+      that.data = State.processRawStateData(data);
+      that.loadAssets();
+      that.loadMarkets();
+      if (that.eventEmitter) {
+        that.eventEmitter.emit(UpdateEvents.stateModified, null);
+      }
+    });
+  }
+
+  async unsubscribe() {
+    if (this.subscriptionEventEmitter) {
+      await this.stopCacheRefreshCycle();
+      this.subscriptionEventEmitter.removeAllListeners();
+      await this.program.account["state"].unsubscribe(this.pubkey);
+      this.subscriptionEventEmitter = undefined;
+      this.eventEmitter = undefined;
+    }
   }
 
   /* -------------------------------------------------------------------------- */
@@ -423,9 +492,9 @@ export default class State extends BaseAccount<Schema> {
     let index = 0;
     for (const perpMarket of this.data.perpMarkets) {
       const marketType = this._getMarketType(perpMarket.perpType);
-      const price = this.cache.getOracleBySymbol(perpMarket.oracleSymbol).price;
+      let price = this.cache.getOracleBySymbol(perpMarket.oracleSymbol).price;
       const oracle = this.cache.getOracleBySymbol(perpMarket.oracleSymbol);
-      const indexTwap = oracle.twap;
+      let indexTwap = oracle.twap;
       const mark = this.cache.data.marks[index]!;
       const num5MinIntervalsSinceLastTwapStartTime = Math.floor(
         mark.twap.lastSampleStartTime.getMinutes() / 5,
@@ -443,10 +512,10 @@ export default class State extends BaseAccount<Schema> {
         );
       }
       if (marketType === MarketType.SquaredPerp) {
-        price.raiseToPower(2);
-        price.divN(perpMarket.strike);
-        indexTwap.raiseToPower(2);
-        indexTwap.divN(perpMarket.strike);
+        price = price.raiseToPower(2);
+        price = price.divN(perpMarket.strike);
+        indexTwap = indexTwap.raiseToPower(2);
+        indexTwap = indexTwap.divN(perpMarket.strike);
       }
       markets[perpMarket.symbol] = {
         symbol: perpMarket.symbol,

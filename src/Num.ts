@@ -6,10 +6,7 @@ export default class Num {
   public n: Readonly<BN>;
   private precisionDecimals = 0;
 
-  public constructor(
-    n: BN | Decimal | number,
-    public readonly decimals: number,
-  ) {
+  public constructor(n: BN | Decimal | number, public decimals: number) {
     if (!Number.isInteger(decimals)) {
       throw TypeError(`Invalid number of decimals ${decimals}`);
     }
@@ -74,23 +71,41 @@ export default class Num {
       .toString();
   }
 
+  public clone() {
+    const num = new Num(this.n, this.decimals);
+    num.precisionDecimals = this.precisionDecimals;
+    return num;
+  }
+
   public raiseToPower(power: number) {
-    this.n = this.n.pow(new BN(power));
+    const num = this.clone();
+    num.n = num.n.pow(new BN(power));
+    num.precisionDecimals *= power;
+    num.decimals *= power;
+    return num;
   }
 
   public div(m: number) {
-    this.n = this.n.div(new BN(m));
+    const num = this.clone();
+    num.n = num.n.div(new BN(m));
+    return num;
   }
 
   public mul(m: number) {
-    this.n = this.n.mul(new BN(m));
+    const num = this.clone();
+    num.n = num.n.mul(new BN(m));
+    return num;
   }
 
   public divN(m: BN) {
-    this.n = this.n.div(m);
+    const num = this.clone();
+    num.n = num.n.div(m);
+    return num;
   }
 
   public mulN(m: BN) {
-    this.n = this.n.mul(m);
+    const num = this.clone();
+    num.n = num.n.mul(m);
+    return num;
   }
 }

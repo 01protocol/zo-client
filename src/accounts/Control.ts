@@ -1,4 +1,4 @@
-import { PublicKey } from "@solana/web3.js";
+import { AccountInfo, PublicKey } from "@solana/web3.js";
 import { Program } from "@project-serum/anchor";
 import BaseAccount from "./BaseAccount";
 import { ControlSchema, ControlSchema as Schema, Zo } from "../types";
@@ -9,6 +9,7 @@ import { ControlSchema, ControlSchema as Schema, Zo } from "../types";
 export default class Control extends BaseAccount<Schema> {
   /**
    * Loads a new Control object from its public key.
+   * @param program
    * @param k The control account's public key.
    */
   static async load(program: Program<Zo>, k: PublicKey) {
@@ -17,7 +18,9 @@ export default class Control extends BaseAccount<Schema> {
 
   /**
    * Loads a new Control from existing data
+   * @param program
    * @param k The control account's public key.
+   * @param prefetchedControlData
    */
   static async loadPrefetched(
     program: Program<Zo>,
@@ -42,5 +45,9 @@ export default class Control extends BaseAccount<Schema> {
 
   async refresh(): Promise<void> {
     this.data = await Control.fetch(this.program, this.pubkey);
+  }
+
+  updateControlFromAccountInfo(accountInfo: AccountInfo<Buffer>) {
+    this.data = this.program.coder.accounts.decode("control", accountInfo.data);
   }
 }

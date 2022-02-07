@@ -13,6 +13,23 @@ export const USDC_DECIMALS = 6;
 export const BASE_IMF_DIVIDER = 1000;
 export const MMF_MULTIPLIER = 2;
 export const USD_DECIMALS = 6;
+
+export const CACHE_REFRESH_INTERVAL = 10000;
+export const HARD_REFRESH_INTERVAL = 700000;
+
+export interface MarginsClusterConfig {
+  cacheRefreshInterval: number;
+  verbose: boolean;
+  loadWithOrders: boolean;
+  hardRefreshInterval: number;
+}
+
+export const DEFAULT_MARGINS_CLUSTER_CONFIG: MarginsClusterConfig = {
+  cacheRefreshInterval: CACHE_REFRESH_INTERVAL,
+  verbose: true,
+  loadWithOrders: true,
+  hardRefreshInterval: HARD_REFRESH_INTERVAL,
+};
 // == 01 CONSTANTS ==
 
 // deprecated; here for backwards compatibility
