@@ -44,10 +44,11 @@ faucet.
 For markets specs on Mainnet, please
 visit [docs.01.xyz/trading/perpetual-futures/perpetuals-specs](https://docs.01.xyz/trading/perpetual-futures/perpetuals-specs)
 
-| Symbol      | Cluster | Base Lots | Quote Lots | Base Decimals |
-| ----------- | ------- | --------- | ---------- | ------------- |
-| BTC-PERP    | Devnet  | 100       | 10         | 6             |
-| SOL-PERP    | Devnet  | 100000000       | 100         | 9             |
+| Symbol      | Cluster | Base Lots | Quote Lots | Base Decimals | Normalization Factor |
+| ----------- | ------- | --------- | ---------- | ------------- | -------------------- |
+| BTC-PERP    | Devnet  | 100       | 10         | 6             | n/a          |
+| SOL-PERP    | Devnet  | 100000000       | 100         | 9             | n/a |
+| SOL-SQUARE  | Devnet  | 10000       | 100         | 9             | 1|
 
 ### Collaterals
 

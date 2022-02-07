@@ -29,7 +29,8 @@ export type OrderType =
   | { immediateOrCancel: {} }
   | { postOnly: {} }
   | { reduceOnlyIoc: {} }
-  | { reduceOnlyLimit: {} };
+  | { reduceOnlyLimit: {} }
+  | { fillOrKill: {} };
 
 type WrappedI80F48 = { data: BN };
 type Symbol = { data: number[] };
