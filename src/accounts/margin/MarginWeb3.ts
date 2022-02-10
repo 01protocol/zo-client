@@ -275,15 +275,15 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
           new BN(
             rawCollateral[i]!.isPos()
               ? rawCollateral[i]!.times(
-                ch.data.borrowCache[i]!.supplyMultiplier,
-              )
-                .floor()
-                .toString()
+                  ch.data.borrowCache[i]!.supplyMultiplier,
+                )
+                  .floor()
+                  .toString()
               : rawCollateral[i]!.times(
-                ch.data.borrowCache[i]!.borrowMultiplier,
-              )
-                .floor()
-                .toString(),
+                  ch.data.borrowCache[i]!.borrowMultiplier,
+                )
+                  .floor()
+                  .toString(),
           ),
           c.decimals,
         );
@@ -559,9 +559,9 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     const tokenAccount = tokenAccountProvided
       ? tokenAccountProvided
       : await findAssociatedTokenAddress(
-        this.program.provider.wallet.publicKey,
-        mint,
-      );
+          this.program.provider.wallet.publicKey,
+          mint,
+        );
     return await this.depositRaw(tokenAccount, vault, amountSmoll, repayOnly);
   }
 
@@ -632,12 +632,12 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       associatedTokenAccountExists
         ? undefined
         : [
-          getAssociatedTokenTransactionWithPayer(
-            mint,
-            associatedTokenAccount,
-            this.program.provider.wallet.publicKey,
-          ),
-        ],
+            getAssociatedTokenTransactionWithPayer(
+              mint,
+              associatedTokenAccount,
+              this.program.provider.wallet.publicKey,
+            ),
+          ],
     );
   }
 
@@ -771,8 +771,8 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       market.decoded.perpType.toNumber() === 1
         ? ZO_FUTURE_TAKER_FEE
         : market.decoded.perpType.toNumber() === 2
-          ? ZO_OPTION_TAKER_FEE
-          : ZO_SQUARE_TAKER_FEE;
+        ? ZO_OPTION_TAKER_FEE
+        : ZO_SQUARE_TAKER_FEE;
     const feeMultiplier = isLong ? 1 + takerFee : 1 - takerFee;
     const maxQuoteQtyBn = new BN(
       Math.round(
@@ -830,26 +830,26 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
         },
         preInstructions: createOo
           ? [
-            this.program.instruction.createPerpOpenOrders({
-              accounts: {
-                state: this.state.pubkey,
-                stateSigner: this.state.signer,
-                authority: this.wallet.publicKey,
-                payer: this.wallet.publicKey,
-                margin: this.pubkey,
-                control: this.data.control,
-                openOrders: ooKey,
-                dexMarket: this.state.getMarketKeyBySymbol(symbol),
-                dexProgram: this.program.programId.equals(
-                  ZERO_ONE_DEVNET_PROGRAM_ID,
-                )
-                  ? ZO_DEX_DEVNET_PROGRAM_ID
-                  : ZO_DEX_MAINNET_PROGRAM_ID,
-                rent: SYSVAR_RENT_PUBKEY,
-                systemProgram: SystemProgram.programId,
-              },
-            }),
-          ]
+              this.program.instruction.createPerpOpenOrders({
+                accounts: {
+                  state: this.state.pubkey,
+                  stateSigner: this.state.signer,
+                  authority: this.wallet.publicKey,
+                  payer: this.wallet.publicKey,
+                  margin: this.pubkey,
+                  control: this.data.control,
+                  openOrders: ooKey,
+                  dexMarket: this.state.getMarketKeyBySymbol(symbol),
+                  dexProgram: this.program.programId.equals(
+                    ZERO_ONE_DEVNET_PROGRAM_ID,
+                  )
+                    ? ZO_DEX_DEVNET_PROGRAM_ID
+                    : ZO_DEX_MAINNET_PROGRAM_ID,
+                  rent: SYSVAR_RENT_PUBKEY,
+                  systemProgram: SystemProgram.programId,
+                },
+              }),
+            ]
           : undefined,
       },
     );
@@ -890,8 +890,8 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       market.decoded.perpType.toNumber() === 1
         ? ZO_FUTURE_TAKER_FEE
         : market.decoded.perpType.toNumber() === 2
-          ? ZO_OPTION_TAKER_FEE
-          : ZO_SQUARE_TAKER_FEE;
+        ? ZO_OPTION_TAKER_FEE
+        : ZO_SQUARE_TAKER_FEE;
     const feeMultiplier = isLong ? 1 + takerFee : 1 - takerFee;
     const maxQuoteQtyBn = new BN(
       Math.round(
@@ -905,7 +905,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     let ooKey;
     const oo = await this.getOpenOrdersInfoBySymbol(symbol);
     ooKey = oo?.key;
-    
+
     if (maxBaseQtyBn.toNumber() == 0) throw new Error();
     return this.program.instruction.placePerpOrder(
       isLong,
@@ -933,7 +933,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
             ? ZO_DEX_DEVNET_PROGRAM_ID
             : ZO_DEX_MAINNET_PROGRAM_ID,
           rent: SYSVAR_RENT_PUBKEY,
-        }
+        },
       },
     );
   }
@@ -1048,9 +1048,9 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       slippage === 1
         ? new BN(1)
         : new Num(
-          (toSize * (1 - slippage)) / fromSize,
-          buy ? baseDecimals : USDC_DECIMALS,
-        ).n;
+            (toSize * (1 - slippage)) / fromSize,
+            buy ? baseDecimals : USDC_DECIMALS,
+          ).n;
 
     if (
       !market.baseMintAddress.equals(tokenMint) ||
@@ -1058,8 +1058,8 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     ) {
       throw new Error(
         `Invalid <SerumSpotMarket ${serumMarket}> for swap:\n` +
-        `  swap wants:   base=${tokenMint}, quote=${stateQuoteMint}\n` +
-        `  market wants: base=${market.baseMintAddress}, quote=${market.quoteMintAddress}`,
+          `  swap wants:   base=${tokenMint}, quote=${stateQuoteMint}\n` +
+          `  market wants: base=${market.baseMintAddress}, quote=${market.quoteMintAddress}`,
       );
     }
 
