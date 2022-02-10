@@ -856,6 +856,89 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
   }
 
   /**
+   * Creates the instruction for placing a perp order on the orderbook.
+   * Creates an Open orders account if does not exist, in the same transaction.
+   * @param symbol The market symbol. Ex: ("BTC-PERP")
+   * @param orderType The order type. Either limit, immediateOrCancel, or postOnly.
+   * @param isLong True if buy, false if sell.
+   * @param price The limit price in big quote units per big base units. Ex: (50,000 USD/SOL)
+   * @param size The maximum amount of big base units to buy or sell.
+   * @param limit If this order is taking, the limit sets the number of maker orders the fill will go through, until stopping and posting. If running into compute unit issues, then set this number lower.
+   * @param clientId Used to tag an order with a unique id, which can be used to cancel this order through cancelPerpOrderByClientId. For optimal use, make sure all ids for every order is unique.
+   */
+  async makePlacePerpOrderIx({
+    symbol,
+    orderType,
+    isLong,
+    price,
+    size,
+    limit,
+    clientId,
+  }: Readonly<{
+    symbol: string;
+    orderType: OrderType;
+    isLong: boolean;
+    price: number;
+    size: number;
+    limit?: number;
+    clientId?: number;
+  }>): Promise<TransactionInstruction> {
+    const market = await this.state.getMarketBySymbol(symbol);
+    const limitPriceBn = market.priceNumberToLots(price);
+    const maxBaseQtyBn = market.baseSizeNumberToLots(size);
+    const takerFee =
+      market.decoded.perpType.toNumber() === 1
+        ? ZO_FUTURE_TAKER_FEE
+        : market.decoded.perpType.toNumber() === 2
+        ? ZO_OPTION_TAKER_FEE
+        : ZO_SQUARE_TAKER_FEE;
+    const feeMultiplier = isLong ? 1 + takerFee : 1 - takerFee;
+    const maxQuoteQtyBn = new BN(
+      Math.round(
+        limitPriceBn
+          .mul(maxBaseQtyBn)
+          .mul(market.decoded["quoteLotSize"])
+          .toNumber() * feeMultiplier,
+      ),
+    );
+
+    let ooKey;
+    const oo = await this.getOpenOrdersInfoBySymbol(symbol);
+    ooKey = oo?.key;
+
+    if (maxBaseQtyBn.toNumber() == 0) throw new Error();
+    return this.program.instruction.placePerpOrder(
+      isLong,
+      limitPriceBn,
+      maxBaseQtyBn,
+      maxQuoteQtyBn,
+      orderType,
+      limit ?? 10,
+      new BN(clientId ?? 0),
+      {
+        accounts: {
+          state: this.state.pubkey,
+          stateSigner: this.state.signer,
+          cache: this.state.cache.pubkey,
+          authority: this.wallet.publicKey,
+          margin: this.pubkey,
+          control: this.control.pubkey,
+          openOrders: ooKey,
+          dexMarket: market.address,
+          reqQ: market.requestQueueAddress,
+          eventQ: market.eventQueueAddress,
+          marketBids: market.bidsAddress,
+          marketAsks: market.asksAddress,
+          dexProgram: this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
+            ? ZO_DEX_DEVNET_PROGRAM_ID
+            : ZO_DEX_MAINNET_PROGRAM_ID,
+          rent: SYSVAR_RENT_PUBKEY,
+        },
+      },
+    );
+  }
+
+  /**
    * Cancels an order on the orderbook for a given market either by orderId or by clientId.
    * @param symbol The market symbol. Ex: ("BTC-PERP")
    * @param isLong True if the order being cancelled is a buy order, false if sell order.
