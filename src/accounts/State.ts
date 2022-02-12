@@ -434,7 +434,7 @@ export default class State extends BaseAccount<Schema> {
     for (const collateral of this.data.collaterals) {
       const supply = this.cache.data.borrowCache[index]!.actualSupply.decimal;
       const borrows = this.cache.data.borrowCache[index]!.actualBorrows.decimal;
-      const utilization = supply.greaterThanOrEqualTo(new Decimal(1))
+      const utilization = supply.greaterThan(new Decimal(0))
         ? borrows.div(supply)
         : new Decimal(0);
       const optimalUtility = new Decimal(collateral.optimalUtil.toString());
