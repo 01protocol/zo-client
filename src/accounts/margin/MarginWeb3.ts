@@ -6,6 +6,7 @@ import {
   PublicKey,
   SystemProgram,
   SYSVAR_RENT_PUBKEY,
+  Transaction,
   TransactionInstruction,
 } from "@solana/web3.js";
 import { Program, ProgramAccount } from "@project-serum/anchor";
@@ -1072,8 +1073,107 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
         ? SERUM_DEVNET_SPOT_PROGRAM_ID
         : SERUM_MAINNET_SPOT_PROGRAM_ID,
     );
+    let tx = new Transaction();
+    tx = tx.add(
+      await this.makeSwapIx({
+        buy,
+        tokenMint,
+        fromSize,
+        toSize,
+        slippage,
+        allowBorrow,
+        serumMarket,
+      }),
+    );
 
-    return await this.program.rpc.swap(buy, allowBorrow, amount, minRate, {
+    return await this.provider.send(tx);
+  }
+
+  /**
+   * Creates an instruction between USDC and a given Token B (or vice versa) on the Serum Spot DEX. This is a direct IOC trade that instantly settles.
+   * Note that the token B needs to be swappable, as enabled by the 01 program.
+   * @param buy If true, then swapping USDC for Token B. If false, the swapping Token B for USDC.
+   * @param tokenMint The mint public key of Token B.
+   * @param fromSize The amount of tokens to swap *from*. If buy, this is USDC. If not buy, this is Token B. This is in big units (ex: 0.5 BTC or 1.5 SOL, not satoshis nor lamports).
+   * @param toSize The amount of tokens to swap *to*. In other words, the amount of expected to tokens. If buy, this is Token B. If not buy, this is USDC. This is in big units (ex: 0.5 BTC or 1.5 SOL, not satoshis nor lamports).
+   * @param slippage The tolerance for the amount of tokens received changing from its expected toSize. Number between 0 - 1, if 1, then max slippage.
+   * @param allowBorrow If false, will only be able to swap up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully swapped.
+   * @param serumMarket The market public key of the Serum Spot DEX.
+   */
+  async makeSwapIx({
+    buy,
+    tokenMint,
+    fromSize,
+    toSize,
+    slippage,
+    allowBorrow,
+    serumMarket,
+  }: Readonly<{
+    buy: boolean;
+    tokenMint: PublicKey;
+    fromSize: number;
+    toSize: number;
+    slippage: number;
+    allowBorrow: boolean;
+    serumMarket: PublicKey;
+  }>): Promise<TransactionInstruction> {
+    if (this.state.data.totalCollaterals < 1) {
+      throw new Error(
+        `<State ${this.state.pubkey.toString()}> does not have a base collateral`,
+      );
+    }
+
+    if (slippage > 1 || slippage < 0) {
+      throw new Error("Invalid slippage input, must be between 0 and 1");
+    }
+
+    const market = await SerumMarket.load(
+      this.connection,
+      serumMarket,
+      {},
+      this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
+        ? SERUM_DEVNET_SPOT_PROGRAM_ID
+        : SERUM_MAINNET_SPOT_PROGRAM_ID,
+    );
+
+    const colIdx = this.state.getCollateralIndex(tokenMint);
+    const stateQuoteMint = this.state.data.collaterals[0]!.mint;
+    // TODO: optimize below to avoid fetching
+    const baseDecimals = await getMintDecimals(this.connection, tokenMint);
+
+    const amount = buy
+      ? new BN(fromSize * 10 ** USDC_DECIMALS)
+      : new BN(fromSize * 10 ** baseDecimals);
+    const minRate =
+      slippage === 1
+        ? new BN(1)
+        : new Num(
+            (toSize * (1 - slippage)) / fromSize,
+            buy ? baseDecimals : USDC_DECIMALS,
+          ).n;
+
+    if (
+      !market.baseMintAddress.equals(tokenMint) ||
+      !market.quoteMintAddress.equals(stateQuoteMint)
+    ) {
+      throw new Error(
+        `Invalid <SerumSpotMarket ${serumMarket}> for swap:\n` +
+          `  swap wants:   base=${tokenMint}, quote=${stateQuoteMint}\n` +
+          `  market wants: base=${market.baseMintAddress}, quote=${market.quoteMintAddress}`,
+      );
+    }
+
+    const vaultSigner: PublicKey = await PublicKey.createProgramAddress(
+      [
+        market.address.toBuffer(),
+        market.decoded.vaultSignerNonce.toArrayLike(Buffer, "le", 8),
+      ],
+      this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
+        ? SERUM_DEVNET_SPOT_PROGRAM_ID
+        : SERUM_MAINNET_SPOT_PROGRAM_ID,
+    );
+
+    return this.program.instruction.swap(buy, allowBorrow, amount, minRate, {
       accounts: {
         authority: this.wallet.publicKey,
         state: this.state.pubkey,
@@ -1105,123 +1205,6 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       },
     });
   }
-
-    /**
-   * Creates an instruction between USDC and a given Token B (or vice versa) on the Serum Spot DEX. This is a direct IOC trade that instantly settles.
-   * Note that the token B needs to be swappable, as enabled by the 01 program.
-   * @param buy If true, then swapping USDC for Token B. If false, the swapping Token B for USDC.
-   * @param tokenMint The mint public key of Token B.
-   * @param fromSize The amount of tokens to swap *from*. If buy, this is USDC. If not buy, this is Token B. This is in big units (ex: 0.5 BTC or 1.5 SOL, not satoshis nor lamports).
-   * @param toSize The amount of tokens to swap *to*. In other words, the amount of expected to tokens. If buy, this is Token B. If not buy, this is USDC. This is in big units (ex: 0.5 BTC or 1.5 SOL, not satoshis nor lamports).
-   * @param slippage The tolerance for the amount of tokens received changing from its expected toSize. Number between 0 - 1, if 1, then max slippage.
-   * @param allowBorrow If false, will only be able to swap up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully swapped.
-   * @param serumMarket The market public key of the Serum Spot DEX.
-   */
-     async makeSwapIx({
-      buy,
-      tokenMint,
-      fromSize,
-      toSize,
-      slippage,
-      allowBorrow,
-      serumMarket,
-    }: Readonly<{
-      buy: boolean;
-      tokenMint: PublicKey;
-      fromSize: number;
-      toSize: number;
-      slippage: number;
-      allowBorrow: boolean;
-      serumMarket: PublicKey;
-    }>): Promise<TransactionInstruction> {
-      if (this.state.data.totalCollaterals < 1) {
-        throw new Error(
-          `<State ${this.state.pubkey.toString()}> does not have a base collateral`,
-        );
-      }
-  
-      if (slippage > 1 || slippage < 0) {
-        throw new Error("Invalid slippage input, must be between 0 and 1");
-      }
-  
-      const market = await SerumMarket.load(
-        this.connection,
-        serumMarket,
-        {},
-        this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
-          ? SERUM_DEVNET_SPOT_PROGRAM_ID
-          : SERUM_MAINNET_SPOT_PROGRAM_ID,
-      );
-  
-      const colIdx = this.state.getCollateralIndex(tokenMint);
-      const stateQuoteMint = this.state.data.collaterals[0]!.mint;
-      // TODO: optimize below to avoid fetching
-      const baseDecimals = await getMintDecimals(this.connection, tokenMint);
-  
-      const amount = buy
-        ? new BN(fromSize * 10 ** USDC_DECIMALS)
-        : new BN(fromSize * 10 ** baseDecimals);
-      const minRate =
-        slippage === 1
-          ? new BN(1)
-          : new Num(
-              (toSize * (1 - slippage)) / fromSize,
-              buy ? baseDecimals : USDC_DECIMALS,
-            ).n;
-  
-      if (
-        !market.baseMintAddress.equals(tokenMint) ||
-        !market.quoteMintAddress.equals(stateQuoteMint)
-      ) {
-        throw new Error(
-          `Invalid <SerumSpotMarket ${serumMarket}> for swap:\n` +
-            `  swap wants:   base=${tokenMint}, quote=${stateQuoteMint}\n` +
-            `  market wants: base=${market.baseMintAddress}, quote=${market.quoteMintAddress}`,
-        );
-      }
-  
-      const vaultSigner: PublicKey = await PublicKey.createProgramAddress(
-        [
-          market.address.toBuffer(),
-          market.decoded.vaultSignerNonce.toArrayLike(Buffer, "le", 8),
-        ],
-        this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
-          ? SERUM_DEVNET_SPOT_PROGRAM_ID
-          : SERUM_MAINNET_SPOT_PROGRAM_ID,
-      );
-  
-      return this.program.instruction.swap(buy, allowBorrow, amount, minRate, {
-        accounts: {
-          authority: this.wallet.publicKey,
-          state: this.state.pubkey,
-          stateSigner: this.state.signer,
-          cache: this.state.data.cache,
-          margin: this.pubkey,
-          control: this.data.control,
-          quoteMint: stateQuoteMint,
-          quoteVault: this.state.data.vaults[0]!,
-          assetMint: tokenMint,
-          assetVault: this.state.getVaultCollateralByMint(tokenMint)[0],
-          swapFeeVault: this.state.data.swapFeeVault,
-          serumOpenOrders: this.state.data.collaterals[colIdx]!.serumOpenOrders,
-          serumMarket,
-          serumRequestQueue: market.decoded.requestQueue,
-          serumEventQueue: market.decoded.eventQueue,
-          serumBids: market.bidsAddress,
-          serumAsks: market.asksAddress,
-          serumCoinVault: market.decoded.baseVault,
-          serumPcVault: market.decoded.quoteVault,
-          serumVaultSigner: vaultSigner,
-          srmSpotProgram: this.program.programId.equals(
-            ZERO_ONE_DEVNET_PROGRAM_ID,
-          )
-            ? SERUM_DEVNET_SPOT_PROGRAM_ID
-            : SERUM_MAINNET_SPOT_PROGRAM_ID,
-          tokenProgram: TOKEN_PROGRAM_ID,
-          rent: SYSVAR_RENT_PUBKEY,
-        },
-      });
-    }
   /**
    * Settles unrealized funding and realized PnL into the margin account for a given market.
    * @param symbol Market symbol (ex: BTC-PERP).
