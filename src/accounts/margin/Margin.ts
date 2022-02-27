@@ -51,6 +51,23 @@ export default abstract class Margin extends MarginWeb3 {
     return await this.getPda(st, marginOwner, program.programId);
   }
 
+
+  /** 
+   * Creates margin account if it does not exist, loads it otherwise 
+  */
+  static async createIfNeeded(
+    program: Program<Zo>,
+    st: State,
+    commitment: Commitment = "finalized",
+    owner?: PublicKey,
+  ): Promise<Margin> {
+    if (this.exists(program, st, owner)) {
+      return (await MarginWeb3.loadWeb3(program, st)) as Margin;
+    } else {
+      return (await MarginWeb3.create(program, st, commitment)) as Margin;
+    }
+  }
+
   /**
    * get total funding amount from all the markets
    */
