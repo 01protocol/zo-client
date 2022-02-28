@@ -53,7 +53,7 @@ export default abstract class Margin extends MarginWeb3 {
 
 
   /** 
-   * Creates margin account if it does not exist, loads it otherwise 
+   * Loads the margin account, creating it first if needed
   */
   static async createIfNeeded(
     program: Program<Zo>,
