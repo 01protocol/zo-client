@@ -317,7 +317,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
         const market = markets[this.state.indexToMarketKey[index]]!;
         const coins = new Num(oo.posSize, market.assetDecimals);
         const pCoins = new Num(oo.nativePcTotal, USD_DECIMALS);
-        const realizedPnl = new Num(oo.realizedPnl, market.assetDecimals);
+        const realizedPnl = new Num(oo.realizedPnl, USD_DECIMALS);
         const fundingIndex = new Num(oo.fundingIndex, USD_DECIMALS).decimal;
 
         positions.push({
