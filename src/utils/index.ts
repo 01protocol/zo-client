@@ -5,6 +5,7 @@ import {
   SystemProgram,
   Transaction,
   TransactionInstruction,
+  ConfirmOptions,
 } from "@solana/web3.js";
 import {
   AccountLayout as TokenAccountLayout,
@@ -20,7 +21,7 @@ import { Program, Provider } from "@project-serum/anchor";
 import BN from "bn.js";
 import Decimal from "decimal.js";
 import { blob, struct, u8 } from "buffer-layout";
-import { Zo } from "../types";
+import { Zo, Wallet } from "../types";
 import {
   IDL,
   RENT_PROGRAM_ID,
@@ -41,6 +42,14 @@ export function sleep(ms: number): Promise<void> {
 export enum Cluster {
   Devnet = "Devnet",
   Mainnet = "Mainnet",
+}
+
+export function createProvider(
+  conn: Connection,
+  wallet: Wallet,
+  opts: ConfirmOptions = {},
+): Provider {
+  return new Provider(conn, wallet, opts);
 }
 
 export function createProgram(

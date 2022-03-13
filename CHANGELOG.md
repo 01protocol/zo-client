@@ -8,6 +8,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 - Margin: Fix RealizedPnl decimals
+- General: Add `createProvider` function
 
 ## [0.8.5] - 2022-02-11
 
