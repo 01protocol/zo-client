@@ -565,15 +565,16 @@ export default class State extends BaseAccount<Schema> {
     const cumulAvg = this.cache.data.marks[marketIndex]!.twap.cumulAvg.decimal;
     const hasData = cumulAvg.abs().gt(0);
     return {
-      hourly: hasData
-        ? cumulAvg.div(lastSampleStartTime.getMinutes() * 24)
-        : undefined,
-      daily: hasData
-        ? cumulAvg.div(lastSampleStartTime.getMinutes())
-        : undefined,
-      apr: hasData
-        ? cumulAvg.div(lastSampleStartTime.getMinutes()).times(100).times(365)
-        : undefined,
+      data: hasData
+        ? {
+            hourly: cumulAvg.div(lastSampleStartTime.getMinutes() * 24),
+            daily: cumulAvg.div(lastSampleStartTime.getMinutes()),
+            apr: cumulAvg
+              .div(lastSampleStartTime.getMinutes())
+              .times(100)
+              .times(365),
+          }
+        : null,
       lastSampleUpdate: lastSampleStartTime,
     };
   }

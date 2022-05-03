@@ -4,16 +4,18 @@ import { PublicKey } from "@solana/web3.js"
 import BN from "bn.js"
 
 /**
- * Funding will be undefined in the first minute of the hour.
+ * Data will be undefined in the first minute of the hour.
  * Make sure to handle that case!
  * @hourly - TWAP of (mark - index) / index / 24
  * @daily - TWAP of (mark - index) / index
  * @apr - daily funding * 365 * 100 (the result is given in percent)
  */
 export interface FundingInfo {
-  hourly: Decimal | undefined,
-  daily: Decimal | undefined,
-  apr: Decimal | undefined,
+  data: {
+    hourly: Decimal,
+    daily: Decimal,
+    apr: Decimal,
+  } | null,
   lastSampleUpdate: Date,
 }
 
