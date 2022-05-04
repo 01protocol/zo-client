@@ -7,7 +7,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [0.8.7]
+## [0.8.7-beta.12]
 
 - State: Add `getFundingInfo`, which returns a `FundingInfo` object.
 - Cache: `MarkTwap`'s `TwapInfo` is reworked: ohlc is now deprecated, and `cumulAvg` represents the cumulative sum of the funding TWAP.
