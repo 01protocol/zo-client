@@ -9,8 +9,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.8.7-beta.12]
 
-- State: Add `getFundingInfo`, which returns a `FundingInfo` object.
-- Cache: `MarkTwap`'s `TwapInfo` is reworked: ohlc is now deprecated, and `cumulAvg` represents the cumulative sum of the funding TWAP.
+- State: Add `getFundingInfo`, which returns a `FundingInfo` object. ([#127](https://github.com/01protocol/zo-client/pull/127))
+- Cache: `MarkTwap`'s `TwapInfo` is reworked: ohlc is now deprecated, and `cumulAvg` represents the cumulative sum of the funding TWAP. ([#127](https://github.com/01protocol/zo-client/pull/127))
 
 ## [0.8.6]
 
