@@ -563,7 +563,8 @@ export default class State extends BaseAccount<Schema> {
     const lastSampleStartTime =
       this.cache.data.marks[marketIndex]!.twap.lastSampleStartTime;
     const cumulAvg = this.cache.data.marks[marketIndex]!.twap.cumulAvg.decimal;
-    const hasData = cumulAvg.abs().gt(0);
+    const hasData =
+      cumulAvg.abs().gt(0) && lastSampleStartTime.getMinutes() > 0;
     return {
       data: hasData
         ? {
