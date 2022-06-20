@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.8]
+
+- General: Optimized loading times
+
 ## [0.8.7]
 
 - State: Add `getFundingInfo`, which returns a `FundingInfo` object. ([#127](https://github.com/01protocol/zo-client/pull/127))
