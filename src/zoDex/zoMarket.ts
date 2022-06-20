@@ -18,7 +18,7 @@ import {
 } from "@solana/web3.js";
 import { decodeEventQueue, decodeRequestQueue } from "./queue";
 import { Buffer } from "buffer";
-import { throwIfNull } from "../utils";
+import { FundingInfo, MarketInfo, throwIfNull } from "../utils";
 import { TransactionId } from "../types";
 import {
   WRAPPED_SOL_MINT,

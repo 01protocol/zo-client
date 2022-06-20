@@ -106,10 +106,14 @@ export default class Cache extends BaseAccount<Schema> {
           ...c,
           price: Num.fromWI80F48(c.price, decimals),
           twap: {
-            cumulAvg: Num.fromWI80F48(c.twap.cumulAvg, decimals),
+            cumulAvg: Num.fromWI80F48(c.twap.cumulAvg, 0),
+            // deprecated
             open: Num.fromWI80F48(c.twap.open, decimals),
+            // deprecated
             high: Num.fromWI80F48(c.twap.high, decimals),
+            // deprecated
             low: Num.fromWI80F48(c.twap.low, decimals),
+            // deprecated
             close: Num.fromWI80F48(c.twap.close, decimals),
             lastSampleStartTime: new Date(
               c.twap.lastSampleStartTime.toNumber() * 1000,

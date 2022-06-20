@@ -12,7 +12,12 @@ import {
   ZO_DEX_DEVNET_PROGRAM_ID,
   ZO_DEX_MAINNET_PROGRAM_ID,
 } from "../config";
-import { AssetInfo, MarketInfo, MarketType } from "../types/dataTypes";
+import {
+  AssetInfo,
+  FundingInfo,
+  MarketInfo,
+  MarketType,
+} from "../types/dataTypes";
 import Decimal from "decimal.js";
 import _ from "lodash";
 import Num from "../Num";
@@ -546,5 +551,32 @@ export default class State extends BaseAccount<Schema> {
       index++;
     }
     this.markets = markets;
+  }
+
+  /**
+   * Gets the funding info object for a given market.
+   * Funding will be undefined in the first minute of the hour.
+   * Make sure to handle that case!
+   */
+  getFundingInfo(symbol: string): FundingInfo {
+    const marketIndex = this.getMarketIndexBySymbol(symbol);
+    const lastSampleStartTime =
+      this.cache.data.marks[marketIndex]!.twap.lastSampleStartTime;
+    const cumulAvg = this.cache.data.marks[marketIndex]!.twap.cumulAvg.decimal;
+    const hasData =
+      cumulAvg.abs().gt(0) && lastSampleStartTime.getMinutes() > 0;
+    return {
+      data: hasData
+        ? {
+            hourly: cumulAvg.div(lastSampleStartTime.getMinutes() * 24),
+            daily: cumulAvg.div(lastSampleStartTime.getMinutes()),
+            apr: cumulAvg
+              .div(lastSampleStartTime.getMinutes())
+              .times(100)
+              .times(365),
+          }
+        : null,
+      lastSampleUpdate: lastSampleStartTime,
+    };
   }
 }

@@ -183,6 +183,9 @@ for (const order of asks) {
   );
 }
 
+// Fetch funding info (daily, hourly)
+const fundingInfo = state.getFundingInfo(MARKET_SYMBOL);
+
 // Cancel an order by order id
 const orderIsLong = true;
 const orderId = orders[0]; // or whichever order that is being cancelled
