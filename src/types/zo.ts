@@ -1,5 +1,5 @@
 export type Zo = {
-  "version": "0.2.3",
+  "version": "0.4.7",
   "name": "zo",
   "constants": [
     {
@@ -20,17 +20,22 @@ export type Zo = {
     {
       "name": "ORACLE_STALENESS_THRESH",
       "type": "u64",
-      "value": "20"
+      "value": "300"
+    },
+    {
+      "name": "TWAP_STALENESS_THRESH",
+      "type": "u64",
+      "value": "60"
     },
     {
       "name": "TWAP_SAMPLE_DT",
       "type": "u64",
-      "value": "300"
+      "value": "60"
     },
     {
       "name": "TWAP_SAMPLES_PER_H",
       "type": "u64",
-      "value": "12"
+      "value": "60"
     },
     {
       "name": "DEFAULT_IR_MULTIPLIER",
@@ -87,7 +92,7 @@ export type Zo = {
         },
         {
           "name": "payer",
-          "isMut": false,
+          "isMut": true,
           "isSigner": true
         },
         {
@@ -402,6 +407,117 @@ export type Zo = {
       ]
     },
     {
+      "name": "placePerpOrderWithMaxTs",
+      "accounts": [
+        {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "control",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reqQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "isLong",
+          "type": "bool"
+        },
+        {
+          "name": "limitPrice",
+          "type": "u64"
+        },
+        {
+          "name": "maxBaseQuantity",
+          "type": "u64"
+        },
+        {
+          "name": "maxQuoteQuantity",
+          "type": "u64"
+        },
+        {
+          "name": "orderType",
+          "type": {
+            "defined": "OrderType"
+          }
+        },
+        {
+          "name": "limit",
+          "type": "u16"
+        },
+        {
+          "name": "clientId",
+          "type": "u64"
+        },
+        {
+          "name": "maxTs",
+          "type": "i64"
+        }
+      ]
+    },
+    {
       "name": "cancelPerpOrder",
       "accounts": [
         {
@@ -478,6 +594,82 @@ export type Zo = {
           "type": {
             "option": "u64"
           }
+        }
+      ]
+    },
+    {
+      "name": "cancelAllPerpOrders",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "control",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "oo",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reqQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "limit",
+          "type": "u16"
         }
       ]
     },
@@ -999,8 +1191,18 @@ export type Zo = {
           "isSigner": true
         },
         {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "cache",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
           "isSigner": false
         }
       ],
@@ -1119,7 +1321,7 @@ export type Zo = {
         }
       ],
       "args": []
-    }
+    },
   ],
   "accounts": [
     {
@@ -2608,12 +2810,32 @@ export type Zo = {
       "code": 6070,
       "name": "FillOrKillNotFilled",
       "msg": "FillOrKill order was not completely filled"
+    },
+    {
+      "code": 6071,
+      "name": "ZammError",
+      "msg": "An error occurred during a Zamm operation"
+    },
+    {
+      "code": 6072,
+      "name": "InvalidPerpType",
+      "msg": "An invalid perp type was used"
+    },
+    {
+      "code": 6073,
+      "name": "DisabledMarket",
+      "msg": "This market is disabled"
+    },
+    {
+      "code": 6074,
+      "name": "CollateralDisabled",
+      "msg": "This collateral is disabled"
     }
   ]
 };
 
 export const IDL: Zo = {
-  "version": "0.2.3",
+  "version": "0.4.7",
   "name": "zo",
   "constants": [
     {
@@ -2634,17 +2856,22 @@ export const IDL: Zo = {
     {
       "name": "ORACLE_STALENESS_THRESH",
       "type": "u64",
-      "value": "20"
+      "value": "300"
+    },
+    {
+      "name": "TWAP_STALENESS_THRESH",
+      "type": "u64",
+      "value": "60"
     },
     {
       "name": "TWAP_SAMPLE_DT",
       "type": "u64",
-      "value": "300"
+      "value": "60"
     },
     {
       "name": "TWAP_SAMPLES_PER_H",
       "type": "u64",
-      "value": "12"
+      "value": "60"
     },
     {
       "name": "DEFAULT_IR_MULTIPLIER",
@@ -2701,7 +2928,7 @@ export const IDL: Zo = {
         },
         {
           "name": "payer",
-          "isMut": false,
+          "isMut": true,
           "isSigner": true
         },
         {
@@ -2847,6 +3074,9 @@ export const IDL: Zo = {
         }
       ]
     },
+
+
+
     {
       "name": "createPerpOpenOrders",
       "accounts": [
@@ -3016,6 +3246,117 @@ export const IDL: Zo = {
       ]
     },
     {
+      "name": "placePerpOrderWithMaxTs",
+      "accounts": [
+        {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "control",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "openOrders",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reqQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "isLong",
+          "type": "bool"
+        },
+        {
+          "name": "limitPrice",
+          "type": "u64"
+        },
+        {
+          "name": "maxBaseQuantity",
+          "type": "u64"
+        },
+        {
+          "name": "maxQuoteQuantity",
+          "type": "u64"
+        },
+        {
+          "name": "orderType",
+          "type": {
+            "defined": "OrderType"
+          }
+        },
+        {
+          "name": "limit",
+          "type": "u16"
+        },
+        {
+          "name": "clientId",
+          "type": "u64"
+        },
+        {
+          "name": "maxTs",
+          "type": "i64"
+        }
+      ]
+    },
+    {
       "name": "cancelPerpOrder",
       "accounts": [
         {
@@ -3092,6 +3433,82 @@ export const IDL: Zo = {
           "type": {
             "option": "u64"
           }
+        }
+      ]
+    },
+    {
+      "name": "cancelAllPerpOrders",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "cache",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "stateSigner",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "margin",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "control",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "oo",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexMarket",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "reqQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "eventQ",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketBids",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "marketAsks",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "limit",
+          "type": "u16"
         }
       ]
     },
@@ -3613,8 +4030,18 @@ export const IDL: Zo = {
           "isSigner": true
         },
         {
+          "name": "state",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "cache",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "dexProgram",
+          "isMut": false,
           "isSigner": false
         }
       ],
@@ -5222,6 +5649,26 @@ export const IDL: Zo = {
       "code": 6070,
       "name": "FillOrKillNotFilled",
       "msg": "FillOrKill order was not completely filled"
+    },
+    {
+      "code": 6071,
+      "name": "ZammError",
+      "msg": "An error occurred during a Zamm operation"
+    },
+    {
+      "code": 6072,
+      "name": "InvalidPerpType",
+      "msg": "An invalid perp type was used"
+    },
+    {
+      "code": 6073,
+      "name": "DisabledMarket",
+      "msg": "This market is disabled"
+    },
+    {
+      "code": 6074,
+      "name": "CollateralDisabled",
+      "msg": "This collateral is disabled"
     }
   ]
 };

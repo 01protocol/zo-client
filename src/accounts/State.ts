@@ -9,10 +9,16 @@ import {
   MMF_MULTIPLIER,
   USD_DECIMALS,
   ZERO_ONE_DEVNET_PROGRAM_ID,
+  ZERO_ONE_MAINNET_PROGRAM_ID,
   ZO_DEX_DEVNET_PROGRAM_ID,
   ZO_DEX_MAINNET_PROGRAM_ID,
 } from "../config";
-import { AssetInfo, FundingInfo, MarketInfo, MarketType } from "../types/dataTypes";
+import {
+  AssetInfo,
+  FundingInfo,
+  MarketInfo,
+  MarketType,
+} from "../types/dataTypes";
 import Decimal from "decimal.js";
 import _ from "lodash";
 import Num from "../Num";
@@ -25,8 +31,10 @@ type CollateralInfo = Omit<StateSchema["collaterals"][0], "oracleSymbol"> & {
   oracleSymbol: string;
 };
 
-type PerpMarket = Omit<StateSchema["perpMarkets"][0],
-  "symbol" | "oracleSymbol"> & {
+type PerpMarket = Omit<
+  StateSchema["perpMarkets"][0],
+  "symbol" | "oracleSymbol"
+> & {
   symbol: string;
   oracleSymbol: string;
 };
@@ -284,9 +292,9 @@ export default class State extends BaseAccount<Schema> {
   eventEmitter: EventEmitter<UpdateEvents> | undefined;
 
   async subscribe({
-                    cacheRefreshInterval,
-                    eventEmitter,
-                  }: {
+    cacheRefreshInterval,
+    eventEmitter,
+  }: {
     cacheRefreshInterval?: number;
     eventEmitter?: EventEmitter<UpdateEvents>;
   }) {
@@ -356,15 +364,26 @@ export default class State extends BaseAccount<Schema> {
       {
         accounts: {
           signer: this.wallet.publicKey,
+          state: this.pubkey,
           cache: this.cache.pubkey,
+          dexProgram: this.program.programId.equals(ZERO_ONE_MAINNET_PROGRAM_ID)
+            ? ZO_DEX_MAINNET_PROGRAM_ID
+            : ZO_DEX_DEVNET_PROGRAM_ID,
         },
-        remainingAccounts: oracles
-          .flatMap((x) => x.sources)
-          .map((x) => ({
+        remainingAccounts: [
+          ...oracles
+            .flatMap((x) => x.sources)
+            .map((x) => ({
+              isSigner: false,
+              isWritable: false,
+              pubkey: x.key,
+            })),
+          ...this.data.perpMarkets.map((x) => ({
             isSigner: false,
             isWritable: false,
-            pubkey: x.key,
+            pubkey: x.dexMarket,
           })),
+        ],
       },
     );
   }
@@ -402,20 +421,24 @@ export default class State extends BaseAccount<Schema> {
     );
     let bids, asks;
     const promises: Array<Promise<boolean>> = [];
-    promises.push(new Promise(async (res) => {
-      bids = await dexMarket.loadBids(
-        this.program.provider.connection,
-        "recent",
-      );
-      res(true);
-    }));
-    promises.push(new Promise(async (res) => {
-      asks = await dexMarket.loadAsks(
-        this.program.provider.connection,
-        "recent",
-      );
-      res(true);
-    }));
+    promises.push(
+      new Promise(async (res) => {
+        bids = await dexMarket.loadBids(
+          this.program.provider.connection,
+          "recent",
+        );
+        res(true);
+      }),
+    );
+    promises.push(
+      new Promise(async (res) => {
+        asks = await dexMarket.loadAsks(
+          this.program.provider.connection,
+          "recent",
+        );
+        res(true);
+      }),
+    );
     await Promise.all(promises);
     this.zoMarketAccounts[market.symbol] = { dexMarket, bids, asks };
     return this.zoMarketAccounts[market.symbol]!;
@@ -427,10 +450,12 @@ export default class State extends BaseAccount<Schema> {
   async loadZoMarkets() {
     const promises: Array<Promise<boolean>> = [];
     for (const marketInfo of Object.values(this.markets)) {
-      promises.push(new Promise(async (res) => {
-        await this.getZoMarketAccounts(marketInfo);
-        res(true);
-      }));
+      promises.push(
+        new Promise(async (res) => {
+          await this.getZoMarketAccounts(marketInfo);
+          res(true);
+        }),
+      );
     }
     await Promise.all(promises);
   }
@@ -574,13 +599,13 @@ export default class State extends BaseAccount<Schema> {
     return {
       data: hasData
         ? {
-          hourly: cumulAvg.div(lastSampleStartTime.getMinutes() * 24),
-          daily: cumulAvg.div(lastSampleStartTime.getMinutes()),
-          apr: cumulAvg
-            .div(lastSampleStartTime.getMinutes())
-            .times(100)
-            .times(365),
-        }
+            hourly: cumulAvg.div(lastSampleStartTime.getMinutes() * 24),
+            daily: cumulAvg.div(lastSampleStartTime.getMinutes()),
+            apr: cumulAvg
+              .div(lastSampleStartTime.getMinutes())
+              .times(100)
+              .times(365),
+          }
         : null,
       lastSampleUpdate: lastSampleStartTime,
     };

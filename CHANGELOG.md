@@ -7,6 +7,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.9]
+
+- Margin: Added `maxTs` to `placePerpOrder`
+- BREAKING - cacheOracle: Updated instruction accounts
+
 ## [0.8.8]
 
 - General: Optimized loading times
