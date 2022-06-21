@@ -9,8 +9,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.8.9]
 
-- Margin: Added `maxTs` to `placePerpOrder`
-- BREAKING - cacheOracle: Updated instruction accounts
+- Margin: Added `maxTs` to `placePerpOrder` ([#159](https://github.com/01protocol/zo-client/pull/159))
+- BREAKING - cacheOracle: Updated instruction accounts ([#159](https://github.com/01protocol/zo-client/pull/159))
 
 ## [0.8.8]
 
