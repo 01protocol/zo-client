@@ -23,7 +23,13 @@ import {
   getWrappedSolInstructionsAndKey,
   loadWI80F48,
 } from "../../utils";
-import { ControlSchema, MarginSchema, OrderType, TransactionId, Zo } from "../../types";
+import {
+  ControlSchema,
+  MarginSchema,
+  OrderType,
+  TransactionId,
+  Zo,
+} from "../../types";
 import {
   CONTROL_ACCOUNT_SIZE,
   SERUM_DEVNET_SPOT_PROGRAM_ID,
@@ -269,15 +275,15 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
           new BN(
             rawCollateral[i]!.isPos()
               ? rawCollateral[i]!.times(
-                ch.data.borrowCache[i]!.supplyMultiplier,
-              )
-                .floor()
-                .toString()
+                  ch.data.borrowCache[i]!.supplyMultiplier,
+                )
+                  .floor()
+                  .toString()
               : rawCollateral[i]!.times(
-                ch.data.borrowCache[i]!.borrowMultiplier,
-              )
-                .floor()
-                .toString(),
+                  ch.data.borrowCache[i]!.borrowMultiplier,
+                )
+                  .floor()
+                  .toString(),
           ),
           c.decimals,
         );
@@ -351,30 +357,31 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     const orders: OrderInfo[] = [];
     const promises: Array<Promise<boolean>> = [];
     for (const market of Object.values(markets)) {
-      promises.push(new Promise(async (res) => {
-        const marketOrders: OrderInfo[] = [];
-        const { dexMarket, bids, asks } = await this.state.getZoMarketAccounts(
-          market,
-        );
-        const activeOrders = dexMarket.filterForOpenOrders(
-          bids,
-          asks,
-          this.control.pubkey,
-        );
-        for (const order of activeOrders) {
-          marketOrders.push({
-            price: new Num(order.price, USD_DECIMALS),
-            coins: new Num(Math.abs(order.size), market.assetDecimals),
-            pCoins: new Num(Math.abs(order.size * order.price), USD_DECIMALS),
-            orderId: order.orderId,
-            marketKey: market.symbol,
-            long: order.side == "buy",
-            symbol: market.symbol,
-          });
-        }
-        orders.push(...marketOrders);
-        res(true);
-      }));
+      promises.push(
+        new Promise(async (res) => {
+          const marketOrders: OrderInfo[] = [];
+          const { dexMarket, bids, asks } =
+            await this.state.getZoMarketAccounts(market);
+          const activeOrders = dexMarket.filterForOpenOrders(
+            bids,
+            asks,
+            this.control.pubkey,
+          );
+          for (const order of activeOrders) {
+            marketOrders.push({
+              price: new Num(order.price, USD_DECIMALS),
+              coins: new Num(Math.abs(order.size), market.assetDecimals),
+              pCoins: new Num(Math.abs(order.size * order.price), USD_DECIMALS),
+              orderId: order.orderId,
+              marketKey: market.symbol,
+              long: order.side == "buy",
+              symbol: market.symbol,
+            });
+          }
+          orders.push(...marketOrders);
+          res(true);
+        }),
+      );
     }
     await Promise.all(promises);
     this.orders = orders;
@@ -558,9 +565,9 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     const tokenAccount = tokenAccountProvided
       ? tokenAccountProvided
       : await findAssociatedTokenAddress(
-        this.program.provider.wallet.publicKey,
-        mint,
-      );
+          this.program.provider.wallet.publicKey,
+          mint,
+        );
     return await this.depositRaw(tokenAccount, vault, amountSmoll, repayOnly);
   }
 
@@ -631,12 +638,12 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       associatedTokenAccountExists
         ? undefined
         : [
-          getAssociatedTokenTransactionWithPayer(
-            mint,
-            associatedTokenAccount,
-            this.program.provider.wallet.publicKey,
-          ),
-        ],
+            getAssociatedTokenTransactionWithPayer(
+              mint,
+              associatedTokenAccount,
+              this.program.provider.wallet.publicKey,
+            ),
+          ],
     );
   }
 
@@ -684,15 +691,15 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
    * @param clientId
    */
   async placePerpOrderRaw({
-                            symbol,
-                            orderType,
-                            isLong,
-                            limitPrice,
-                            maxBaseQty,
-                            maxQuoteQty,
-                            limit,
-                            clientId,
-                          }: Readonly<{
+    symbol,
+    orderType,
+    isLong,
+    limitPrice,
+    maxBaseQty,
+    maxQuoteQty,
+    limit,
+    clientId,
+  }: Readonly<{
     symbol: string;
     orderType: OrderType;
     isLong: boolean;
@@ -773,8 +780,8 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       market.decoded.perpType.toNumber() === 1
         ? ZO_FUTURE_TAKER_FEE
         : market.decoded.perpType.toNumber() === 2
-          ? ZO_OPTION_TAKER_FEE
-          : ZO_SQUARE_TAKER_FEE;
+        ? ZO_OPTION_TAKER_FEE
+        : ZO_SQUARE_TAKER_FEE;
     const feeMultiplier = isLong ? 1 + takerFee : 1 - takerFee;
     const maxQuoteQtyBn = new BN(
       Math.round(
@@ -929,14 +936,14 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
    * @param clientId Used to tag an order with a unique id, which can be used to cancel this order through cancelPerpOrderByClientId. For optimal use, make sure all ids for every order is unique.
    */
   async makePlacePerpOrderIx({
-                               symbol,
-                               orderType,
-                               isLong,
-                               price,
-                               size,
-                               limit,
-                               clientId,
-                             }: Readonly<{
+    symbol,
+    orderType,
+    isLong,
+    price,
+    size,
+    limit,
+    clientId,
+  }: Readonly<{
     symbol: string;
     orderType: OrderType;
     isLong: boolean;
@@ -952,8 +959,8 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       market.decoded.perpType.toNumber() === 1
         ? ZO_FUTURE_TAKER_FEE
         : market.decoded.perpType.toNumber() === 2
-          ? ZO_OPTION_TAKER_FEE
-          : ZO_SQUARE_TAKER_FEE;
+        ? ZO_OPTION_TAKER_FEE
+        : ZO_SQUARE_TAKER_FEE;
     const feeMultiplier = isLong ? 1 + takerFee : 1 - takerFee;
     const maxQuoteQtyBn = new BN(
       Math.round(
@@ -965,7 +972,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     );
 
     const oo = await this.getOpenOrdersInfoBySymbol(symbol);
-    const ooKey:any = oo?.key;
+    const ooKey: any = oo?.key;
 
     if (maxBaseQtyBn.toNumber() == 0) throw new Error();
     return this.program.instruction.placePerpOrder(
@@ -1007,11 +1014,11 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
    * @param clientId The client id that was assigned to the order when it was placed.
    */
   async cancelPerpOrder({
-                          symbol,
-                          isLong,
-                          orderId,
-                          clientId,
-                        }: {
+    symbol,
+    isLong,
+    orderId,
+    clientId,
+  }: {
     symbol: string;
     isLong?: boolean;
     orderId?: BN;
@@ -1062,14 +1069,14 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
    * @param serumMarket The market public key of the Serum Spot DEX.
    */
   async swap({
-               buy,
-               tokenMint,
-               fromSize,
-               toSize,
-               slippage,
-               allowBorrow,
-               serumMarket,
-             }: Readonly<{
+    buy,
+    tokenMint,
+    fromSize,
+    toSize,
+    slippage,
+    allowBorrow,
+    serumMarket,
+  }: Readonly<{
     buy: boolean;
     tokenMint: PublicKey;
     fromSize: number;
@@ -1109,9 +1116,9 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       slippage === 1
         ? new BN(1)
         : new Num(
-          (toSize * (1 - slippage)) / fromSize,
-          buy ? baseDecimals : USDC_DECIMALS,
-        ).n;
+            (toSize * (1 - slippage)) / fromSize,
+            buy ? baseDecimals : USDC_DECIMALS,
+          ).n;
 
     if (
       !market.baseMintAddress.equals(tokenMint) ||
@@ -1119,8 +1126,8 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     ) {
       throw new Error(
         `Invalid <SerumSpotMarket ${serumMarket}> for swap:\n` +
-        `  swap wants:   base=${tokenMint}, quote=${stateQuoteMint}\n` +
-        `  market wants: base=${market.baseMintAddress}, quote=${market.quoteMintAddress}`,
+          `  swap wants:   base=${tokenMint}, quote=${stateQuoteMint}\n` +
+          `  market wants: base=${market.baseMintAddress}, quote=${market.quoteMintAddress}`,
       );
     }
 
