@@ -746,6 +746,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
    * @param size The maximum amount of big base units to buy or sell.
    * @param limit If this order is taking, the limit sets the number of maker orders the fill will go through, until stopping and posting. If running into compute unit issues, then set this number lower.
    * @param clientId Used to tag an order with a unique id, which can be used to cancel this order through cancelPerpOrderByClientId. For optimal use, make sure all ids for every order is unique.
+   * @param maxTs If the on-chain timestamp exceeds the maxTs, the order will not be placed.
    */
   async placePerpOrder({
     symbol,
@@ -755,6 +756,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     size,
     limit,
     clientId,
+    maxTs,
   }: Readonly<{
     symbol: string;
     orderType: OrderType;
@@ -763,6 +765,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     size: number;
     limit?: number;
     clientId?: number;
+    maxTs?: number;
   }>): Promise<TransactionId> {
     const market = await this.state.getMarketBySymbol(symbol);
     const limitPriceBn = market.priceNumberToLots(price);
@@ -801,58 +804,118 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       createOo = false;
     }
     if (maxBaseQtyBn.toNumber() == 0) throw new Error();
-    return await this.program.rpc.placePerpOrder(
-      isLong,
-      limitPriceBn,
-      maxBaseQtyBn,
-      maxQuoteQtyBn,
-      orderType,
-      limit ?? 10,
-      new BN(clientId ?? 0),
-      {
-        accounts: {
-          state: this.state.pubkey,
-          stateSigner: this.state.signer,
-          cache: this.state.cache.pubkey,
-          authority: this.wallet.publicKey,
-          margin: this.pubkey,
-          control: this.control.pubkey,
-          openOrders: ooKey,
-          dexMarket: market.address,
-          reqQ: market.requestQueueAddress,
-          eventQ: market.eventQueueAddress,
-          marketBids: market.bidsAddress,
-          marketAsks: market.asksAddress,
-          dexProgram: this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
-            ? ZO_DEX_DEVNET_PROGRAM_ID
-            : ZO_DEX_MAINNET_PROGRAM_ID,
-          rent: SYSVAR_RENT_PUBKEY,
+    if (maxTs) {
+      return await this.program.rpc.placePerpOrderWithMaxTs(
+        isLong,
+        limitPriceBn,
+        maxBaseQtyBn,
+        maxQuoteQtyBn,
+        orderType,
+        limit ?? 10,
+        new BN(clientId ?? 0),
+        new BN(maxTs),
+        {
+          accounts: {
+            state: this.state.pubkey,
+            stateSigner: this.state.signer,
+            cache: this.state.cache.pubkey,
+            authority: this.wallet.publicKey,
+            margin: this.pubkey,
+            control: this.control.pubkey,
+            openOrders: ooKey,
+            dexMarket: market.address,
+            reqQ: market.requestQueueAddress,
+            eventQ: market.eventQueueAddress,
+            marketBids: market.bidsAddress,
+            marketAsks: market.asksAddress,
+            dexProgram: this.program.programId.equals(
+              ZERO_ONE_DEVNET_PROGRAM_ID,
+            )
+              ? ZO_DEX_DEVNET_PROGRAM_ID
+              : ZO_DEX_MAINNET_PROGRAM_ID,
+            rent: SYSVAR_RENT_PUBKEY,
+          },
+          preInstructions: createOo
+            ? [
+                this.program.instruction.createPerpOpenOrders({
+                  accounts: {
+                    state: this.state.pubkey,
+                    stateSigner: this.state.signer,
+                    authority: this.wallet.publicKey,
+                    payer: this.wallet.publicKey,
+                    margin: this.pubkey,
+                    control: this.data.control,
+                    openOrders: ooKey,
+                    dexMarket: this.state.getMarketKeyBySymbol(symbol),
+                    dexProgram: this.program.programId.equals(
+                      ZERO_ONE_DEVNET_PROGRAM_ID,
+                    )
+                      ? ZO_DEX_DEVNET_PROGRAM_ID
+                      : ZO_DEX_MAINNET_PROGRAM_ID,
+                    rent: SYSVAR_RENT_PUBKEY,
+                    systemProgram: SystemProgram.programId,
+                  },
+                }),
+              ]
+            : undefined,
         },
-        preInstructions: createOo
-          ? [
-              this.program.instruction.createPerpOpenOrders({
-                accounts: {
-                  state: this.state.pubkey,
-                  stateSigner: this.state.signer,
-                  authority: this.wallet.publicKey,
-                  payer: this.wallet.publicKey,
-                  margin: this.pubkey,
-                  control: this.data.control,
-                  openOrders: ooKey,
-                  dexMarket: this.state.getMarketKeyBySymbol(symbol),
-                  dexProgram: this.program.programId.equals(
-                    ZERO_ONE_DEVNET_PROGRAM_ID,
-                  )
-                    ? ZO_DEX_DEVNET_PROGRAM_ID
-                    : ZO_DEX_MAINNET_PROGRAM_ID,
-                  rent: SYSVAR_RENT_PUBKEY,
-                  systemProgram: SystemProgram.programId,
-                },
-              }),
-            ]
-          : undefined,
-      },
-    );
+      );
+    } else {
+      return await this.program.rpc.placePerpOrder(
+        isLong,
+        limitPriceBn,
+        maxBaseQtyBn,
+        maxQuoteQtyBn,
+        orderType,
+        limit ?? 10,
+        new BN(clientId ?? 0),
+        {
+          accounts: {
+            state: this.state.pubkey,
+            stateSigner: this.state.signer,
+            cache: this.state.cache.pubkey,
+            authority: this.wallet.publicKey,
+            margin: this.pubkey,
+            control: this.control.pubkey,
+            openOrders: ooKey,
+            dexMarket: market.address,
+            reqQ: market.requestQueueAddress,
+            eventQ: market.eventQueueAddress,
+            marketBids: market.bidsAddress,
+            marketAsks: market.asksAddress,
+            dexProgram: this.program.programId.equals(
+              ZERO_ONE_DEVNET_PROGRAM_ID,
+            )
+              ? ZO_DEX_DEVNET_PROGRAM_ID
+              : ZO_DEX_MAINNET_PROGRAM_ID,
+            rent: SYSVAR_RENT_PUBKEY,
+          },
+          preInstructions: createOo
+            ? [
+                this.program.instruction.createPerpOpenOrders({
+                  accounts: {
+                    state: this.state.pubkey,
+                    stateSigner: this.state.signer,
+                    authority: this.wallet.publicKey,
+                    payer: this.wallet.publicKey,
+                    margin: this.pubkey,
+                    control: this.data.control,
+                    openOrders: ooKey,
+                    dexMarket: this.state.getMarketKeyBySymbol(symbol),
+                    dexProgram: this.program.programId.equals(
+                      ZERO_ONE_DEVNET_PROGRAM_ID,
+                    )
+                      ? ZO_DEX_DEVNET_PROGRAM_ID
+                      : ZO_DEX_MAINNET_PROGRAM_ID,
+                    rent: SYSVAR_RENT_PUBKEY,
+                    systemProgram: SystemProgram.programId,
+                  },
+                }),
+              ]
+            : undefined,
+        },
+      );
+    }
   }
 
   /**

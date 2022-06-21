@@ -366,18 +366,24 @@ export default class State extends BaseAccount<Schema> {
           signer: this.wallet.publicKey,
           state: this.pubkey,
           cache: this.cache.pubkey,
-          dexProgram:
-            this.program.programId === ZERO_ONE_MAINNET_PROGRAM_ID
-              ? ZO_DEX_MAINNET_PROGRAM_ID
-              : ZO_DEX_DEVNET_PROGRAM_ID,
+          dexProgram: this.program.programId.equals(ZERO_ONE_MAINNET_PROGRAM_ID)
+            ? ZO_DEX_MAINNET_PROGRAM_ID
+            : ZO_DEX_DEVNET_PROGRAM_ID,
         },
-        remainingAccounts: oracles
-          .flatMap((x) => x.sources)
-          .map((x) => ({
+        remainingAccounts: [
+          ...oracles
+            .flatMap((x) => x.sources)
+            .map((x) => ({
+              isSigner: false,
+              isWritable: false,
+              pubkey: x.key,
+            })),
+          ...this.data.perpMarkets.map((x) => ({
             isSigner: false,
             isWritable: false,
-            pubkey: x.key,
+            pubkey: x.dexMarket,
           })),
+        ],
       },
     );
   }
