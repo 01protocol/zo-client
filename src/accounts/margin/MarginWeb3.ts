@@ -1058,6 +1058,53 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
   }
 
   /**
+   * Creates the instruction for cancelling a perp order.
+   */
+  async makeCancelPerpOrderIx({
+    symbol,
+    isLong,
+    orderId,
+    clientId,
+  }: {
+    symbol: string;
+    isLong?: boolean;
+    orderId?: BN;
+    clientId?: BN;
+  }): Promise<TransactionInstruction> {
+    const market = await this.state.getMarketBySymbol(symbol);
+    const oo = await this.getOpenOrdersInfoBySymbol(symbol);
+
+    if (!isLong && !orderId && !clientId) {
+      throw new Error(
+        `Either specify both isLong and orderId, or only clientId`,
+      );
+    }
+
+    return this.program.instruction.cancelPerpOrder(
+      orderId ?? null,
+      isLong ?? null,
+      clientId ?? null,
+      {
+        accounts: {
+          state: this.state.pubkey,
+          cache: this.state.cache.pubkey,
+          authority: this.wallet.publicKey,
+          margin: this.pubkey,
+          control: this.control.pubkey,
+          openOrders: oo!.key,
+          dexMarket: market.address,
+          marketBids: market.bidsAddress,
+          marketAsks: market.asksAddress,
+          eventQ: market.eventQueueAddress,
+          dexProgram: this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
+            ? ZO_DEX_DEVNET_PROGRAM_ID
+            : ZO_DEX_MAINNET_PROGRAM_ID,
+        },
+      },
+    );
+  }
+
+  /**
    * Swaps between USDC and a given Token B (or vice versa) on the Serum Spot DEX. This is a direct IOC trade that instantly settles.
    * Note that the token B needs to be swappable, as enabled by the 01 program.
    * @param buy If true, then swapping USDC for Token B. If false, the swapping Token B for USDC.

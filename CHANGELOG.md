@@ -7,6 +7,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.10]
+
+- Margin: New `makeCancelPerpOrderIx`
+
 ## [0.8.9]
 
 - Margin: Added `maxTs` to `placePerpOrder` ([#159](https://github.com/01protocol/zo-client/pull/159))
