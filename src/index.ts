@@ -13,4 +13,4 @@ export { default as MarginsCluster } from "./accounts/margin/MarginsCluster";
 export { decodeEvent } from "./utils/events";
 
 export { ZoMarket, Orderbook, ZoOpenOrders } from "./zoDex/zoMarket";
-export { EVENT_QUEUE_HEADER, decodeEventsSince } from "./zoDex/queue";
+export { EVENT_QUEUE_HEADER, decodeEventsSince, EVENT_QUEUE_LAYOUT } from "./zoDex/queue";

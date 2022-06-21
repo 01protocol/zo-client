@@ -13,12 +13,7 @@ import {
   ZO_DEX_DEVNET_PROGRAM_ID,
   ZO_DEX_MAINNET_PROGRAM_ID,
 } from "../config";
-import {
-  AssetInfo,
-  FundingInfo,
-  MarketInfo,
-  MarketType,
-} from "../types/dataTypes";
+import { AssetInfo, FundingInfo, MarketInfo, MarketType } from "../types/dataTypes";
 import Decimal from "decimal.js";
 import _ from "lodash";
 import Num from "../Num";
@@ -31,10 +26,8 @@ type CollateralInfo = Omit<StateSchema["collaterals"][0], "oracleSymbol"> & {
   oracleSymbol: string;
 };
 
-type PerpMarket = Omit<
-  StateSchema["perpMarkets"][0],
-  "symbol" | "oracleSymbol"
-> & {
+type PerpMarket = Omit<StateSchema["perpMarkets"][0],
+  "symbol" | "oracleSymbol"> & {
   symbol: string;
   oracleSymbol: string;
 };
@@ -292,9 +285,9 @@ export default class State extends BaseAccount<Schema> {
   eventEmitter: EventEmitter<UpdateEvents> | undefined;
 
   async subscribe({
-    cacheRefreshInterval,
-    eventEmitter,
-  }: {
+                    cacheRefreshInterval,
+                    eventEmitter,
+                  }: {
     cacheRefreshInterval?: number;
     eventEmitter?: EventEmitter<UpdateEvents>;
   }) {
@@ -419,15 +412,23 @@ export default class State extends BaseAccount<Schema> {
         ? ZO_DEX_DEVNET_PROGRAM_ID
         : ZO_DEX_MAINNET_PROGRAM_ID,
     );
-
-    const bids = await dexMarket.loadBids(
-      this.program.provider.connection,
-      "recent",
-    );
-    const asks = await dexMarket.loadAsks(
-      this.program.provider.connection,
-      "recent",
-    );
+    let bids, asks;
+    const promises: Array<Promise<boolean>> = [];
+    promises.push(new Promise(async (res) => {
+      bids = await dexMarket.loadBids(
+        this.program.provider.connection,
+        "recent",
+      );
+      res(true);
+    }));
+    promises.push(new Promise(async (res) => {
+      asks = await dexMarket.loadAsks(
+        this.program.provider.connection,
+        "recent",
+      );
+      res(true);
+    }));
+    await Promise.all(promises);
     this.zoMarketAccounts[market.symbol] = { dexMarket, bids, asks };
     return this.zoMarketAccounts[market.symbol]!;
   }
@@ -436,9 +437,14 @@ export default class State extends BaseAccount<Schema> {
    * Load all ZoMarket DEX Accounts
    */
   async loadZoMarkets() {
+    const promises: Array<Promise<boolean>> = [];
     for (const marketInfo of Object.values(this.markets)) {
-      await this.getZoMarketAccounts(marketInfo);
+      promises.push(new Promise(async (res) => {
+        await this.getZoMarketAccounts(marketInfo);
+        res(true);
+      }));
     }
+    await Promise.all(promises);
   }
 
   /**
@@ -580,13 +586,13 @@ export default class State extends BaseAccount<Schema> {
     return {
       data: hasData
         ? {
-            hourly: cumulAvg.div(lastSampleStartTime.getMinutes() * 24),
-            daily: cumulAvg.div(lastSampleStartTime.getMinutes()),
-            apr: cumulAvg
-              .div(lastSampleStartTime.getMinutes())
-              .times(100)
-              .times(365),
-          }
+          hourly: cumulAvg.div(lastSampleStartTime.getMinutes() * 24),
+          daily: cumulAvg.div(lastSampleStartTime.getMinutes()),
+          apr: cumulAvg
+            .div(lastSampleStartTime.getMinutes())
+            .times(100)
+            .times(365),
+        }
         : null,
       lastSampleUpdate: lastSampleStartTime,
     };
