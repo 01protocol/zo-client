@@ -960,9 +960,9 @@ export default abstract class Margin extends MarginWeb3 {
 Margin: ${this.pubkey.toString()},
 Wallet: ${this.owner && this.owner.toString()},
 Control: ${this.control.pubkey.toString()},
-Balances: [${"\n" + Object.keys(this.balances).filter(symbol => this.balances[symbol]!.number != 0).map(symbol => "{\n" + symbol + ":" + this.balances[symbol]!.number + "\n}").reduce((res, el) => res + ",\n" + el)}
+Balances: [${"\n" + Object.keys(this.balances).filter(symbol => this.balances[symbol]!.number != 0).map(symbol => "{\n" + symbol + ":" + this.balances[symbol]!.number + "\n}").reduce((res, el) => res + ",\n" + el, "")}
 ],
-Positions:[ ${"\n" + (this.positions).filter(position => position.coins.number != 0 || position.realizedPnL.number != 0).map(position => this.positionToString(position)).reduce((res, el) => res + ",\n" + el)}
+Positions:[ ${"\n" + (this.positions).filter(position => position.coins.number != 0 || position.realizedPnL.number != 0).map(position => this.positionToString(position)).reduce((res, el) => res + ",\n" + el, "")}
 ],
    `;
   }

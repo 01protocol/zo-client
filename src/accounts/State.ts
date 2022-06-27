@@ -13,12 +13,7 @@ import {
   ZO_DEX_DEVNET_PROGRAM_ID,
   ZO_DEX_MAINNET_PROGRAM_ID,
 } from "../config";
-import {
-  AssetInfo,
-  FundingInfo,
-  MarketInfo,
-  MarketType,
-} from "../types/dataTypes";
+import { AssetInfo, FundingInfo, MarketInfo, MarketType } from "../types/dataTypes";
 import Decimal from "decimal.js";
 import _ from "lodash";
 import Num from "../Num";
@@ -26,15 +21,14 @@ import { loadSymbol } from "../utils";
 import BaseAccount from "./BaseAccount";
 import EventEmitter from "eventemitter3";
 import { UpdateEvents } from "./margin/UpdateEvents";
+import { Event } from "../zoDex/queue";
 
 type CollateralInfo = Omit<StateSchema["collaterals"][0], "oracleSymbol"> & {
   oracleSymbol: string;
 };
 
-type PerpMarket = Omit<
-  StateSchema["perpMarkets"][0],
-  "symbol" | "oracleSymbol"
-> & {
+type PerpMarket = Omit<StateSchema["perpMarkets"][0],
+  "symbol" | "oracleSymbol"> & {
   symbol: string;
   oracleSymbol: string;
 };
@@ -49,12 +43,11 @@ export interface Schema
  * The state account defines program-level parameters, and tracks listed markets and supported collaterals.
  */
 export default class State extends BaseAccount<Schema> {
-  _getMarketBySymbol: { [k: string]: ZoMarket } = {};
   /**
    * zo market infos
    */
   zoMarketAccounts: {
-    [key: string]: { dexMarket: ZoMarket; bids: Orderbook; asks: Orderbook };
+    [key: string]: { dexMarket: ZoMarket; bids: Orderbook; asks: Orderbook; eventQueue: Event[] };
   } = {};
   assets: { [key: string]: AssetInfo } = {};
   markets: { [key: string]: MarketInfo } = {};
@@ -183,7 +176,7 @@ export default class State extends BaseAccount<Schema> {
   }
 
   async refresh(): Promise<void> {
-    this._getMarketBySymbol = {};
+    this.zoMarketAccounts = {};
     [this.data] = await Promise.all([
       State.fetch(this.program, this.pubkey),
       this.cache.refresh(),
@@ -250,18 +243,11 @@ export default class State extends BaseAccount<Schema> {
       ?.dexMarket as PublicKey;
   }
 
-  async getMarketBySymbol(sym: string): Promise<ZoMarket> {
-    if (!this._getMarketBySymbol[sym]) {
-      this._getMarketBySymbol[sym] = await ZoMarket.load(
-        this.connection,
-        this.getMarketKeyBySymbol(sym),
-        this.provider.opts,
-        this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
-          ? ZO_DEX_DEVNET_PROGRAM_ID
-          : ZO_DEX_MAINNET_PROGRAM_ID,
-      );
+  async getMarketBySymbol(sym: string, withOrderbooks?: boolean, withEventQueues?: boolean): Promise<ZoMarket> {
+    if (!this.zoMarketAccounts[sym]) {
+      await this.getZoMarketAccounts({ market: this.markets[sym]!, withOrderbooks, withEventQueues });
     }
-    return this._getMarketBySymbol[sym] as ZoMarket;
+    return this.zoMarketAccounts[sym]!.dexMarket;
   }
 
   /* -------------------------------------------------------------------------- */
@@ -292,9 +278,9 @@ export default class State extends BaseAccount<Schema> {
   eventEmitter: EventEmitter<UpdateEvents> | undefined;
 
   async subscribe({
-    cacheRefreshInterval,
-    eventEmitter,
-  }: {
+                    cacheRefreshInterval,
+                    eventEmitter,
+                  }: {
     cacheRefreshInterval?: number;
     eventEmitter?: EventEmitter<UpdateEvents>;
   }) {
@@ -406,8 +392,14 @@ export default class State extends BaseAccount<Schema> {
   /**
    * Get the ZoMarket DEX accounts for a market using the market object (  { dexMarket: ZoMarket; bids: Orderbook; asks: Orderbook } )
    * @param market
+   * @param withOrderbooks parameter to fetch asks and bids, default = true due to previous versions
+   * @param withEventQueues to fetch eventqueue or no
    */
-  async getZoMarketAccounts(market: MarketInfo) {
+  async getZoMarketAccounts({
+                              market,
+                              withOrderbooks = true,
+                              withEventQueues,
+                            }: { market: MarketInfo, withOrderbooks?: boolean, withEventQueues?: boolean }) {
     if (this.zoMarketAccounts[market.symbol]) {
       return this.zoMarketAccounts[market.symbol]!;
     }
@@ -419,40 +411,53 @@ export default class State extends BaseAccount<Schema> {
         ? ZO_DEX_DEVNET_PROGRAM_ID
         : ZO_DEX_MAINNET_PROGRAM_ID,
     );
-    let bids, asks;
+    let bids, asks, eventQueue;
     const promises: Array<Promise<boolean>> = [];
-    promises.push(
-      new Promise(async (res) => {
-        bids = await dexMarket.loadBids(
-          this.program.provider.connection,
-          "recent",
-        );
-        res(true);
-      }),
-    );
-    promises.push(
-      new Promise(async (res) => {
-        asks = await dexMarket.loadAsks(
-          this.program.provider.connection,
-          "recent",
-        );
-        res(true);
-      }),
-    );
+    if (withOrderbooks) {
+      promises.push(
+        new Promise(async (res) => {
+          bids = await dexMarket.loadBids(
+            this.program.provider.connection,
+            "recent",
+          );
+          res(true);
+        }),
+      );
+      promises.push(
+        new Promise(async (res) => {
+          asks = await dexMarket.loadAsks(
+            this.program.provider.connection,
+            "recent",
+          );
+          res(true);
+        }),
+      );
+    }
+    if (withEventQueues) {
+      promises.push(
+        new Promise(async (res) => {
+          eventQueue = await dexMarket.loadEventQueue(
+            this.program.provider.connection,
+            "recent",
+          );
+          res(true);
+        }),
+      );
+    }
     await Promise.all(promises);
-    this.zoMarketAccounts[market.symbol] = { dexMarket, bids, asks };
+    this.zoMarketAccounts[market.symbol] = { dexMarket, bids, asks, eventQueue };
     return this.zoMarketAccounts[market.symbol]!;
   }
 
   /**
    * Load all ZoMarket DEX Accounts
    */
-  async loadZoMarkets() {
+  async loadZoMarkets(withOrderbooks?: boolean, withEventQueues?: boolean) {
     const promises: Array<Promise<boolean>> = [];
     for (const marketInfo of Object.values(this.markets)) {
       promises.push(
         new Promise(async (res) => {
-          await this.getZoMarketAccounts(marketInfo);
+          await this.getZoMarketAccounts({ market: marketInfo, withOrderbooks, withEventQueues });
           res(true);
         }),
       );
@@ -523,7 +528,7 @@ export default class State extends BaseAccount<Schema> {
   /**
    * Load all market infos
    */
-  loadMarkets() {
+  loadMarkets(loadOrderbooks?: boolean, loadEventQueues?: boolean) {
     const markets: { [key: string]: MarketInfo } = {};
     let index = 0;
     for (const perpMarket of this.data.perpMarkets) {
@@ -599,13 +604,13 @@ export default class State extends BaseAccount<Schema> {
     return {
       data: hasData
         ? {
-            hourly: cumulAvg.div(lastSampleStartTime.getMinutes() * 24),
-            daily: cumulAvg.div(lastSampleStartTime.getMinutes()),
-            apr: cumulAvg
-              .div(lastSampleStartTime.getMinutes())
-              .times(100)
-              .times(365),
-          }
+          hourly: cumulAvg.div(lastSampleStartTime.getMinutes() * 24),
+          daily: cumulAvg.div(lastSampleStartTime.getMinutes()),
+          apr: cumulAvg
+            .div(lastSampleStartTime.getMinutes())
+            .times(100)
+            .times(365),
+        }
         : null,
       lastSampleUpdate: lastSampleStartTime,
     };

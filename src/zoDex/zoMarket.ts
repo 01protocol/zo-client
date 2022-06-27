@@ -1,24 +1,11 @@
 import { blob, seq, struct } from "buffer-layout";
-import {
-  accountFlagsLayout,
-  i128,
-  i64,
-  publicKeyLayout,
-  u128,
-  u64,
-} from "./layout";
+import { accountFlagsLayout, i128, i64, publicKeyLayout, u128, u64 } from "./layout";
 import { Slab, SLAB_LAYOUT } from "./slab";
 import BN from "bn.js";
-import {
-  AccountInfo,
-  AccountMeta,
-  Commitment,
-  Connection,
-  PublicKey,
-} from "@solana/web3.js";
+import { AccountInfo, AccountMeta, Commitment, Connection, PublicKey } from "@solana/web3.js";
 import { decodeEventQueue, decodeRequestQueue } from "./queue";
 import { Buffer } from "buffer";
-import { FundingInfo, MarketInfo, throwIfNull } from "../utils";
+import { throwIfNull } from "../utils";
 import { TransactionId } from "../types";
 import {
   WRAPPED_SOL_MINT,
@@ -487,9 +474,10 @@ export class ZoMarket {
     return decodeRequestQueue(data);
   }
 
-  async loadEventQueue(connection: Connection) {
+  async loadEventQueue(connection: Connection,
+                       commitment?: Commitment) {
     const { data } = throwIfNull(
-      await connection.getAccountInfo(this._decoded.eventQueue),
+      await connection.getAccountInfo(this._decoded.eventQueue, commitment),
     );
     return decodeEventQueue(data);
   }
@@ -560,8 +548,8 @@ export class ZoMarket {
         (price *
           Math.pow(10, this._quoteSplTokenDecimals) *
           this._decoded.baseLotSize.toNumber()) /
-          (Math.pow(10, this._baseSplTokenDecimals) *
-            this._decoded.quoteLotSize.toNumber()),
+        (Math.pow(10, this._baseSplTokenDecimals) *
+          this._decoded.quoteLotSize.toNumber()),
       ),
     );
   }
@@ -886,7 +874,7 @@ export class Orderbook {
     return this.items(false);
   }
 
-  *items(descending = false): Generator<Order> {
+  * items(descending = false): Generator<Order> {
     for (const {
       key,
       ownerSlot,

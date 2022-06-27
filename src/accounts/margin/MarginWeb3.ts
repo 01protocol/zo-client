@@ -361,7 +361,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
         new Promise(async (res) => {
           const marketOrders: OrderInfo[] = [];
           const { dexMarket, bids, asks } =
-            await this.state.getZoMarketAccounts(market);
+            await this.state.getZoMarketAccounts({ market: market });
           const activeOrders = dexMarket.filterForOpenOrders(
             bids,
             asks,

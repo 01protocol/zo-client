@@ -8,9 +8,14 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.12]
+
+- State: Added `loadZoMarkets` method
+- Margin: Fixed `toString` method
+
 ## [0.8.11]
 
-- Margin: Added toString method
+- Margin: Added `toString` method
 
 ## [0.8.10]
 
