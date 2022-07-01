@@ -7,7 +7,7 @@ export { DEX_IDL } from "./types/dex";
 // == PARAMS ==
 export const ZO_FUTURE_TAKER_FEE = 0.001; // 10bps
 export const ZO_OPTION_TAKER_FEE = 0.001; // temporary value, not actual
-export const ZO_SQUARE_TAKER_FEE = 0.0015; // 15bps, not actual
+export const ZO_SQUARE_TAKER_FEE = 0.002; // 20bps
 export const USDC_DECIMALS = 6;
 
 export const BASE_IMF_DIVIDER = 1000;
