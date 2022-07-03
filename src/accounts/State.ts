@@ -13,7 +13,12 @@ import {
   ZO_DEX_DEVNET_PROGRAM_ID,
   ZO_DEX_MAINNET_PROGRAM_ID,
 } from "../config";
-import { AssetInfo, FundingInfo, MarketInfo, MarketType } from "../types/dataTypes";
+import {
+  AssetInfo,
+  FundingInfo,
+  MarketInfo,
+  MarketType,
+} from "../types/dataTypes";
 import Decimal from "decimal.js";
 import _ from "lodash";
 import Num from "../Num";
@@ -27,8 +32,10 @@ type CollateralInfo = Omit<StateSchema["collaterals"][0], "oracleSymbol"> & {
   oracleSymbol: string;
 };
 
-type PerpMarket = Omit<StateSchema["perpMarkets"][0],
-  "symbol" | "oracleSymbol"> & {
+type PerpMarket = Omit<
+  StateSchema["perpMarkets"][0],
+  "symbol" | "oracleSymbol"
+> & {
   symbol: string;
   oracleSymbol: string;
 };
@@ -47,7 +54,12 @@ export default class State extends BaseAccount<Schema> {
    * zo market infos
    */
   zoMarketAccounts: {
-    [key: string]: { dexMarket: ZoMarket; bids: Orderbook; asks: Orderbook; eventQueue: Event[] };
+    [key: string]: {
+      dexMarket: ZoMarket;
+      bids: Orderbook;
+      asks: Orderbook;
+      eventQueue: Event[];
+    };
   } = {};
   assets: { [key: string]: AssetInfo } = {};
   markets: { [key: string]: MarketInfo } = {};
@@ -243,9 +255,17 @@ export default class State extends BaseAccount<Schema> {
       ?.dexMarket as PublicKey;
   }
 
-  async getMarketBySymbol(sym: string, withOrderbooks?: boolean, withEventQueues?: boolean): Promise<ZoMarket> {
+  async getMarketBySymbol(
+    sym: string,
+    withOrderbooks?: boolean,
+    withEventQueues?: boolean,
+  ): Promise<ZoMarket> {
     if (!this.zoMarketAccounts[sym]) {
-      await this.getZoMarketAccounts({ market: this.markets[sym]!, withOrderbooks, withEventQueues });
+      await this.getZoMarketAccounts({
+        market: this.markets[sym]!,
+        withOrderbooks,
+        withEventQueues,
+      });
     }
     return this.zoMarketAccounts[sym]!.dexMarket;
   }
@@ -278,9 +298,9 @@ export default class State extends BaseAccount<Schema> {
   eventEmitter: EventEmitter<UpdateEvents> | undefined;
 
   async subscribe({
-                    cacheRefreshInterval,
-                    eventEmitter,
-                  }: {
+    cacheRefreshInterval,
+    eventEmitter,
+  }: {
     cacheRefreshInterval?: number;
     eventEmitter?: EventEmitter<UpdateEvents>;
   }) {
@@ -396,10 +416,14 @@ export default class State extends BaseAccount<Schema> {
    * @param withEventQueues to fetch eventqueue or no
    */
   async getZoMarketAccounts({
-                              market,
-                              withOrderbooks = true,
-                              withEventQueues,
-                            }: { market: MarketInfo, withOrderbooks?: boolean, withEventQueues?: boolean }) {
+    market,
+    withOrderbooks = true,
+    withEventQueues,
+  }: {
+    market: MarketInfo;
+    withOrderbooks?: boolean;
+    withEventQueues?: boolean;
+  }) {
     if (this.zoMarketAccounts[market.symbol]) {
       return this.zoMarketAccounts[market.symbol]!;
     }
@@ -445,7 +469,12 @@ export default class State extends BaseAccount<Schema> {
       );
     }
     await Promise.all(promises);
-    this.zoMarketAccounts[market.symbol] = { dexMarket, bids, asks, eventQueue };
+    this.zoMarketAccounts[market.symbol] = {
+      dexMarket,
+      bids,
+      asks,
+      eventQueue,
+    };
     return this.zoMarketAccounts[market.symbol]!;
   }
 
@@ -457,7 +486,11 @@ export default class State extends BaseAccount<Schema> {
     for (const marketInfo of Object.values(this.markets)) {
       promises.push(
         new Promise(async (res) => {
-          await this.getZoMarketAccounts({ market: marketInfo, withOrderbooks, withEventQueues });
+          await this.getZoMarketAccounts({
+            market: marketInfo,
+            withOrderbooks,
+            withEventQueues,
+          });
           res(true);
         }),
       );
@@ -604,13 +637,13 @@ export default class State extends BaseAccount<Schema> {
     return {
       data: hasData
         ? {
-          hourly: cumulAvg.div(lastSampleStartTime.getMinutes() * 24),
-          daily: cumulAvg.div(lastSampleStartTime.getMinutes()),
-          apr: cumulAvg
-            .div(lastSampleStartTime.getMinutes())
-            .times(100)
-            .times(365),
-        }
+            hourly: cumulAvg.div(lastSampleStartTime.getMinutes() * 24),
+            daily: cumulAvg.div(lastSampleStartTime.getMinutes()),
+            apr: cumulAvg
+              .div(lastSampleStartTime.getMinutes())
+              .times(100)
+              .times(365),
+          }
         : null,
       lastSampleUpdate: lastSampleStartTime,
     };

@@ -8,9 +8,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [0.8.14]
+## [0.8.15]
 
 - Margin: Fixed `liqPrice` method
+
+## [0.8.13]
+
+- Config: Updated `ZO_SQUARE_TAKER_FEE` from 0.0015 to 0.002
 
 ## [0.8.12]
 

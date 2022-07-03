@@ -9,7 +9,6 @@ import { Zo } from "../../types/zo";
 import Cache from "../Cache";
 import { ControlSchema, MarginSchema } from "../../types";
 
-
 /**
  * The margin account is a PDA generated using
  * ```javascript
@@ -68,12 +67,12 @@ export default abstract class Margin extends MarginWeb3 {
     if (position.isLong) {
       const fundingDifference = this.state.markets[
         position.marketKey
-        ]!.fundingIndex.sub(position.fundingIndex);
+      ]!.fundingIndex.sub(position.fundingIndex);
       return position.coins.decimal.mul(fundingDifference).mul(-1);
     } else {
       const fundingDifference = this.state.markets[
         position.marketKey
-        ]!.fundingIndex.sub(position.fundingIndex);
+      ]!.fundingIndex.sub(position.fundingIndex);
       return position.coins.decimal.mul(fundingDifference);
     }
   }
@@ -773,12 +772,12 @@ export default abstract class Margin extends MarginWeb3 {
     if (position.isLong) {
       const fundingDifference = this.state.markets[
         position.marketKey
-        ]!.fundingIndex.sub(position.fundingIndex);
+      ]!.fundingIndex.sub(position.fundingIndex);
       funding = funding.sub(position.coins.decimal.mul(fundingDifference));
     } else {
       const fundingDifference = this.state.markets[
         position.marketKey
-        ]!.fundingIndex.sub(position.fundingIndex);
+      ]!.fundingIndex.sub(position.fundingIndex);
       funding = funding.add(position.coins.decimal.mul(fundingDifference));
     }
     return funding;
@@ -971,7 +970,6 @@ export default abstract class Margin extends MarginWeb3 {
     return { weight, weightedBorrow };
   }
 
-
   positionToString(position: PositionInfo) {
     return `{
     market:${position.marketKey}
@@ -990,9 +988,27 @@ export default abstract class Margin extends MarginWeb3 {
 Margin: ${this.pubkey.toString()},
 Wallet: ${this.owner && this.owner.toString()},
 Control: ${this.control.pubkey.toString()},
-Balances: [${"\n" + Object.keys(this.balances).filter(symbol => this.balances[symbol]!.number != 0).map(symbol => "{\n" + symbol + ":" + this.balances[symbol]!.number + "\n}").reduce((res, el) => res + ",\n" + el, "")}
+Balances: [${
+      "\n" +
+      Object.keys(this.balances)
+        .filter((symbol) => this.balances[symbol]!.number != 0)
+        .map(
+          (symbol) =>
+            "{\n" + symbol + ":" + this.balances[symbol]!.number + "\n}",
+        )
+        .reduce((res, el) => res + ",\n" + el, "")
+    }
 ],
-Positions:[ ${"\n" + (this.positions).filter(position => position.coins.number != 0 || position.realizedPnL.number != 0).map(position => this.positionToString(position)).reduce((res, el) => res + ",\n" + el, "")}
+Positions:[ ${
+      "\n" +
+      this.positions
+        .filter(
+          (position) =>
+            position.coins.number != 0 || position.realizedPnL.number != 0,
+        )
+        .map((position) => this.positionToString(position))
+        .reduce((res, el) => res + ",\n" + el, "")
+    }
 ],
    `;
   }
