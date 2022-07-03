@@ -8,6 +8,8 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- New `SpecialOrders` classes and methods that enable stop loss and take profit trigger orders. 
+
 ## [0.10.0] - 2022-08-03
 
 - BREAKING: Margin's `withdraw` methods now take and additional `heimdall` account. Previous build's withdraw methods will fail.
