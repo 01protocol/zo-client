@@ -47,6 +47,12 @@ export type OrderType =
 	// eslint-disable-next-line @typescript-eslint/ban-types
 	| { fillOrKill: {} }
 
+export type SpecialOrderType =
+	// eslint-disable-next-line @typescript-eslint/ban-types
+	| { takeProfit: {} }
+	// eslint-disable-next-line @typescript-eslint/ban-types
+	| { stopLoss: {} }
+
 export enum OrderTypeName {
 	Limit = "Limit",
 	ImmediateOrCancel = "ImmediateOrCancel",
@@ -104,6 +110,9 @@ type TwapInfo = Omit<
 	close: WrappedI80F48
 	lastSampleStartTime: BN
 }
+type SpecialOrdersInfo = Omit<IdlTypes<Zo>["SpecialOrdersInfo"], "ty"> & {
+	ty: SpecialOrderType
+}
 
 type OracleCache = Omit<IdlTypes<Zo>["OracleCache"], "symbol"> & {
 	symbol: symbol
@@ -139,6 +148,13 @@ export type CacheSchema = IdlAccounts<Zo>["cache"] & {
 }
 export type ControlSchema = IdlAccounts<Zo>["control"] & {
 	openOrdersAgg: OpenOrdersInfo[]
+}
+
+export type SpecialOrdersSchema = Omit<
+	IdlAccounts<Zo>["specialOrders"],
+	"entries"
+> & {
+	entries: SpecialOrdersInfo[]
 }
 
 export type ZammSchema = IdlAccounts<ZammIdlType>["zamm"]

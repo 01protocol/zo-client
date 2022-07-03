@@ -1,7 +1,8 @@
-import Num from "../Num"
-import Decimal from "decimal.js"
-import { PublicKey } from "@solana/web3.js"
-import BN from "bn.js"
+import Num from "../Num";
+import { SpecialOrderType } from "../types";
+import Decimal from "decimal.js";
+import { PublicKey } from "@solana/web3.js";
+import BN from "bn.js";
 
 /**
  * Data will be undefined in the first minute of the hour.
@@ -12,11 +13,11 @@ import BN from "bn.js"
  */
 export interface FundingInfo {
   data: {
-    hourly: Decimal,
-    daily: Decimal,
-    apr: Decimal,
-  } | null,
-  lastSampleUpdate: Date,
+    hourly: Decimal;
+    daily: Decimal;
+    apr: Decimal;
+  } | null;
+  lastSampleUpdate: Date;
 }
 
 export enum MarketType {
@@ -52,12 +53,11 @@ export interface PositionInfo {
  * @isLong - long
  */
 export interface OOInfo {
-  long: Decimal,
-  short: Decimal,
-  posSize: Decimal,
-  isLong: boolean,
+  long: Decimal;
+  short: Decimal;
+  posSize: Decimal;
+  isLong: boolean;
 }
-
 
 /**
  *   @pubKey: public key
@@ -114,18 +114,18 @@ export interface MarketInfo {
  *   @vault - vault key
  */
 export type AssetInfo = {
-  decimals: number,
-  weight: number,
-  liqFee: number,
-  isBorrowable: boolean,
-  optimalUtil: number,
-  optimalRate: number,
-  maxRate: number,
-  ogFee: number,
-  isSwappable: boolean,
-  serumOpenOrders: PublicKey,
-  maxDeposit: Decimal,
-  dustThreshold: Num,
+  decimals: number;
+  weight: number;
+  liqFee: number;
+  isBorrowable: boolean;
+  optimalUtil: number;
+  optimalRate: number;
+  maxRate: number;
+  ogFee: number;
+  isSwappable: boolean;
+  serumOpenOrders: PublicKey;
+  maxDeposit: Decimal;
+  dustThreshold: Num;
   symbol: string;
   indexPrice: Num;
   supply: Decimal;
@@ -138,6 +138,17 @@ export type AssetInfo = {
   vault: PublicKey;
 };
 
+export interface SpecialOrderInfo {
+  id: number;
+  marketSymbol: string;
+  marketKey: PublicKey;
+  isLong: boolean;
+  triggerPrice: Num;
+  limitPrice: Num;
+  size: Num;
+  type: SpecialOrderType;
+  fee: BN;
+}
 
 /**
  * @price
