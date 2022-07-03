@@ -8,6 +8,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.14]
+
+- Margin: Fixed `liqPrice` method
+
 ## [0.8.12]
 
 - State: Added `loadZoMarkets` method

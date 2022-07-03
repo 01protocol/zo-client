@@ -686,16 +686,46 @@ export default abstract class Margin extends MarginWeb3 {
     const pmmf = this.state.markets[marketKey]!.pmmf;
     const indexPrice = this.state.markets[marketKey]!.indexPrice.decimal;
 
-    const priceChange = this.marginFraction
-      .sub(this.maintenanceMarginFraction)
-      .mul(this.totalOpenPositionNotional)
-      .div(position.coins.decimal.mul(new Decimal(1).sub(pmmf)));
     if (position.isLong) {
-      const price = indexPrice.sub(priceChange).toNumber();
-      return price > 0 ? price : Infinity;
+      // (c * d - (m - f) * t / (1 - w)) / c
+      const price = (
+        (
+          (
+            position.coins.decimal.mul(indexPrice)
+          )
+            .sub(
+              (
+                (
+                  this.marginFraction.sub(this.maintenanceMarginFraction)
+                )
+                  .mul(this.totalPositionNotional)
+              )
+                .div(new Decimal(1).sub(pmmf)),
+            )
+        )
+          .div(position.coins.decimal)
+      ).toNumber();
+      return price < 0 ? Infinity : price;
+    } else {
+      // (c * d + (m - f) * t / (1 + w)) / c
+      return (
+        (
+          (
+            position.coins.decimal.mul(indexPrice)
+          )
+            .add(
+              (
+                (
+                  this.marginFraction.sub(this.maintenanceMarginFraction)
+                )
+                  .mul(this.totalPositionNotional)
+              )
+                .div(new Decimal(1).add(pmmf)),
+            )
+        )
+          .div(position.coins.decimal)
+      ).toNumber();
     }
-    const price = indexPrice.add(priceChange).toNumber();
-    return price > 0 ? price : Infinity;
   }
 
   /**
