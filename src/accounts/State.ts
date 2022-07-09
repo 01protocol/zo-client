@@ -139,6 +139,7 @@ export default class State extends BaseAccount<Schema> {
     ));
   }
 
+  eventEmitter: EventEmitter<UpdateEvents> | undefined;
   async subscribe() {
     this.eventEmitter = new EventEmitter();
     const anchorEventEmitter = await this._subscribe();
@@ -149,11 +150,11 @@ export default class State extends BaseAccount<Schema> {
       that.loadMarkets();
       this.eventEmitter!.emit(UpdateEvents.stateModified);
     });
-    await this.cache.subscribe()
-    this.cache.eventEmitter!.addListener(UpdateEvents.cacheModified, ()=>{
+    await this.cache.subscribe();
+    this.cache.eventEmitter!.addListener(UpdateEvents.cacheModified, () => {
       that.loadAssets();
       that.loadMarkets();
-    })
+    });
   }
 
   async unsubscribe() {
@@ -163,7 +164,7 @@ export default class State extends BaseAccount<Schema> {
       ));
       (await this.cache.unsubscribe());
     } catch (_) {
-    //
+      //
     }
   }
 
@@ -331,7 +332,6 @@ export default class State extends BaseAccount<Schema> {
   }
 
   subscriptionEventEmitter: EventEmitter | undefined;
-  eventEmitter: EventEmitter<UpdateEvents> | undefined;
 
   /* -------------------------------------------------------------------------- */
   /*                                                                            */

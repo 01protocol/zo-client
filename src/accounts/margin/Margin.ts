@@ -570,7 +570,7 @@ export default abstract class Margin extends MarginWeb3 {
     st: State,
     ch?: Cache,
     owner?: PublicKey,
-    commitment = "processed",
+    commitment = "processed" as Commitment,
   ): Promise<Margin> {
     if (ch)
       console.warn(
@@ -605,7 +605,7 @@ export default abstract class Margin extends MarginWeb3 {
     st: State,
     accountInfo: AccountInfo<Buffer>,
     withOrders: boolean,
-    commitment ="processed"
+    commitment ="processed" as Commitment
   ): Promise<Margin> {
     return (await super.loadFromAccountInfo(
       program,

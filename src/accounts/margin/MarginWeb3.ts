@@ -42,6 +42,7 @@ import Decimal from "decimal.js";
 import { getMintDecimals } from "@zero_one/lite-serum/lib/market";
 import { OrderInfo, PositionInfo } from "../../types/dataTypes";
 import EventEmitter from "eventemitter3";
+import { UpdateEvents } from "./UpdateEvents";
 
 export interface MarginClassSchema extends Omit<MarginSchema, "collateral"> {
   /** The deposit amount divided by the entry supply or borrow multiplier */
@@ -262,9 +263,8 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
   }
 
   private async _subscribe(
-    program: Program<Zo>,
   ): Promise<EventEmitter> {
-    return (await program.account["margin"].subscribe(
+    return (await this.program.account["margin"].subscribe(
       this.pubkey,
       this.commitment,
     ));
@@ -423,15 +423,38 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     await this.loadOrders();
   }
 
+  eventEmitter: EventEmitter<UpdateEvents> | undefined;
   /**
    * Refreshes the data on the Margin, state, cache and control accounts.
    */
-  async subscribe(): Promise<void> {
-    [this.data] = await Promise.all([
-      MarginWeb3.fetch(this.program, this.pubkey, this.state, this.commitment),
-      this.control.refresh(),
-      this.state.refresh(),
-    ]);
+  async subscribe() {
+    this.eventEmitter = new EventEmitter();
+    const anchorEventEmitter = await this._subscribe();
+    const that = this;
+    anchorEventEmitter.addListener("change", async (account) => {
+      that.data = account
+      that.loadBalances();
+      that.loadPositions();
+      await that.loadOrders();
+      this.eventEmitter!.emit(UpdateEvents.marginModified);
+    });
+    await this.control.subscribe();
+    this.control.eventEmitter!.addListener(UpdateEvents.controlModified, async () => {
+      that.loadBalances();
+      that.loadPositions();
+      await that.loadOrders();
+    });
+  }
+
+  async unsubscribe() {
+    try {
+      (await this.program.account["margin"]!.unsubscribe(
+        this.pubkey,
+      ));
+      (await this.control.unsubscribe());
+    } catch (_) {
+      //
+    }
   }
 
   /**

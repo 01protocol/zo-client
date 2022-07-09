@@ -3,6 +3,7 @@ import { Program } from "@project-serum/anchor";
 import BaseAccount from "./BaseAccount";
 import { ControlSchema, ControlSchema as Schema, Zo } from "../types";
 import EventEmitter from "eventemitter3";
+import { UpdateEvents } from "./margin/UpdateEvents";
 
 /**
  * The Control account tracks a user's open orders and positions across all markets.
@@ -57,21 +58,38 @@ export default class Control extends BaseAccount<Schema> {
   }
 
   private async _subscribe(
-    program: Program<Zo>,
   ): Promise<EventEmitter> {
-    return (await program.account["control"].subscribe(
+    return (await this.program.account["control"].subscribe(
       this.pubkey,
       this.commitment,
     ));
+  }
+
+  eventEmitter: EventEmitter<UpdateEvents> | undefined;
+  async subscribe(): Promise<void> {
+    this.eventEmitter = new EventEmitter()
+    const anchorEventEmitter = await this._subscribe();
+    const that = this
+    anchorEventEmitter.addListener("change", (account) => {
+      that.data = account
+      this.eventEmitter!.emit(UpdateEvents.controlModified);
+    });
+  }
+
+  async unsubscribe(){
+    try {
+      await this.program.account["control"].unsubscribe(
+        this.pubkey,
+      );
+    } catch (_) {
+      //
+    }
   }
 
   async refresh(): Promise<void> {
     this.data = await Control.fetch(this.program, this.pubkey, this.commitment);
   }
 
-  async subscribe(): Promise<void> {
-    this.data = await Control.fetch(this.program, this.pubkey, this.commitment);
-  }
 
   updateControlFromAccountInfo(accountInfo: AccountInfo<Buffer>) {
     this.data = this.program.coder.accounts.decode("control", accountInfo.data);
