@@ -38,6 +38,7 @@ export default class MarginsCluster {
       this.cluster == Cluster.Devnet
         ? ZO_DEVNET_STATE_KEY
         : ZO_MAINNET_STATE_KEY,
+      this.config.commitment
     );
     await this.state.subscribe({
       cacheRefreshInterval: this.config.cacheRefreshInterval,
@@ -114,6 +115,7 @@ export default class MarginsCluster {
                   that.state,
                   accountInfo,
                   this.config.loadWithOrders,
+                  this.config.commitment
                 );
               that.controlToMarginKey.set(
                 that.margins[pubkey.toString()]!.control.pubkey.toString(),

@@ -1,4 +1,4 @@
-import { PublicKey } from "@solana/web3.js";
+import { Commitment, PublicKey } from "@solana/web3.js";
 import { BN, Program } from "@project-serum/anchor";
 import Cache from "./Cache";
 import { Orderbook, ZoMarket } from "../zoDex/zoMarket";
@@ -13,12 +13,7 @@ import {
   ZO_DEX_DEVNET_PROGRAM_ID,
   ZO_DEX_MAINNET_PROGRAM_ID,
 } from "../config";
-import {
-  AssetInfo,
-  FundingInfo,
-  MarketInfo,
-  MarketType,
-} from "../types/dataTypes";
+import { AssetInfo, FundingInfo, MarketInfo, MarketType } from "../types/dataTypes";
 import Decimal from "decimal.js";
 import _ from "lodash";
 import Num from "../Num";
@@ -32,10 +27,8 @@ type CollateralInfo = Omit<StateSchema["collaterals"][0], "oracleSymbol"> & {
   oracleSymbol: string;
 };
 
-type PerpMarket = Omit<
-  StateSchema["perpMarkets"][0],
-  "symbol" | "oracleSymbol"
-> & {
+type PerpMarket = Omit<StateSchema["perpMarkets"][0],
+  "symbol" | "oracleSymbol"> & {
   symbol: string;
   oracleSymbol: string;
 };
@@ -70,6 +63,7 @@ export default class State extends BaseAccount<Schema> {
     data: Readonly<Schema>,
     public readonly signer: PublicKey,
     public readonly cache: Cache,
+    public readonly commitment: Commitment
   ) {
     super(program, pubkey, data);
   }
@@ -110,15 +104,16 @@ export default class State extends BaseAccount<Schema> {
   /**
    * @param program
    * @param k The state's public key.
+   * @param commitment
    */
-  static async load(program: Program<Zo>, k: PublicKey): Promise<State> {
-    const data = await this.fetch(program, k);
+  static async load(program: Program<Zo>, k: PublicKey, commitment = "processed" as Commitment) : Promise<State> {
+    const data = await this.fetch(program, k, commitment);
     const [signer, signerNonce] = await this.getSigner(k, program.programId);
     if (signerNonce !== data.signerNonce) {
       throw Error("Invalid state signer nonce");
     }
-    const cache = await Cache.load(program, data.cache, data);
-    const state = new this(program, k, data, signer, cache);
+    const cache = await Cache.load(program, data.cache, data, commitment);
+    const state = new this(program, k, data, signer, cache, commitment);
     state.loadAssets();
     state.loadMarkets();
     return state;
@@ -127,14 +122,24 @@ export default class State extends BaseAccount<Schema> {
   private static async fetch(
     program: Program<Zo>,
     k: PublicKey,
+    commitment: Commitment
   ): Promise<Schema> {
     const data = (await program.account["state"]!.fetch(
       k,
-      "recent",
+      commitment as Commitment,
     )) as StateSchema;
 
     // Convert StateSchema to Schema.
     return State.processRawStateData(data);
+  }
+
+  private async _subscribe(
+    program: Program<Zo>,
+  ): Promise<EventEmitter> {
+    return (await program.account["state"]!.subscribe(
+      this.pubkey,
+      this.commitment,
+    ));
   }
 
   private static processRawStateData(data: StateSchema): Schema {
@@ -190,7 +195,7 @@ export default class State extends BaseAccount<Schema> {
   async refresh(): Promise<void> {
     this.zoMarketAccounts = {};
     [this.data] = await Promise.all([
-      State.fetch(this.program, this.pubkey),
+      State.fetch(this.program, this.pubkey, this.commitment),
       this.cache.refresh(),
     ]);
     this.loadAssets();
@@ -298,9 +303,9 @@ export default class State extends BaseAccount<Schema> {
   eventEmitter: EventEmitter<UpdateEvents> | undefined;
 
   async subscribe({
-    cacheRefreshInterval,
-    eventEmitter,
-  }: {
+                    cacheRefreshInterval,
+                    eventEmitter,
+                  }: {
     cacheRefreshInterval?: number;
     eventEmitter?: EventEmitter<UpdateEvents>;
   }) {
@@ -416,10 +421,10 @@ export default class State extends BaseAccount<Schema> {
    * @param withEventQueues to fetch eventqueue or no
    */
   async getZoMarketAccounts({
-    market,
-    withOrderbooks = true,
-    withEventQueues,
-  }: {
+                              market,
+                              withOrderbooks = true,
+                              withEventQueues,
+                            }: {
     market: MarketInfo;
     withOrderbooks?: boolean;
     withEventQueues?: boolean;
@@ -430,7 +435,7 @@ export default class State extends BaseAccount<Schema> {
     const dexMarket = await ZoMarket.load(
       this.program.provider.connection,
       market.pubKey,
-      { commitment: "recent" },
+      { commitment: this.commitment },
       this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
         ? ZO_DEX_DEVNET_PROGRAM_ID
         : ZO_DEX_MAINNET_PROGRAM_ID,
@@ -442,7 +447,7 @@ export default class State extends BaseAccount<Schema> {
         new Promise(async (res) => {
           bids = await dexMarket.loadBids(
             this.program.provider.connection,
-            "recent",
+            this.commitment,
           );
           res(true);
         }),
@@ -451,7 +456,7 @@ export default class State extends BaseAccount<Schema> {
         new Promise(async (res) => {
           asks = await dexMarket.loadAsks(
             this.program.provider.connection,
-            "recent",
+            this.commitment,
           );
           res(true);
         }),
@@ -462,7 +467,7 @@ export default class State extends BaseAccount<Schema> {
         new Promise(async (res) => {
           eventQueue = await dexMarket.loadEventQueue(
             this.program.provider.connection,
-            "recent",
+            this.commitment,
           );
           res(true);
         }),
@@ -561,7 +566,7 @@ export default class State extends BaseAccount<Schema> {
   /**
    * Load all market infos
    */
-  loadMarkets(loadOrderbooks?: boolean, loadEventQueues?: boolean) {
+  loadMarkets() {
     const markets: { [key: string]: MarketInfo } = {};
     let index = 0;
     for (const perpMarket of this.data.perpMarkets) {
@@ -637,13 +642,13 @@ export default class State extends BaseAccount<Schema> {
     return {
       data: hasData
         ? {
-            hourly: cumulAvg.div(lastSampleStartTime.getMinutes() * 24),
-            daily: cumulAvg.div(lastSampleStartTime.getMinutes()),
-            apr: cumulAvg
-              .div(lastSampleStartTime.getMinutes())
-              .times(100)
-              .times(365),
-          }
+          hourly: cumulAvg.div(lastSampleStartTime.getMinutes() * 24),
+          daily: cumulAvg.div(lastSampleStartTime.getMinutes()),
+          apr: cumulAvg
+            .div(lastSampleStartTime.getMinutes())
+            .times(100)
+            .times(365),
+        }
         : null,
       lastSampleUpdate: lastSampleStartTime,
     };

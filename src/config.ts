@@ -21,6 +21,7 @@ export interface MarginsClusterConfig {
   cacheRefreshInterval: number;
   verbose: boolean;
   loadWithOrders: boolean;
+  commitment: Commitment;
   hardRefreshInterval: number;
 }
 
@@ -29,6 +30,7 @@ export const DEFAULT_MARGINS_CLUSTER_CONFIG: MarginsClusterConfig = {
   verbose: true,
   loadWithOrders: true,
   hardRefreshInterval: HARD_REFRESH_INTERVAL,
+  commitment: "processed"
 };
 // == 01 CONSTANTS ==
 

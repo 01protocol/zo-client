@@ -67,12 +67,12 @@ export default abstract class Margin extends MarginWeb3 {
     if (position.isLong) {
       const fundingDifference = this.state.markets[
         position.marketKey
-      ]!.fundingIndex.sub(position.fundingIndex);
+        ]!.fundingIndex.sub(position.fundingIndex);
       return position.coins.decimal.mul(fundingDifference).mul(-1);
     } else {
       const fundingDifference = this.state.markets[
         position.marketKey
-      ]!.fundingIndex.sub(position.fundingIndex);
+        ]!.fundingIndex.sub(position.fundingIndex);
       return position.coins.decimal.mul(fundingDifference);
     }
   }
@@ -570,12 +570,13 @@ export default abstract class Margin extends MarginWeb3 {
     st: State,
     ch?: Cache,
     owner?: PublicKey,
+    commitment = "processed",
   ): Promise<Margin> {
     if (ch)
       console.warn(
         "[DEPRECATED SOON: Cache param will soon be removed from here; cache is taken from state directly.]",
       );
-    return (await super.loadWeb3(program, st, owner)) as Margin;
+    return (await super.loadWeb3(program, st, owner,commitment)) as Margin;
   }
 
   static async loadPrefetched(
@@ -604,12 +605,14 @@ export default abstract class Margin extends MarginWeb3 {
     st: State,
     accountInfo: AccountInfo<Buffer>,
     withOrders: boolean,
+    commitment ="processed"
   ): Promise<Margin> {
     return (await super.loadFromAccountInfo(
       program,
       st,
       accountInfo,
       withOrders,
+      commitment
     )) as Margin;
   }
 
@@ -772,12 +775,12 @@ export default abstract class Margin extends MarginWeb3 {
     if (position.isLong) {
       const fundingDifference = this.state.markets[
         position.marketKey
-      ]!.fundingIndex.sub(position.fundingIndex);
+        ]!.fundingIndex.sub(position.fundingIndex);
       funding = funding.sub(position.coins.decimal.mul(fundingDifference));
     } else {
       const fundingDifference = this.state.markets[
         position.marketKey
-      ]!.fundingIndex.sub(position.fundingIndex);
+        ]!.fundingIndex.sub(position.fundingIndex);
       funding = funding.add(position.coins.decimal.mul(fundingDifference));
     }
     return funding;
