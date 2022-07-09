@@ -5,7 +5,6 @@ import { Orderbook, ZoMarket } from "../zoDex/zoMarket";
 import { StateSchema, Zo } from "../types";
 import {
   BASE_IMF_DIVIDER,
-  CACHE_REFRESH_INTERVAL,
   MMF_MULTIPLIER,
   USD_DECIMALS,
   ZERO_ONE_DEVNET_PROGRAM_ID,
@@ -63,7 +62,7 @@ export default class State extends BaseAccount<Schema> {
     data: Readonly<Schema>,
     public readonly signer: PublicKey,
     public readonly cache: Cache,
-    public readonly commitment: Commitment
+    public readonly commitment: Commitment,
   ) {
     super(program, pubkey, data);
   }
@@ -106,7 +105,7 @@ export default class State extends BaseAccount<Schema> {
    * @param k The state's public key.
    * @param commitment
    */
-  static async load(program: Program<Zo>, k: PublicKey, commitment = "processed" as Commitment) : Promise<State> {
+  static async load(program: Program<Zo>, k: PublicKey, commitment = "processed" as Commitment): Promise<State> {
     const data = await this.fetch(program, k, commitment);
     const [signer, signerNonce] = await this.getSigner(k, program.programId);
     if (signerNonce !== data.signerNonce) {
@@ -122,7 +121,7 @@ export default class State extends BaseAccount<Schema> {
   private static async fetch(
     program: Program<Zo>,
     k: PublicKey,
-    commitment: Commitment
+    commitment: Commitment,
   ): Promise<Schema> {
     const data = (await program.account["state"]!.fetch(
       k,
@@ -133,14 +132,58 @@ export default class State extends BaseAccount<Schema> {
     return State.processRawStateData(data);
   }
 
-  private async _subscribe(
-    program: Program<Zo>,
-  ): Promise<EventEmitter> {
-    return (await program.account["state"]!.subscribe(
+  private async _subscribe(): Promise<EventEmitter> {
+    return (await this.program.account["state"]!.subscribe(
       this.pubkey,
       this.commitment,
     ));
   }
+
+  async subscribe() {
+    this.eventEmitter = new EventEmitter();
+    const anchorEventEmitter = await this._subscribe();
+    const that = this;
+    anchorEventEmitter.addListener("change", async (account) => {
+      that.data = State.processRawStateData(account);
+      that.loadAssets();
+      that.loadMarkets();
+      this.eventEmitter!.emit(UpdateEvents.stateModified);
+    });
+    await this.cache.subscribe()
+    this.cache.eventEmitter!.addListener(UpdateEvents.cacheModified, ()=>{
+      that.loadAssets();
+      that.loadMarkets();
+    })
+  }
+
+  async unsubscribe() {
+    try {
+      (await this.program.account["state"]!.unsubscribe(
+        this.pubkey,
+      ));
+      (await this.cache.unsubscribe());
+    } catch (_) {
+    //
+    }
+  }
+
+  /*
+    const that = this;
+      this.eventEmitter = eventEmitter;
+      this.subscriptionEventEmitter = this.program.account["state"].subscribe(
+        this.pubkey,
+      );
+      this.subscriptionEventEmitter.addListener("change", async (data) => {
+        that.data = State.processRawStateData(data);
+        that.loadAssets();
+        that.loadMarkets();
+        if (that.eventEmitter) {
+          that.eventEmitter.emit(UpdateEvents.stateModified, null);
+        }
+      });
+    }
+
+   */
 
   private static processRawStateData(data: StateSchema): Schema {
     return {
@@ -283,57 +326,12 @@ export default class State extends BaseAccount<Schema> {
 
   cacheRefreshCycleId: any;
 
-  startCacheRefreshCycle(interval = CACHE_REFRESH_INTERVAL) {
-    const that = this;
-    this.cacheRefreshCycleId = setInterval(async () => {
-      await that.cache.refresh();
-      that.loadAssets();
-      that.loadMarkets();
-      if (that.eventEmitter) {
-        that.eventEmitter.emit(UpdateEvents.cacheModified, null);
-      }
-    }, interval);
-  }
-
   async stopCacheRefreshCycle(): Promise<void> {
     clearInterval(this.cacheRefreshCycleId);
   }
 
   subscriptionEventEmitter: EventEmitter | undefined;
   eventEmitter: EventEmitter<UpdateEvents> | undefined;
-
-  async subscribe({
-                    cacheRefreshInterval,
-                    eventEmitter,
-                  }: {
-    cacheRefreshInterval?: number;
-    eventEmitter?: EventEmitter<UpdateEvents>;
-  }) {
-    const that = this;
-    this.eventEmitter = eventEmitter;
-    this.startCacheRefreshCycle(cacheRefreshInterval);
-    this.subscriptionEventEmitter = this.program.account["state"].subscribe(
-      this.pubkey,
-    );
-    this.subscriptionEventEmitter.addListener("change", async (data) => {
-      that.data = State.processRawStateData(data);
-      that.loadAssets();
-      that.loadMarkets();
-      if (that.eventEmitter) {
-        that.eventEmitter.emit(UpdateEvents.stateModified, null);
-      }
-    });
-  }
-
-  async unsubscribe() {
-    if (this.subscriptionEventEmitter) {
-      await this.stopCacheRefreshCycle();
-      this.subscriptionEventEmitter.removeAllListeners();
-      await this.program.account["state"].unsubscribe(this.pubkey);
-      this.subscriptionEventEmitter = undefined;
-      this.eventEmitter = undefined;
-    }
-  }
 
   /* -------------------------------------------------------------------------- */
   /*                                                                            */

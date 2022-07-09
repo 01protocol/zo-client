@@ -7,6 +7,7 @@ import Num from "../Num";
 import { CacheSchema, Zo } from "../types";
 import { loadSymbol, loadWI80F48 } from "../utils";
 import EventEmitter from "eventemitter3";
+import { UpdateEvents } from "./margin/UpdateEvents";
 
 type OracleCache = Omit<CacheSchema["oracles"][0],
   "symbol" | "price" | "twap"> & {
@@ -46,6 +47,7 @@ type Schema = Omit<CacheSchema, "oracles" | "marks" | "borrowCache"> & {
  * The Cache account stores and tracks oracle prices, mark prices, funding and borrow lending multipliers.
  */
 export default class Cache extends BaseAccount<Schema> {
+  eventEmitter: EventEmitter<UpdateEvents> | undefined;
   private constructor(
     program: Program<Zo>,
     k: PublicKey,
@@ -98,13 +100,26 @@ export default class Cache extends BaseAccount<Schema> {
   }
 
   async subscribe(): Promise<void> {
-    const eventEmitter = await this._subscribe();
-    eventEmitter.addListener("change", (account) => {
-      this.data = Cache.processRawCacheData(
+    this.eventEmitter = new EventEmitter()
+    const anchorEventEmitter = await this._subscribe();
+    const that = this
+    anchorEventEmitter.addListener("change", (account) => {
+      that.data = Cache.processRawCacheData(
         account,
-        this._st,
+        that._st,
       );
+      this.eventEmitter!.emit(UpdateEvents.cacheModified);
     });
+  }
+
+  async unsubscribe(){
+    try {
+      await this.program.account["cache"].unsubscribe(
+        this.pubkey,
+      );
+    } catch (_) {
+    //
+    }
   }
 
   private static processRawCacheData(
