@@ -154,6 +154,7 @@ export default class State extends BaseAccount<Schema> {
     this.cache.eventEmitter!.addListener(UpdateEvents.cacheModified, () => {
       that.loadAssets();
       that.loadMarkets();
+      this.eventEmitter!.emit(UpdateEvents.stateModified);
     });
   }
 

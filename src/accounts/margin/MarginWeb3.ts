@@ -439,10 +439,18 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       this.eventEmitter!.emit(UpdateEvents.marginModified);
     });
     await this.control.subscribe();
+    await this.state.subscribe();
     this.control.eventEmitter!.addListener(UpdateEvents.controlModified, async () => {
       that.loadBalances();
       that.loadPositions();
       await that.loadOrders();
+      this.eventEmitter!.emit(UpdateEvents.marginModified);
+    });
+    this.state.eventEmitter!.addListener(UpdateEvents.stateModified, async () => {
+      that.loadBalances();
+      that.loadPositions();
+      await that.loadOrders();
+      this.eventEmitter!.emit(UpdateEvents.marginModified);
     });
   }
 
@@ -452,6 +460,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
         this.pubkey,
       ));
       (await this.control.unsubscribe());
+      (await this.state.unsubscribe());
     } catch (_) {
       //
     }
