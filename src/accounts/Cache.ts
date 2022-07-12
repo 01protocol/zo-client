@@ -4,10 +4,9 @@ import Decimal from "decimal.js";
 import BaseAccount from "./BaseAccount";
 import { Schema as StateSchema } from "./State";
 import Num from "../Num";
-import { CacheSchema, Zo } from "../types";
+import { CacheSchema, UpdateEvents, Zo } from "../types";
 import { loadSymbol, loadWI80F48 } from "../utils";
 import EventEmitter from "eventemitter3";
-import { UpdateEvents } from "./margin/UpdateEvents";
 
 type OracleCache = Omit<CacheSchema["oracles"][0],
   "symbol" | "price" | "twap"> & {
@@ -48,14 +47,15 @@ type Schema = Omit<CacheSchema, "oracles" | "marks" | "borrowCache"> & {
  */
 export default class Cache extends BaseAccount<Schema> {
   eventEmitter: EventEmitter<UpdateEvents> | undefined;
+
   private constructor(
     program: Program<Zo>,
     k: PublicKey,
     data: Schema,
     private _st: StateSchema,
-    public readonly commitment: Commitment,
+    commitment?: Commitment,
   ) {
-    super(program, k, data);
+    super(program, k, data,commitment);
   }
 
   /**
@@ -83,15 +83,9 @@ export default class Cache extends BaseAccount<Schema> {
     return Cache.processRawCacheData(data, st);
   }
 
-  private async _subscribe(): Promise<EventEmitter> {
-    return (await this.program.account["cache"].subscribe(
-      this.pubkey,
-      this.commitment,
-    ));
-  }
 
   async updateState(st: StateSchema): Promise<void> {
-    this._st = st
+    this._st = st;
     this.data = Cache.processRawCacheData(
       // @ts-ignore
       this.data as CacheSchema,
@@ -100,9 +94,9 @@ export default class Cache extends BaseAccount<Schema> {
   }
 
   async subscribe(): Promise<void> {
-    this.eventEmitter = new EventEmitter()
-    const anchorEventEmitter = await this._subscribe();
-    const that = this
+    this.eventEmitter = new EventEmitter();
+    const anchorEventEmitter = await this._subscribe("cache");
+    const that = this;
     anchorEventEmitter.addListener("change", (account) => {
       that.data = Cache.processRawCacheData(
         account,
@@ -112,13 +106,13 @@ export default class Cache extends BaseAccount<Schema> {
     });
   }
 
-  async unsubscribe(){
+  async unsubscribe() {
     try {
       await this.program.account["cache"].unsubscribe(
         this.pubkey,
       );
     } catch (_) {
-    //
+      //
     }
   }
 

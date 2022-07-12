@@ -23,7 +23,7 @@ import {
   getWrappedSolInstructionsAndKey,
   loadWI80F48,
 } from "../../utils";
-import { ControlSchema, MarginSchema, OrderType, TransactionId, Zo } from "../../types";
+import { ControlSchema, MarginSchema, OrderType, TransactionId, UpdateEvents, Zo } from "../../types";
 import {
   CONTROL_ACCOUNT_SIZE,
   SERUM_DEVNET_SPOT_PROGRAM_ID,
@@ -42,7 +42,6 @@ import Decimal from "decimal.js";
 import { getMintDecimals } from "@zero_one/lite-serum/lib/market";
 import { OrderInfo, PositionInfo } from "../../types/dataTypes";
 import EventEmitter from "eventemitter3";
-import { UpdateEvents } from "./UpdateEvents";
 
 export interface MarginClassSchema extends Omit<MarginSchema, "collateral"> {
   /** The deposit amount divided by the entry supply or borrow multiplier */
@@ -69,9 +68,9 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     public readonly control: Control,
     public state: State,
     public readonly owner?: PublicKey,
-    public readonly commitment = "processed" as Commitment,
+    commitment?: Commitment,
   ) {
-    super(program, pubkey, data);
+    super(program, pubkey, data, commitment);
   }
 
   /**
@@ -81,7 +80,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     program: Program<Zo>,
     st: State,
     owner?: PublicKey,
-    commitment = "processed" as Commitment,
+    commitment = "processed" as Commitment
   ): Promise<MarginWeb3> {
     const marginOwner = owner || program.provider.wallet.publicKey;
     const [key] = await this.getPda(st, marginOwner, program.programId);
@@ -103,7 +102,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     prefetchedMarginData: ProgramAccount<MarginSchema>,
     prefetchedControlData: ProgramAccount<ControlSchema>,
     withOrders: boolean,
-    commitment = "processed" as Commitment
+    commitment?: Commitment,
   ): Promise<MarginWeb3> {
     const data = this.transformFetchedData(st, prefetchedMarginData.account);
     const control = await Control.loadPrefetched(
@@ -133,7 +132,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     st: State,
     accountInfo: AccountInfo<Buffer>,
     withOrders: boolean,
-    commitment = "processed" as Commitment,
+    commitment?: Commitment,
   ): Promise<MarginWeb3> {
     const account = program.coder.accounts.decode("margin", accountInfo.data);
     const data = this.transformFetchedData(st, account);
@@ -260,14 +259,6 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       commitment,
     )) as MarginSchema;
     return MarginWeb3.transformFetchedData(st, data);
-  }
-
-  private async _subscribe(
-  ): Promise<EventEmitter> {
-    return (await this.program.account["margin"].subscribe(
-      this.pubkey,
-      this.commitment,
-    ));
   }
 
   private static transformFetchedData(
@@ -414,7 +405,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
           this.program,
           this.pubkey,
           this.state,
-          this.commitment
+          this.commitment,
         );
       }
     }
@@ -424,15 +415,16 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
   }
 
   eventEmitter: EventEmitter<UpdateEvents> | undefined;
+
   /**
    * Refreshes the data on the Margin, state, cache and control accounts.
    */
   async subscribe() {
     this.eventEmitter = new EventEmitter();
-    const anchorEventEmitter = await this._subscribe();
+    const anchorEventEmitter = await this._subscribe("margin");
     const that = this;
     anchorEventEmitter.addListener("change", async (account) => {
-      that.data = account
+      that.data = MarginWeb3.transformFetchedData(that.state, account);
       that.loadBalances();
       that.loadPositions();
       await that.loadOrders();
@@ -440,7 +432,8 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     });
     await this.control.subscribe();
     await this.state.subscribe();
-    this.control.eventEmitter!.addListener(UpdateEvents.controlModified, async () => {
+    //Note: when control modified only margin event is emitted
+    this.control.eventEmitter!.addListener(UpdateEvents._controlModified, async () => {
       that.loadBalances();
       that.loadPositions();
       await that.loadOrders();
@@ -450,7 +443,13 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       that.loadBalances();
       that.loadPositions();
       await that.loadOrders();
-      this.eventEmitter!.emit(UpdateEvents.marginModified);
+      this.eventEmitter!.emit(UpdateEvents.stateModified);
+    });
+    this.state.eventEmitter!.addListener(UpdateEvents.cacheModified, async () => {
+      that.loadBalances();
+      that.loadPositions();
+      await that.loadOrders();
+      this.eventEmitter!.emit(UpdateEvents.cacheModified);
     });
   }
 
@@ -461,6 +460,9 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       ));
       (await this.control.unsubscribe());
       (await this.state.unsubscribe());
+      if (this.backupSubscriberChannel) {
+        await this.program.provider.connection.removeProgramAccountChangeListener(this.backupSubscriberChannel);
+      }
     } catch (_) {
       //
     }

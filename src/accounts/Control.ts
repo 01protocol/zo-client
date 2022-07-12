@@ -1,9 +1,8 @@
 import { AccountInfo, Commitment, PublicKey } from "@solana/web3.js";
 import { Program } from "@project-serum/anchor";
 import BaseAccount from "./BaseAccount";
-import { ControlSchema, ControlSchema as Schema, Zo } from "../types";
+import { ControlSchema, ControlSchema as Schema, UpdateEvents, Zo } from "../types";
 import EventEmitter from "eventemitter3";
-import { UpdateEvents } from "./margin/UpdateEvents";
 
 /**
  * The Control account tracks a user's open orders and positions across all markets.
@@ -14,9 +13,9 @@ export default class Control extends BaseAccount<Schema> {
     program: Program<Zo>,
     pubkey: PublicKey,
     data: ControlSchema,
-    public readonly commitment = "processed" as Commitment,
+    commitment?: Commitment,
   ) {
-    super(program, pubkey, data);
+    super(program, pubkey, data, commitment);
   }
 
   /**
@@ -57,22 +56,15 @@ export default class Control extends BaseAccount<Schema> {
     };
   }
 
-  private async _subscribe(
-  ): Promise<EventEmitter> {
-    return (await this.program.account["control"].subscribe(
-      this.pubkey,
-      this.commitment,
-    ));
-  }
 
   eventEmitter: EventEmitter<UpdateEvents> | undefined;
   async subscribe(): Promise<void> {
     this.eventEmitter = new EventEmitter()
-    const anchorEventEmitter = await this._subscribe();
+    const anchorEventEmitter = await this._subscribe("control");
     const that = this
     anchorEventEmitter.addListener("change", (account) => {
       that.data = account
-      this.eventEmitter!.emit(UpdateEvents.controlModified);
+      this.eventEmitter!.emit(UpdateEvents._controlModified);
     });
   }
 

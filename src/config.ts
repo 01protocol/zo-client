@@ -1,4 +1,4 @@
-import { PublicKey } from "@solana/web3.js";
+import { Commitment, PublicKey } from "@solana/web3.js";
 
 export { IDL } from "./types/zo";
 

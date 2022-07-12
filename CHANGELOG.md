@@ -8,6 +8,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.9.0]
+
+- Margin, Control, State, Cache: Added subscriptions to changes 
+
 ## [0.8.15]
 
 - Margin: Fixed `liqPrice` method

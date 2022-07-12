@@ -2,16 +2,8 @@ import { Commitment, PublicKey } from "@solana/web3.js";
 import { BN, Program } from "@project-serum/anchor";
 import Cache from "./Cache";
 import { Orderbook, ZoMarket } from "../zoDex/zoMarket";
-import { StateSchema, Zo } from "../types";
-import {
-  BASE_IMF_DIVIDER,
-  MMF_MULTIPLIER,
-  USD_DECIMALS,
-  ZERO_ONE_DEVNET_PROGRAM_ID,
-  ZERO_ONE_MAINNET_PROGRAM_ID,
-  ZO_DEX_DEVNET_PROGRAM_ID,
-  ZO_DEX_MAINNET_PROGRAM_ID,
-} from "../config";
+import { StateSchema, UpdateEvents, Zo } from "../types";
+import { BASE_IMF_DIVIDER, MMF_MULTIPLIER, USD_DECIMALS } from "../config";
 import { AssetInfo, FundingInfo, MarketInfo, MarketType } from "../types/dataTypes";
 import Decimal from "decimal.js";
 import _ from "lodash";
@@ -19,7 +11,6 @@ import Num from "../Num";
 import { loadSymbol } from "../utils";
 import BaseAccount from "./BaseAccount";
 import EventEmitter from "eventemitter3";
-import { UpdateEvents } from "./margin/UpdateEvents";
 import { Event } from "../zoDex/queue";
 
 type CollateralInfo = Omit<StateSchema["collaterals"][0], "oracleSymbol"> & {
@@ -62,9 +53,9 @@ export default class State extends BaseAccount<Schema> {
     data: Readonly<Schema>,
     public readonly signer: PublicKey,
     public readonly cache: Cache,
-    public readonly commitment: Commitment,
+    commitment?: Commitment,
   ) {
-    super(program, pubkey, data);
+    super(program, pubkey, data, commitment);
   }
 
   /**
@@ -115,6 +106,7 @@ export default class State extends BaseAccount<Schema> {
     const state = new this(program, k, data, signer, cache, commitment);
     state.loadAssets();
     state.loadMarkets();
+    await state.loadZoMarkets();
     return state;
   }
 
@@ -132,17 +124,12 @@ export default class State extends BaseAccount<Schema> {
     return State.processRawStateData(data);
   }
 
-  private async _subscribe(): Promise<EventEmitter> {
-    return (await this.program.account["state"]!.subscribe(
-      this.pubkey,
-      this.commitment,
-    ));
-  }
 
   eventEmitter: EventEmitter<UpdateEvents> | undefined;
+
   async subscribe() {
     this.eventEmitter = new EventEmitter();
-    const anchorEventEmitter = await this._subscribe();
+    const anchorEventEmitter = await this._subscribe("state");
     const that = this;
     anchorEventEmitter.addListener("change", async (account) => {
       that.data = State.processRawStateData(account);
@@ -154,9 +141,101 @@ export default class State extends BaseAccount<Schema> {
     this.cache.eventEmitter!.addListener(UpdateEvents.cacheModified, () => {
       that.loadAssets();
       that.loadMarkets();
-      this.eventEmitter!.emit(UpdateEvents.stateModified);
+      this.eventEmitter!.emit(UpdateEvents.cacheModified);
     });
   }
+
+  _obEmitters: { [key: string]: EventEmitter<string> } = {};
+  _obEmittersKeys: { [key: string]: number } = {};
+
+  obEmitter(symbol: string) {
+    return this._obEmitters[symbol];
+  }
+
+  async subscribeToAllOrderbooks(){
+    const promises: Array<Promise<boolean>> = []
+    for(const symbol of Object.keys(this.markets)){
+      promises.push(new Promise(async (res)=>{
+        await this.subscribeToOrderbook(symbol)
+        res(true)
+      }))
+    }
+    await Promise.all(promises)
+  }
+
+  async unsubscribeFromAllOrderbooks() {
+    const promises: Array<Promise<boolean>> = []
+    for(const symbol of Object.keys(this.markets)){
+      promises.push(new Promise(async (res)=>{
+        await this.unsubscribeFromOrderbook(symbol)
+        res(true)
+      }))
+    }
+    await Promise.all(promises)
+  }
+
+  async subscribeToOrderbook(symbol: string) {
+    this._obEmitters[symbol] = new EventEmitter();
+    const { dexMarket } = await this.getZoMarketAccounts({
+      market: this.markets[symbol]!,
+      withOrderbooks: true,
+      withEventQueues: false,
+    });
+    const marketPubKey = dexMarket.publicKey;
+    this._obEmittersKeys[symbol] = this.connection.onAccountChange(
+      marketPubKey,
+      async (zoMarketBuffer) => {
+        const zoMarket = await ZoMarket.load(
+          this.provider.connection,
+          marketPubKey,
+          { commitment: this.commitment },
+          this.getDexProgram(),
+          zoMarketBuffer,
+        );
+        let bidsOrderbook, asksOrderbook;
+        const promises: Array<Promise<boolean>> = [];
+        promises.push(
+          new Promise(async (res) => {
+            bidsOrderbook = (
+              await zoMarket.loadBids(this.provider.connection, this.commitment)
+            );
+            res(true);
+          }),
+        );
+        promises.push(
+          new Promise(async (res) => {
+            asksOrderbook = (
+              await zoMarket.loadAsks(this.provider.connection, this.commitment)
+            );
+            res(true);
+          }),
+        );
+        await Promise.all(promises);
+        this.zoMarketAccounts[symbol]!.bids = bidsOrderbook;
+        this.zoMarketAccounts[symbol]!.asks = asksOrderbook;
+        this._obEmitters[symbol]!.emit(State.getOrderbookUpdateEventName(symbol), {
+          bidsOrderbook: bidsOrderbook,
+          asksOrderbook: asksOrderbook,
+        });
+      },
+      this.commitment,
+    );
+  }
+
+  static getOrderbookUpdateEventName(symbol: string) {
+    return UpdateEvents.orderbookReloaded + "-" + symbol;
+  }
+
+  async unsubscribeFromOrderbook(symbol: string) {
+    try {
+      this.connection.removeAccountChangeListener(this._obEmittersKeys[symbol]!).then();
+      delete this._obEmittersKeys[symbol];
+      delete this._obEmitters[symbol];
+    } catch (_) {
+      //
+    }
+  }
+
 
   async unsubscribe() {
     try {
@@ -168,24 +247,6 @@ export default class State extends BaseAccount<Schema> {
       //
     }
   }
-
-  /*
-    const that = this;
-      this.eventEmitter = eventEmitter;
-      this.subscriptionEventEmitter = this.program.account["state"].subscribe(
-        this.pubkey,
-      );
-      this.subscriptionEventEmitter.addListener("change", async (data) => {
-        that.data = State.processRawStateData(data);
-        that.loadAssets();
-        that.loadMarkets();
-        if (that.eventEmitter) {
-          that.eventEmitter.emit(UpdateEvents.stateModified, null);
-        }
-      });
-    }
-
-   */
 
   private static processRawStateData(data: StateSchema): Schema {
     return {
@@ -355,12 +416,11 @@ export default class State extends BaseAccount<Schema> {
         dexMarket: market.address,
         marketBids: market.bidsAddress,
         marketAsks: market.asksAddress,
-        dexProgram: this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
-          ? ZO_DEX_DEVNET_PROGRAM_ID
-          : ZO_DEX_MAINNET_PROGRAM_ID,
+        dexProgram: this.getDexProgram(),
       },
     });
   }
+
 
   /**
    * Called by the keepers regularly to cache the oracle prices.
@@ -376,9 +436,7 @@ export default class State extends BaseAccount<Schema> {
           signer: this.wallet.publicKey,
           state: this.pubkey,
           cache: this.cache.pubkey,
-          dexProgram: this.program.programId.equals(ZERO_ONE_MAINNET_PROGRAM_ID)
-            ? ZO_DEX_MAINNET_PROGRAM_ID
-            : ZO_DEX_DEVNET_PROGRAM_ID,
+          dexProgram: this.getDexProgram(),
         },
         remainingAccounts: [
           ...oracles
@@ -435,9 +493,7 @@ export default class State extends BaseAccount<Schema> {
       this.program.provider.connection,
       market.pubKey,
       { commitment: this.commitment },
-      this.program.programId.equals(ZERO_ONE_DEVNET_PROGRAM_ID)
-        ? ZO_DEX_DEVNET_PROGRAM_ID
-        : ZO_DEX_MAINNET_PROGRAM_ID,
+      this.getDexProgram(),
     );
     let bids, asks, eventQueue;
     const promises: Array<Promise<boolean>> = [];

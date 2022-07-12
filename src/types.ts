@@ -40,19 +40,15 @@ type OracleSource = IdlTypes<Zo>["OracleSource"] & {
 type CollateralInfo = Omit<IdlTypes<Zo>["CollateralInfo"], "oracleSymbol"> & {
   oracleSymbol: symbol;
 };
-type PerpMarketInfo = Omit<
-  IdlTypes<Zo>["PerpMarketInfo"],
-  "symbol" | "oracleSymbol" | "perpType"
-> & {
+type PerpMarketInfo = Omit<IdlTypes<Zo>["PerpMarketInfo"],
+  "symbol" | "oracleSymbol" | "perpType"> & {
   symbol: symbol;
   oracleSymbol: symbol;
   perpType: PerpType;
 };
 type OpenOrdersInfo = IdlTypes<Zo>["OpenOrdersInfo"];
-type TwapInfo = Omit<
-  IdlTypes<Zo>["TwapInfo"],
-  "cumulAvg" | "open" | "high" | "low" | "close" | "lastSampleStartTime"
-> & {
+type TwapInfo = Omit<IdlTypes<Zo>["TwapInfo"],
+  "cumulAvg" | "open" | "high" | "low" | "close" | "lastSampleStartTime"> & {
   cumulAvg: WrappedI80F48;
   open: WrappedI80F48;
   high: WrappedI80F48;
@@ -71,10 +67,8 @@ type MarkCache = Omit<IdlTypes<Zo>["MarkCache"], "price" | "twap"> & {
   price: WrappedI80F48;
   twap: TwapInfo;
 };
-type BorrowCache = Omit<
-  IdlTypes<Zo>["BorrowCache"],
-  "supply" | "borrows" | "supplyMultiplier" | "borrowMultiplier"
-> & {
+type BorrowCache = Omit<IdlTypes<Zo>["BorrowCache"],
+  "supply" | "borrows" | "supplyMultiplier" | "borrowMultiplier"> & {
   supply: WrappedI80F48;
   borrows: WrappedI80F48;
   supplyMultiplier: WrappedI80F48;
@@ -96,3 +90,13 @@ export type CacheSchema = IdlAccounts<Zo>["cache"] & {
 export type ControlSchema = IdlAccounts<Zo>["control"] & {
   openOrdersAgg: OpenOrdersInfo[];
 };
+
+export enum UpdateEvents {
+  stateModified = "stateModified",
+  cacheModified = "cacheModified",
+  // not emitted from margin
+  _controlModified = "_controlModified",
+  marginModified = "marginModified",
+  orderbookReloaded = "orderbookReloaded",
+}
+
