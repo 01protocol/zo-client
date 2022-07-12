@@ -67,12 +67,12 @@ export default abstract class Margin extends MarginWeb3 {
     if (position.isLong) {
       const fundingDifference = this.state.markets[
         position.marketKey
-        ]!.fundingIndex.sub(position.fundingIndex);
+      ]!.fundingIndex.sub(position.fundingIndex);
       return position.coins.decimal.mul(fundingDifference).mul(-1);
     } else {
       const fundingDifference = this.state.markets[
         position.marketKey
-        ]!.fundingIndex.sub(position.fundingIndex);
+      ]!.fundingIndex.sub(position.fundingIndex);
       return position.coins.decimal.mul(fundingDifference);
     }
   }
@@ -576,7 +576,7 @@ export default abstract class Margin extends MarginWeb3 {
       console.warn(
         "[DEPRECATED SOON: Cache param will soon be removed from here; cache is taken from state directly.]",
       );
-    return (await super.loadWeb3(program, st, owner,commitment)) as Margin;
+    return (await super.loadWeb3(program, st, owner, commitment)) as Margin;
   }
 
   static async loadPrefetched(
@@ -605,14 +605,14 @@ export default abstract class Margin extends MarginWeb3 {
     st: State,
     accountInfo: AccountInfo<Buffer>,
     withOrders: boolean,
-    commitment ="processed" as Commitment
+    commitment = "processed" as Commitment,
   ): Promise<Margin> {
     return (await super.loadFromAccountInfo(
       program,
       st,
       accountInfo,
       withOrders,
-      commitment
+      commitment,
     )) as Margin;
   }
 
@@ -690,43 +690,29 @@ export default abstract class Margin extends MarginWeb3 {
 
     if (position.isLong) {
       // (c * d - (m - f) * t / (1 - w)) / c
-      const price = (
-        (
-          (
-            position.coins.decimal.mul(indexPrice)
-          )
-            .sub(
-              (
-                (
-                  this.marginFraction.sub(this.maintenanceMarginFraction)
-                )
-                  .mul(this.totalPositionNotional)
-              )
-                .div(new Decimal(1).sub(pmmf)),
-            )
+      const price = position.coins.decimal
+        .mul(indexPrice)
+        .sub(
+          this.marginFraction
+            .sub(this.maintenanceMarginFraction)
+            .mul(this.totalPositionNotional)
+            .div(new Decimal(1).sub(pmmf)),
         )
-          .div(position.coins.decimal)
-      ).toNumber();
+        .div(position.coins.decimal)
+        .toNumber();
       return price < 0 ? Infinity : price;
     } else {
       // (c * d + (m - f) * t / (1 + w)) / c
-      return (
-        (
-          (
-            position.coins.decimal.mul(indexPrice)
-          )
-            .add(
-              (
-                (
-                  this.marginFraction.sub(this.maintenanceMarginFraction)
-                )
-                  .mul(this.totalPositionNotional)
-              )
-                .div(new Decimal(1).add(pmmf)),
-            )
+      return position.coins.decimal
+        .mul(indexPrice)
+        .add(
+          this.marginFraction
+            .sub(this.maintenanceMarginFraction)
+            .mul(this.totalPositionNotional)
+            .div(new Decimal(1).add(pmmf)),
         )
-          .div(position.coins.decimal)
-      ).toNumber();
+        .div(position.coins.decimal)
+        .toNumber();
     }
   }
 
@@ -775,12 +761,12 @@ export default abstract class Margin extends MarginWeb3 {
     if (position.isLong) {
       const fundingDifference = this.state.markets[
         position.marketKey
-        ]!.fundingIndex.sub(position.fundingIndex);
+      ]!.fundingIndex.sub(position.fundingIndex);
       funding = funding.sub(position.coins.decimal.mul(fundingDifference));
     } else {
       const fundingDifference = this.state.markets[
         position.marketKey
-        ]!.fundingIndex.sub(position.fundingIndex);
+      ]!.fundingIndex.sub(position.fundingIndex);
       funding = funding.add(position.coins.decimal.mul(fundingDifference));
     }
     return funding;

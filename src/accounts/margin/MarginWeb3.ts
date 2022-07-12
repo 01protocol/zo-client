@@ -23,7 +23,14 @@ import {
   getWrappedSolInstructionsAndKey,
   loadWI80F48,
 } from "../../utils";
-import { ControlSchema, MarginSchema, OrderType, TransactionId, UpdateEvents, Zo } from "../../types";
+import {
+  ControlSchema,
+  MarginSchema,
+  OrderType,
+  TransactionId,
+  UpdateEvents,
+  Zo,
+} from "../../types";
 import {
   CONTROL_ACCOUNT_SIZE,
   SERUM_DEVNET_SPOT_PROGRAM_ID,
@@ -80,13 +87,21 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     program: Program<Zo>,
     st: State,
     owner?: PublicKey,
-    commitment = "processed" as Commitment
+    commitment = "processed" as Commitment,
   ): Promise<MarginWeb3> {
     const marginOwner = owner || program.provider.wallet.publicKey;
     const [key] = await this.getPda(st, marginOwner, program.programId);
     const data = await this.fetch(program, key, st, commitment);
     const control = await Control.load(program, data.control, commitment);
-    const margin = new this(program, key, data, control, st, marginOwner, commitment);
+    const margin = new this(
+      program,
+      key,
+      data,
+      control,
+      st,
+      marginOwner,
+      commitment,
+    );
     margin.loadBalances();
     margin.loadPositions();
     await margin.loadOrders();
@@ -137,7 +152,15 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     const account = program.coder.accounts.decode("margin", accountInfo.data);
     const data = this.transformFetchedData(st, account);
     const control = await Control.load(program, data.control);
-    const margin = new this(program, account.publicKey, data, control, st, undefined, commitment);
+    const margin = new this(
+      program,
+      account.publicKey,
+      data,
+      control,
+      st,
+      undefined,
+      commitment,
+    );
     margin.loadBalances();
     margin.loadPositions();
     if (withOrders) {
@@ -277,15 +300,15 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
           new BN(
             rawCollateral[i]!.isPos()
               ? rawCollateral[i]!.times(
-                ch.data.borrowCache[i]!.supplyMultiplier,
-              )
-                .floor()
-                .toString()
+                  ch.data.borrowCache[i]!.supplyMultiplier,
+                )
+                  .floor()
+                  .toString()
               : rawCollateral[i]!.times(
-                ch.data.borrowCache[i]!.borrowMultiplier,
-              )
-                .floor()
-                .toString(),
+                  ch.data.borrowCache[i]!.borrowMultiplier,
+                )
+                  .floor()
+                  .toString(),
           ),
           c.decimals,
         );
@@ -396,7 +419,12 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     if (refreshMarginData) {
       if (refreshState) {
         [this.data] = await Promise.all([
-          MarginWeb3.fetch(this.program, this.pubkey, this.state, this.commitment),
+          MarginWeb3.fetch(
+            this.program,
+            this.pubkey,
+            this.state,
+            this.commitment,
+          ),
           this.control.refresh(),
           this.state.refresh(),
         ]);
@@ -433,35 +461,44 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     await this.control.subscribe();
     await this.state.subscribe();
     //Note: when control modified only margin event is emitted
-    this.control.eventEmitter!.addListener(UpdateEvents._controlModified, async () => {
-      that.loadBalances();
-      that.loadPositions();
-      await that.loadOrders();
-      this.eventEmitter!.emit(UpdateEvents.marginModified);
-    });
-    this.state.eventEmitter!.addListener(UpdateEvents.stateModified, async () => {
-      that.loadBalances();
-      that.loadPositions();
-      await that.loadOrders();
-      this.eventEmitter!.emit(UpdateEvents.stateModified);
-    });
-    this.state.eventEmitter!.addListener(UpdateEvents.cacheModified, async () => {
-      that.loadBalances();
-      that.loadPositions();
-      await that.loadOrders();
-      this.eventEmitter!.emit(UpdateEvents.cacheModified);
-    });
+    this.control.eventEmitter!.addListener(
+      UpdateEvents._controlModified,
+      async () => {
+        that.loadBalances();
+        that.loadPositions();
+        await that.loadOrders();
+        this.eventEmitter!.emit(UpdateEvents.marginModified);
+      },
+    );
+    this.state.eventEmitter!.addListener(
+      UpdateEvents.stateModified,
+      async () => {
+        that.loadBalances();
+        that.loadPositions();
+        await that.loadOrders();
+        this.eventEmitter!.emit(UpdateEvents.stateModified);
+      },
+    );
+    this.state.eventEmitter!.addListener(
+      UpdateEvents.cacheModified,
+      async () => {
+        that.loadBalances();
+        that.loadPositions();
+        await that.loadOrders();
+        this.eventEmitter!.emit(UpdateEvents.cacheModified);
+      },
+    );
   }
 
   async unsubscribe() {
     try {
-      (await this.program.account["margin"]!.unsubscribe(
-        this.pubkey,
-      ));
-      (await this.control.unsubscribe());
-      (await this.state.unsubscribe());
+      await this.program.account["margin"]!.unsubscribe(this.pubkey);
+      await this.control.unsubscribe();
+      await this.state.unsubscribe();
       if (this.backupSubscriberChannel) {
-        await this.program.provider.connection.removeProgramAccountChangeListener(this.backupSubscriberChannel);
+        await this.program.provider.connection.removeProgramAccountChangeListener(
+          this.backupSubscriberChannel,
+        );
       }
     } catch (_) {
       //
@@ -622,9 +659,9 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     const tokenAccount = tokenAccountProvided
       ? tokenAccountProvided
       : await findAssociatedTokenAddress(
-        this.program.provider.wallet.publicKey,
-        mint,
-      );
+          this.program.provider.wallet.publicKey,
+          mint,
+        );
     return await this.depositRaw(tokenAccount, vault, amountSmoll, repayOnly);
   }
 
@@ -695,12 +732,12 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       associatedTokenAccountExists
         ? undefined
         : [
-          getAssociatedTokenTransactionWithPayer(
-            mint,
-            associatedTokenAccount,
-            this.program.provider.wallet.publicKey,
-          ),
-        ],
+            getAssociatedTokenTransactionWithPayer(
+              mint,
+              associatedTokenAccount,
+              this.program.provider.wallet.publicKey,
+            ),
+          ],
     );
   }
 
@@ -748,15 +785,15 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
    * @param clientId
    */
   async placePerpOrderRaw({
-                            symbol,
-                            orderType,
-                            isLong,
-                            limitPrice,
-                            maxBaseQty,
-                            maxQuoteQty,
-                            limit,
-                            clientId,
-                          }: Readonly<{
+    symbol,
+    orderType,
+    isLong,
+    limitPrice,
+    maxBaseQty,
+    maxQuoteQty,
+    limit,
+    clientId,
+  }: Readonly<{
     symbol: string;
     orderType: OrderType;
     isLong: boolean;
@@ -812,15 +849,15 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
    * @param maxTs If the on-chain timestamp exceeds the maxTs, the order will not be placed.
    */
   async placePerpOrder({
-                         symbol,
-                         orderType,
-                         isLong,
-                         price,
-                         size,
-                         limit,
-                         clientId,
-                         maxTs,
-                       }: Readonly<{
+    symbol,
+    orderType,
+    isLong,
+    price,
+    size,
+    limit,
+    clientId,
+    maxTs,
+  }: Readonly<{
     symbol: string;
     orderType: OrderType;
     isLong: boolean;
@@ -837,8 +874,8 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       market.decoded.perpType.toNumber() === 1
         ? ZO_FUTURE_TAKER_FEE
         : market.decoded.perpType.toNumber() === 2
-          ? ZO_OPTION_TAKER_FEE
-          : ZO_SQUARE_TAKER_FEE;
+        ? ZO_OPTION_TAKER_FEE
+        : ZO_SQUARE_TAKER_FEE;
     const feeMultiplier = isLong ? 1 + takerFee : 1 - takerFee;
     const maxQuoteQtyBn = new BN(
       Math.round(
@@ -900,26 +937,26 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
           },
           preInstructions: createOo
             ? [
-              this.program.instruction.createPerpOpenOrders({
-                accounts: {
-                  state: this.state.pubkey,
-                  stateSigner: this.state.signer,
-                  authority: this.wallet.publicKey,
-                  payer: this.wallet.publicKey,
-                  margin: this.pubkey,
-                  control: this.data.control,
-                  openOrders: ooKey,
-                  dexMarket: this.state.getMarketKeyBySymbol(symbol),
-                  dexProgram: this.program.programId.equals(
-                    ZERO_ONE_DEVNET_PROGRAM_ID,
-                  )
-                    ? ZO_DEX_DEVNET_PROGRAM_ID
-                    : ZO_DEX_MAINNET_PROGRAM_ID,
-                  rent: SYSVAR_RENT_PUBKEY,
-                  systemProgram: SystemProgram.programId,
-                },
-              }),
-            ]
+                this.program.instruction.createPerpOpenOrders({
+                  accounts: {
+                    state: this.state.pubkey,
+                    stateSigner: this.state.signer,
+                    authority: this.wallet.publicKey,
+                    payer: this.wallet.publicKey,
+                    margin: this.pubkey,
+                    control: this.data.control,
+                    openOrders: ooKey,
+                    dexMarket: this.state.getMarketKeyBySymbol(symbol),
+                    dexProgram: this.program.programId.equals(
+                      ZERO_ONE_DEVNET_PROGRAM_ID,
+                    )
+                      ? ZO_DEX_DEVNET_PROGRAM_ID
+                      : ZO_DEX_MAINNET_PROGRAM_ID,
+                    rent: SYSVAR_RENT_PUBKEY,
+                    systemProgram: SystemProgram.programId,
+                  },
+                }),
+              ]
             : undefined,
         },
       );
@@ -955,26 +992,26 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
           },
           preInstructions: createOo
             ? [
-              this.program.instruction.createPerpOpenOrders({
-                accounts: {
-                  state: this.state.pubkey,
-                  stateSigner: this.state.signer,
-                  authority: this.wallet.publicKey,
-                  payer: this.wallet.publicKey,
-                  margin: this.pubkey,
-                  control: this.data.control,
-                  openOrders: ooKey,
-                  dexMarket: this.state.getMarketKeyBySymbol(symbol),
-                  dexProgram: this.program.programId.equals(
-                    ZERO_ONE_DEVNET_PROGRAM_ID,
-                  )
-                    ? ZO_DEX_DEVNET_PROGRAM_ID
-                    : ZO_DEX_MAINNET_PROGRAM_ID,
-                  rent: SYSVAR_RENT_PUBKEY,
-                  systemProgram: SystemProgram.programId,
-                },
-              }),
-            ]
+                this.program.instruction.createPerpOpenOrders({
+                  accounts: {
+                    state: this.state.pubkey,
+                    stateSigner: this.state.signer,
+                    authority: this.wallet.publicKey,
+                    payer: this.wallet.publicKey,
+                    margin: this.pubkey,
+                    control: this.data.control,
+                    openOrders: ooKey,
+                    dexMarket: this.state.getMarketKeyBySymbol(symbol),
+                    dexProgram: this.program.programId.equals(
+                      ZERO_ONE_DEVNET_PROGRAM_ID,
+                    )
+                      ? ZO_DEX_DEVNET_PROGRAM_ID
+                      : ZO_DEX_MAINNET_PROGRAM_ID,
+                    rent: SYSVAR_RENT_PUBKEY,
+                    systemProgram: SystemProgram.programId,
+                  },
+                }),
+              ]
             : undefined,
         },
       );
@@ -993,14 +1030,14 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
    * @param clientId Used to tag an order with a unique id, which can be used to cancel this order through cancelPerpOrderByClientId. For optimal use, make sure all ids for every order is unique.
    */
   async makePlacePerpOrderIx({
-                               symbol,
-                               orderType,
-                               isLong,
-                               price,
-                               size,
-                               limit,
-                               clientId,
-                             }: Readonly<{
+    symbol,
+    orderType,
+    isLong,
+    price,
+    size,
+    limit,
+    clientId,
+  }: Readonly<{
     symbol: string;
     orderType: OrderType;
     isLong: boolean;
@@ -1016,8 +1053,8 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       market.decoded.perpType.toNumber() === 1
         ? ZO_FUTURE_TAKER_FEE
         : market.decoded.perpType.toNumber() === 2
-          ? ZO_OPTION_TAKER_FEE
-          : ZO_SQUARE_TAKER_FEE;
+        ? ZO_OPTION_TAKER_FEE
+        : ZO_SQUARE_TAKER_FEE;
     const feeMultiplier = isLong ? 1 + takerFee : 1 - takerFee;
     const maxQuoteQtyBn = new BN(
       Math.round(
@@ -1071,11 +1108,11 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
    * @param clientId The client id that was assigned to the order when it was placed.
    */
   async cancelPerpOrder({
-                          symbol,
-                          isLong,
-                          orderId,
-                          clientId,
-                        }: {
+    symbol,
+    isLong,
+    orderId,
+    clientId,
+  }: {
     symbol: string;
     isLong?: boolean;
     orderId?: BN;
@@ -1118,11 +1155,11 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
    * Creates the instruction for cancelling a perp order.
    */
   async makeCancelPerpOrderIx({
-                                symbol,
-                                isLong,
-                                orderId,
-                                clientId,
-                              }: {
+    symbol,
+    isLong,
+    orderId,
+    clientId,
+  }: {
     symbol: string;
     isLong?: boolean;
     orderId?: BN;
@@ -1173,14 +1210,14 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
    * @param serumMarket The market public key of the Serum Spot DEX.
    */
   async swap({
-               buy,
-               tokenMint,
-               fromSize,
-               toSize,
-               slippage,
-               allowBorrow,
-               serumMarket,
-             }: Readonly<{
+    buy,
+    tokenMint,
+    fromSize,
+    toSize,
+    slippage,
+    allowBorrow,
+    serumMarket,
+  }: Readonly<{
     buy: boolean;
     tokenMint: PublicKey;
     fromSize: number;
@@ -1220,9 +1257,9 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       slippage === 1
         ? new BN(1)
         : new Num(
-          (toSize * (1 - slippage)) / fromSize,
-          buy ? baseDecimals : USDC_DECIMALS,
-        ).n;
+            (toSize * (1 - slippage)) / fromSize,
+            buy ? baseDecimals : USDC_DECIMALS,
+          ).n;
 
     if (
       !market.baseMintAddress.equals(tokenMint) ||
@@ -1230,8 +1267,8 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     ) {
       throw new Error(
         `Invalid <SerumSpotMarket ${serumMarket}> for swap:\n` +
-        `  swap wants:   base=${tokenMint}, quote=${stateQuoteMint}\n` +
-        `  market wants: base=${market.baseMintAddress}, quote=${market.quoteMintAddress}`,
+          `  swap wants:   base=${tokenMint}, quote=${stateQuoteMint}\n` +
+          `  market wants: base=${market.baseMintAddress}, quote=${market.quoteMintAddress}`,
       );
     }
 

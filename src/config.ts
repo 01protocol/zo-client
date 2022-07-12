@@ -30,7 +30,7 @@ export const DEFAULT_MARGINS_CLUSTER_CONFIG: MarginsClusterConfig = {
   verbose: true,
   loadWithOrders: true,
   hardRefreshInterval: HARD_REFRESH_INTERVAL,
-  commitment: "processed"
+  commitment: "processed",
 };
 // == 01 CONSTANTS ==
 

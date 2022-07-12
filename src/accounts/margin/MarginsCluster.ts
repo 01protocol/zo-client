@@ -27,8 +27,7 @@ export default class MarginsCluster {
     public readonly program: Program<Zo>,
     public readonly cluster: Cluster,
     readonly config: MarginsClusterConfig = DEFAULT_MARGINS_CLUSTER_CONFIG,
-  ) {
-  }
+  ) {}
 
   hardRefreshIntervalId: any;
 

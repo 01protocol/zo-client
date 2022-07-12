@@ -4,7 +4,12 @@ import Cache from "./Cache";
 import { Orderbook, ZoMarket } from "../zoDex/zoMarket";
 import { StateSchema, UpdateEvents, Zo } from "../types";
 import { BASE_IMF_DIVIDER, MMF_MULTIPLIER, USD_DECIMALS } from "../config";
-import { AssetInfo, FundingInfo, MarketInfo, MarketType } from "../types/dataTypes";
+import {
+  AssetInfo,
+  FundingInfo,
+  MarketInfo,
+  MarketType,
+} from "../types/dataTypes";
 import Decimal from "decimal.js";
 import _ from "lodash";
 import Num from "../Num";
@@ -17,8 +22,10 @@ type CollateralInfo = Omit<StateSchema["collaterals"][0], "oracleSymbol"> & {
   oracleSymbol: string;
 };
 
-type PerpMarket = Omit<StateSchema["perpMarkets"][0],
-  "symbol" | "oracleSymbol"> & {
+type PerpMarket = Omit<
+  StateSchema["perpMarkets"][0],
+  "symbol" | "oracleSymbol"
+> & {
   symbol: string;
   oracleSymbol: string;
 };
@@ -96,7 +103,11 @@ export default class State extends BaseAccount<Schema> {
    * @param k The state's public key.
    * @param commitment
    */
-  static async load(program: Program<Zo>, k: PublicKey, commitment = "processed" as Commitment): Promise<State> {
+  static async load(
+    program: Program<Zo>,
+    k: PublicKey,
+    commitment = "processed" as Commitment,
+  ): Promise<State> {
     const data = await this.fetch(program, k, commitment);
     const [signer, signerNonce] = await this.getSigner(k, program.programId);
     if (signerNonce !== data.signerNonce) {
@@ -123,7 +134,6 @@ export default class State extends BaseAccount<Schema> {
     // Convert StateSchema to Schema.
     return State.processRawStateData(data);
   }
-
 
   eventEmitter: EventEmitter<UpdateEvents> | undefined;
 
@@ -152,26 +162,30 @@ export default class State extends BaseAccount<Schema> {
     return this._obEmitters[symbol];
   }
 
-  async subscribeToAllOrderbooks(){
-    const promises: Array<Promise<boolean>> = []
-    for(const symbol of Object.keys(this.markets)){
-      promises.push(new Promise(async (res)=>{
-        await this.subscribeToOrderbook(symbol)
-        res(true)
-      }))
+  async subscribeToAllOrderbooks() {
+    const promises: Array<Promise<boolean>> = [];
+    for (const symbol of Object.keys(this.markets)) {
+      promises.push(
+        new Promise(async (res) => {
+          await this.subscribeToOrderbook(symbol);
+          res(true);
+        }),
+      );
     }
-    await Promise.all(promises)
+    await Promise.all(promises);
   }
 
   async unsubscribeFromAllOrderbooks() {
-    const promises: Array<Promise<boolean>> = []
-    for(const symbol of Object.keys(this.markets)){
-      promises.push(new Promise(async (res)=>{
-        await this.unsubscribeFromOrderbook(symbol)
-        res(true)
-      }))
+    const promises: Array<Promise<boolean>> = [];
+    for (const symbol of Object.keys(this.markets)) {
+      promises.push(
+        new Promise(async (res) => {
+          await this.unsubscribeFromOrderbook(symbol);
+          res(true);
+        }),
+      );
     }
-    await Promise.all(promises)
+    await Promise.all(promises);
   }
 
   async subscribeToOrderbook(symbol: string) {
@@ -196,16 +210,18 @@ export default class State extends BaseAccount<Schema> {
         const promises: Array<Promise<boolean>> = [];
         promises.push(
           new Promise(async (res) => {
-            bidsOrderbook = (
-              await zoMarket.loadBids(this.provider.connection, this.commitment)
+            bidsOrderbook = await zoMarket.loadBids(
+              this.provider.connection,
+              this.commitment,
             );
             res(true);
           }),
         );
         promises.push(
           new Promise(async (res) => {
-            asksOrderbook = (
-              await zoMarket.loadAsks(this.provider.connection, this.commitment)
+            asksOrderbook = await zoMarket.loadAsks(
+              this.provider.connection,
+              this.commitment,
             );
             res(true);
           }),
@@ -213,10 +229,13 @@ export default class State extends BaseAccount<Schema> {
         await Promise.all(promises);
         this.zoMarketAccounts[symbol]!.bids = bidsOrderbook;
         this.zoMarketAccounts[symbol]!.asks = asksOrderbook;
-        this._obEmitters[symbol]!.emit(State.getOrderbookUpdateEventName(symbol), {
-          bidsOrderbook: bidsOrderbook,
-          asksOrderbook: asksOrderbook,
-        });
+        this._obEmitters[symbol]!.emit(
+          State.getOrderbookUpdateEventName(symbol),
+          {
+            bidsOrderbook: bidsOrderbook,
+            asksOrderbook: asksOrderbook,
+          },
+        );
       },
       this.commitment,
     );
@@ -228,7 +247,9 @@ export default class State extends BaseAccount<Schema> {
 
   async unsubscribeFromOrderbook(symbol: string) {
     try {
-      this.connection.removeAccountChangeListener(this._obEmittersKeys[symbol]!).then();
+      this.connection
+        .removeAccountChangeListener(this._obEmittersKeys[symbol]!)
+        .then();
       delete this._obEmittersKeys[symbol];
       delete this._obEmitters[symbol];
     } catch (_) {
@@ -236,13 +257,10 @@ export default class State extends BaseAccount<Schema> {
     }
   }
 
-
   async unsubscribe() {
     try {
-      (await this.program.account["state"]!.unsubscribe(
-        this.pubkey,
-      ));
-      (await this.cache.unsubscribe());
+      await this.program.account["state"]!.unsubscribe(this.pubkey);
+      await this.cache.unsubscribe();
     } catch (_) {
       //
     }
@@ -421,7 +439,6 @@ export default class State extends BaseAccount<Schema> {
     });
   }
 
-
   /**
    * Called by the keepers regularly to cache the oracle prices.
    * @param mockPrices Only used for testing purposes. An array of user-set prices.
@@ -478,10 +495,10 @@ export default class State extends BaseAccount<Schema> {
    * @param withEventQueues to fetch eventqueue or no
    */
   async getZoMarketAccounts({
-                              market,
-                              withOrderbooks = true,
-                              withEventQueues,
-                            }: {
+    market,
+    withOrderbooks = true,
+    withEventQueues,
+  }: {
     market: MarketInfo;
     withOrderbooks?: boolean;
     withEventQueues?: boolean;
@@ -697,13 +714,13 @@ export default class State extends BaseAccount<Schema> {
     return {
       data: hasData
         ? {
-          hourly: cumulAvg.div(lastSampleStartTime.getMinutes() * 24),
-          daily: cumulAvg.div(lastSampleStartTime.getMinutes()),
-          apr: cumulAvg
-            .div(lastSampleStartTime.getMinutes())
-            .times(100)
-            .times(365),
-        }
+            hourly: cumulAvg.div(lastSampleStartTime.getMinutes() * 24),
+            daily: cumulAvg.div(lastSampleStartTime.getMinutes()),
+            apr: cumulAvg
+              .div(lastSampleStartTime.getMinutes())
+              .times(100)
+              .times(365),
+          }
         : null,
       lastSampleUpdate: lastSampleStartTime,
     };

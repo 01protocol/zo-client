@@ -10,6 +10,7 @@
     "build": "tsc && tsc -p tsconfig.cjs.json",
     "build-docs": "typedoc --out docs src/index.ts",
     "lint-format": "prettier --check ./src",
+    "lint": "prettier --write ./src",
     "prepare": "husky install",
     "tsc": "tsc"
   },
