@@ -229,7 +229,7 @@ export default class State extends BaseAccount<Schema> {
         await Promise.all(promises);
         this.zoMarketAccounts[symbol]!.bids = bidsOrderbook;
         this.zoMarketAccounts[symbol]!.asks = asksOrderbook;
-        if(this._obEmitters[symbol]) {
+        if (this._obEmitters[symbol]) {
           this._obEmitters[symbol]!.emit(
             State.getOrderbookUpdateEventName(symbol),
             {
