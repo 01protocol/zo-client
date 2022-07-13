@@ -96,3 +96,12 @@ export type CacheSchema = IdlAccounts<Zo>["cache"] & {
 export type ControlSchema = IdlAccounts<Zo>["control"] & {
   openOrdersAgg: OpenOrdersInfo[];
 };
+
+export enum UpdateEvents {
+  stateModified = "stateModified",
+  cacheModified = "cacheModified",
+  // not emitted from margin
+  _controlModified = "_controlModified",
+  marginModified = "marginModified",
+  orderbookReloaded = "orderbookReloaded",
+}

@@ -570,12 +570,13 @@ export default abstract class Margin extends MarginWeb3 {
     st: State,
     ch?: Cache,
     owner?: PublicKey,
+    commitment = "processed" as Commitment,
   ): Promise<Margin> {
     if (ch)
       console.warn(
         "[DEPRECATED SOON: Cache param will soon be removed from here; cache is taken from state directly.]",
       );
-    return (await super.loadWeb3(program, st, owner)) as Margin;
+    return (await super.loadWeb3(program, st, owner, commitment)) as Margin;
   }
 
   static async loadPrefetched(
@@ -604,12 +605,14 @@ export default abstract class Margin extends MarginWeb3 {
     st: State,
     accountInfo: AccountInfo<Buffer>,
     withOrders: boolean,
+    commitment = "processed" as Commitment,
   ): Promise<Margin> {
     return (await super.loadFromAccountInfo(
       program,
       st,
       accountInfo,
       withOrders,
+      commitment,
     )) as Margin;
   }
 
@@ -687,43 +690,29 @@ export default abstract class Margin extends MarginWeb3 {
 
     if (position.isLong) {
       // (c * d - (m - f) * t / (1 - w)) / c
-      const price = (
-        (
-          (
-            position.coins.decimal.mul(indexPrice)
-          )
-            .sub(
-              (
-                (
-                  this.marginFraction.sub(this.maintenanceMarginFraction)
-                )
-                  .mul(this.totalPositionNotional)
-              )
-                .div(new Decimal(1).sub(pmmf)),
-            )
+      const price = position.coins.decimal
+        .mul(indexPrice)
+        .sub(
+          this.marginFraction
+            .sub(this.maintenanceMarginFraction)
+            .mul(this.totalPositionNotional)
+            .div(new Decimal(1).sub(pmmf)),
         )
-          .div(position.coins.decimal)
-      ).toNumber();
+        .div(position.coins.decimal)
+        .toNumber();
       return price < 0 ? Infinity : price;
     } else {
       // (c * d + (m - f) * t / (1 + w)) / c
-      return (
-        (
-          (
-            position.coins.decimal.mul(indexPrice)
-          )
-            .add(
-              (
-                (
-                  this.marginFraction.sub(this.maintenanceMarginFraction)
-                )
-                  .mul(this.totalPositionNotional)
-              )
-                .div(new Decimal(1).add(pmmf)),
-            )
+      return position.coins.decimal
+        .mul(indexPrice)
+        .add(
+          this.marginFraction
+            .sub(this.maintenanceMarginFraction)
+            .mul(this.totalPositionNotional)
+            .div(new Decimal(1).add(pmmf)),
         )
-          .div(position.coins.decimal)
-      ).toNumber();
+        .div(position.coins.decimal)
+        .toNumber();
     }
   }
 

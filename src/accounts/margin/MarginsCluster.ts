@@ -1,9 +1,9 @@
 import State from "../State";
 import Margin from "./Margin";
 import EventEmitter from "eventemitter3";
-import { UpdateEvents } from "./UpdateEvents";
 import { Program } from "@project-serum/anchor";
 import { Zo } from "../../types/zo";
+import { UpdateEvents } from "../../types";
 import { KeyedAccountInfo } from "@solana/web3.js";
 import {
   DEFAULT_MARGINS_CLUSTER_CONFIG,
@@ -38,11 +38,9 @@ export default class MarginsCluster {
       this.cluster == Cluster.Devnet
         ? ZO_DEVNET_STATE_KEY
         : ZO_MAINNET_STATE_KEY,
+      this.config.commitment,
     );
-    await this.state.subscribe({
-      cacheRefreshInterval: this.config.cacheRefreshInterval,
-      eventEmitter: this.eventEmitter,
-    });
+    await this.state.subscribe();
     const that = this;
     this.log("State loaded");
     await this.loadAccounts();
@@ -54,7 +52,7 @@ export default class MarginsCluster {
       this.config.hardRefreshInterval,
     );
     this.log("MarginsCluster listeners launched");
-    this.eventEmitter!.emit(UpdateEvents.marginsReloaded, null);
+    this.eventEmitter!.emit(UpdateEvents.marginModified, null);
     this.log("MarginsCluster running");
   }
 
@@ -70,7 +68,7 @@ export default class MarginsCluster {
     await this.loadAccounts();
     this.startMarginsListener();
     this.startControlsListener();
-    this.eventEmitter!.emit(UpdateEvents.marginsReloaded, null);
+    this.eventEmitter!.emit(UpdateEvents.marginModified, null);
     this.log("Hard refresh complete");
   }
 
@@ -114,6 +112,7 @@ export default class MarginsCluster {
                   that.state,
                   accountInfo,
                   this.config.loadWithOrders,
+                  this.config.commitment,
                 );
               that.controlToMarginKey.set(
                 that.margins[pubkey.toString()]!.control.pubkey.toString(),
@@ -147,7 +146,7 @@ export default class MarginsCluster {
               await that.margins[marginKey]!.updateControlFromAccountInfo(
                 accountInfo,
               );
-              that.eventEmitter!.emit(UpdateEvents.controlModified, marginKey);
+              that.eventEmitter!.emit(UpdateEvents._controlModified, marginKey);
             }
           } catch (_) {
             console.warn("Failed to load an updated control account!");

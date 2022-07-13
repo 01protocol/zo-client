@@ -28,6 +28,7 @@ import {
   MarginSchema,
   OrderType,
   TransactionId,
+  UpdateEvents,
   Zo,
 } from "../../types";
 import {
@@ -47,6 +48,7 @@ import {
 import Decimal from "decimal.js";
 import { getMintDecimals } from "@zero_one/lite-serum/lib/market";
 import { OrderInfo, PositionInfo } from "../../types/dataTypes";
+import EventEmitter from "eventemitter3";
 
 export interface MarginClassSchema extends Omit<MarginSchema, "collateral"> {
   /** The deposit amount divided by the entry supply or borrow multiplier */
@@ -73,8 +75,9 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     public readonly control: Control,
     public state: State,
     public readonly owner?: PublicKey,
+    commitment?: Commitment,
   ) {
-    super(program, pubkey, data);
+    super(program, pubkey, data, commitment);
   }
 
   /**
@@ -84,12 +87,21 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     program: Program<Zo>,
     st: State,
     owner?: PublicKey,
+    commitment = "processed" as Commitment,
   ): Promise<MarginWeb3> {
     const marginOwner = owner || program.provider.wallet.publicKey;
     const [key] = await this.getPda(st, marginOwner, program.programId);
-    const data = await this.fetch(program, key, st);
-    const control = await Control.load(program, data.control);
-    const margin = new this(program, key, data, control, st, marginOwner);
+    const data = await this.fetch(program, key, st, commitment);
+    const control = await Control.load(program, data.control, commitment);
+    const margin = new this(
+      program,
+      key,
+      data,
+      control,
+      st,
+      marginOwner,
+      commitment,
+    );
     margin.loadBalances();
     margin.loadPositions();
     await margin.loadOrders();
@@ -105,6 +117,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     prefetchedMarginData: ProgramAccount<MarginSchema>,
     prefetchedControlData: ProgramAccount<ControlSchema>,
     withOrders: boolean,
+    commitment?: Commitment,
   ): Promise<MarginWeb3> {
     const data = this.transformFetchedData(st, prefetchedMarginData.account);
     const control = await Control.loadPrefetched(
@@ -118,6 +131,8 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
       data,
       control,
       st,
+      undefined,
+      commitment,
     );
     margin.loadBalances();
     margin.loadPositions();
@@ -132,11 +147,20 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     st: State,
     accountInfo: AccountInfo<Buffer>,
     withOrders: boolean,
+    commitment?: Commitment,
   ): Promise<MarginWeb3> {
     const account = program.coder.accounts.decode("margin", accountInfo.data);
     const data = this.transformFetchedData(st, account);
     const control = await Control.load(program, data.control);
-    const margin = new this(program, account.publicKey, data, control, st);
+    const margin = new this(
+      program,
+      account.publicKey,
+      data,
+      control,
+      st,
+      undefined,
+      commitment,
+    );
     margin.loadBalances();
     margin.loadPositions();
     if (withOrders) {
@@ -251,10 +275,11 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     program: Program<Zo>,
     k: PublicKey,
     st: State,
+    commitment: Commitment,
   ): Promise<MarginClassSchema> {
     const data = (await program.account["margin"].fetch(
       k,
-      "recent",
+      commitment,
     )) as MarginSchema;
     return MarginWeb3.transformFetchedData(st, data);
   }
@@ -394,7 +419,12 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     if (refreshMarginData) {
       if (refreshState) {
         [this.data] = await Promise.all([
-          MarginWeb3.fetch(this.program, this.pubkey, this.state),
+          MarginWeb3.fetch(
+            this.program,
+            this.pubkey,
+            this.state,
+            this.commitment,
+          ),
           this.control.refresh(),
           this.state.refresh(),
         ]);
@@ -403,12 +433,76 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
           this.program,
           this.pubkey,
           this.state,
+          this.commitment,
         );
       }
     }
     this.loadBalances();
     this.loadPositions();
     await this.loadOrders();
+  }
+
+  eventEmitter: EventEmitter<UpdateEvents> | undefined;
+
+  /**
+   * Refreshes the data on the Margin, state, cache and control accounts.
+   */
+  async subscribe() {
+    this.eventEmitter = new EventEmitter();
+    const anchorEventEmitter = await this._subscribe("margin");
+    const that = this;
+    anchorEventEmitter.addListener("change", async (account) => {
+      that.data = MarginWeb3.transformFetchedData(that.state, account);
+      that.loadBalances();
+      that.loadPositions();
+      await that.loadOrders();
+      this.eventEmitter!.emit(UpdateEvents.marginModified);
+    });
+    await this.control.subscribe();
+    await this.state.subscribe();
+    //Note: when control modified only margin event is emitted
+    this.control.eventEmitter!.addListener(
+      UpdateEvents._controlModified,
+      async () => {
+        that.loadBalances();
+        that.loadPositions();
+        await that.loadOrders();
+        this.eventEmitter!.emit(UpdateEvents.marginModified);
+      },
+    );
+    this.state.eventEmitter!.addListener(
+      UpdateEvents.stateModified,
+      async () => {
+        that.loadBalances();
+        that.loadPositions();
+        await that.loadOrders();
+        this.eventEmitter!.emit(UpdateEvents.stateModified);
+      },
+    );
+    this.state.eventEmitter!.addListener(
+      UpdateEvents.cacheModified,
+      async () => {
+        that.loadBalances();
+        that.loadPositions();
+        await that.loadOrders();
+        this.eventEmitter!.emit(UpdateEvents.cacheModified);
+      },
+    );
+  }
+
+  async unsubscribe() {
+    try {
+      await this.program.account["margin"]!.unsubscribe(this.pubkey);
+      await this.control.unsubscribe();
+      await this.state.unsubscribe();
+      if (this.backupSubscriberChannel) {
+        await this.program.provider.connection.removeProgramAccountChangeListener(
+          this.backupSubscriberChannel,
+        );
+      }
+    } catch (_) {
+      //
+    }
   }
 
   /**
@@ -624,7 +718,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
     if (
       await this.program.provider.connection.getAccountInfo(
         associatedTokenAccount,
-        "recent",
+        this.commitment,
       )
     ) {
       associatedTokenAccountExists = true;

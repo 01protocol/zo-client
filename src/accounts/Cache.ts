@@ -1,11 +1,12 @@
-import { PublicKey } from "@solana/web3.js";
+import { Commitment, PublicKey } from "@solana/web3.js";
 import { BN, Program } from "@project-serum/anchor";
 import Decimal from "decimal.js";
 import BaseAccount from "./BaseAccount";
 import { Schema as StateSchema } from "./State";
 import Num from "../Num";
-import { CacheSchema, Zo } from "../types";
+import { CacheSchema, UpdateEvents, Zo } from "../types";
 import { loadSymbol, loadWI80F48 } from "../utils";
+import EventEmitter from "eventemitter3";
 
 type OracleCache = Omit<
   CacheSchema["oracles"][0],
@@ -49,13 +50,16 @@ type Schema = Omit<CacheSchema, "oracles" | "marks" | "borrowCache"> & {
  * The Cache account stores and tracks oracle prices, mark prices, funding and borrow lending multipliers.
  */
 export default class Cache extends BaseAccount<Schema> {
+  eventEmitter: EventEmitter<UpdateEvents> | undefined;
+
   private constructor(
     program: Program<Zo>,
     k: PublicKey,
     data: Schema,
-    private readonly _st: StateSchema,
+    private _st: StateSchema,
+    commitment?: Commitment,
   ) {
-    super(program, k, data);
+    super(program, k, data, commitment);
   }
 
   /**
@@ -63,21 +67,61 @@ export default class Cache extends BaseAccount<Schema> {
    * @param program
    * @param k The cache account's public key.
    * @param st
+   * @param commitment
    */
-  static async load(program: Program<Zo>, k: PublicKey, st: StateSchema) {
-    return new this(program, k, await Cache.fetch(program, k, st), st);
+  static async load(
+    program: Program<Zo>,
+    k: PublicKey,
+    st: StateSchema,
+    commitment = "processed" as Commitment,
+  ) {
+    return new this(
+      program,
+      k,
+      await Cache.fetch(program, k, st, commitment),
+      st,
+      commitment,
+    );
   }
 
   private static async fetch(
     program: Program<Zo>,
     k: PublicKey,
     st: StateSchema,
+    commitment: Commitment,
   ): Promise<Schema> {
     const data = (await program.account["cache"].fetch(
       k,
-      "recent",
+      commitment,
     )) as CacheSchema;
     return Cache.processRawCacheData(data, st);
+  }
+
+  async updateState(st: StateSchema): Promise<void> {
+    this._st = st;
+    this.data = Cache.processRawCacheData(
+      // @ts-ignore
+      this.data as CacheSchema,
+      this._st,
+    );
+  }
+
+  async subscribe(): Promise<void> {
+    this.eventEmitter = new EventEmitter();
+    const anchorEventEmitter = await this._subscribe("cache");
+    const that = this;
+    anchorEventEmitter.addListener("change", (account) => {
+      that.data = Cache.processRawCacheData(account, that._st);
+      this.eventEmitter!.emit(UpdateEvents.cacheModified);
+    });
+  }
+
+  async unsubscribe() {
+    try {
+      await this.program.account["cache"].unsubscribe(this.pubkey);
+    } catch (_) {
+      //
+    }
   }
 
   private static processRawCacheData(
@@ -148,7 +192,12 @@ export default class Cache extends BaseAccount<Schema> {
   }
 
   async refresh(): Promise<void> {
-    this.data = await Cache.fetch(this.program, this.pubkey, this._st);
+    this.data = await Cache.fetch(
+      this.program,
+      this.pubkey,
+      this._st,
+      this.commitment,
+    );
   }
 
   /**
