@@ -1,12 +1,12 @@
-import { Commitment, PublicKey } from "@solana/web3.js";
-import { BN, Program } from "@project-serum/anchor";
-import Decimal from "decimal.js";
-import BaseAccount from "./BaseAccount";
-import { Schema as StateSchema } from "./State";
-import Num from "../Num";
-import { CacheSchema, UpdateEvents, Zo } from "../types";
-import { loadSymbol, loadWI80F48 } from "../utils";
-import EventEmitter from "eventemitter3";
+import { Commitment, PublicKey } from "@solana/web3.js"
+import { BN, Program } from "@project-serum/anchor"
+import Decimal from "decimal.js"
+import BaseAccount from "./BaseAccount"
+import { Schema as StateSchema } from "./State"
+import Num from "../Num"
+import { CacheSchema, UpdateEvents, Zo } from "../types"
+import { loadSymbol, loadWI80F48 } from "../utils"
+import EventEmitter from "eventemitter3"
 
 type OracleCache = Omit<
   CacheSchema["oracles"][0],
@@ -50,7 +50,7 @@ type Schema = Omit<CacheSchema, "oracles" | "marks" | "borrowCache"> & {
  * The Cache account stores and tracks oracle prices, mark prices, funding and borrow lending multipliers.
  */
 export default class Cache extends BaseAccount<Schema> {
-  eventEmitter: EventEmitter<UpdateEvents> | undefined;
+  eventEmitter: EventEmitter<UpdateEvents> | undefined
 
   private constructor(
     program: Program<Zo>,
@@ -59,7 +59,7 @@ export default class Cache extends BaseAccount<Schema> {
     private _st: StateSchema,
     commitment?: Commitment,
   ) {
-    super(program, k, data, commitment);
+    super(program, k, data, commitment)
   }
 
   /**
@@ -81,7 +81,7 @@ export default class Cache extends BaseAccount<Schema> {
       await Cache.fetch(program, k, st, commitment),
       st,
       commitment,
-    );
+    )
   }
 
   private static async fetch(
@@ -93,32 +93,32 @@ export default class Cache extends BaseAccount<Schema> {
     const data = (await program.account["cache"].fetch(
       k,
       commitment,
-    )) as CacheSchema;
-    return Cache.processRawCacheData(data, st);
+    )) as CacheSchema
+    return Cache.processRawCacheData(data, st)
   }
 
   async updateState(st: StateSchema): Promise<void> {
-    this._st = st;
+    this._st = st
     this.data = Cache.processRawCacheData(
       // @ts-ignore
       this.data as CacheSchema,
       this._st,
-    );
+    )
   }
 
   async subscribe(): Promise<void> {
-    this.eventEmitter = new EventEmitter();
-    const anchorEventEmitter = await this._subscribe("cache");
-    const that = this;
+    this.eventEmitter = new EventEmitter()
+    const anchorEventEmitter = await this._subscribe("cache")
+    const that = this
     anchorEventEmitter.addListener("change", (account) => {
-      that.data = Cache.processRawCacheData(account, that._st);
-      this.eventEmitter!.emit(UpdateEvents.cacheModified);
-    });
+      that.data = Cache.processRawCacheData(account, that._st)
+      this.eventEmitter!.emit(UpdateEvents.cacheModified)
+    })
   }
 
   async unsubscribe() {
     try {
-      await this.program.account["cache"].unsubscribe(this.pubkey);
+      await this.program.account["cache"].unsubscribe(this.pubkey)
     } catch (_) {
       //
     }
@@ -134,18 +134,18 @@ export default class Cache extends BaseAccount<Schema> {
         //@ts-ignore
         .filter((c) => !c.symbol.data.every((x) => x === 0))
         .map((c) => {
-          const decimals = c.quoteDecimals - c.baseDecimals;
+          const decimals = c.quoteDecimals - c.baseDecimals
           return {
             ...c,
             //@ts-ignore
             symbol: loadSymbol(c.symbol),
             price: Num.fromWI80F48(c.price, decimals),
             twap: Num.fromWI80F48(c.twap, decimals),
-          };
+          }
         }),
       marks: st.perpMarkets.map((m, i) => {
-        const decimals = 6 - m.assetDecimals;
-        const c = data.marks[i]!;
+        const decimals = 6 - m.assetDecimals
+        const c = data.marks[i]!
         return {
           ...c,
           price: Num.fromWI80F48(c.price, decimals),
@@ -163,15 +163,15 @@ export default class Cache extends BaseAccount<Schema> {
               c.twap.lastSampleStartTime.toNumber() * 1000,
             ),
           },
-        };
+        }
       }),
       borrowCache: st.collaterals.map((col, i) => {
-        const decimals = col.decimals;
-        const c = data.borrowCache[i]!;
-        const rawSupply = loadWI80F48(c.supply);
-        const rawBorrows = loadWI80F48(c.borrows);
-        const supplyMultiplier = loadWI80F48(c.supplyMultiplier);
-        const borrowMultiplier = loadWI80F48(c.borrowMultiplier);
+        const decimals = col.decimals
+        const c = data.borrowCache[i]!
+        const rawSupply = loadWI80F48(c.supply)
+        const rawBorrows = loadWI80F48(c.borrows)
+        const supplyMultiplier = loadWI80F48(c.supplyMultiplier)
+        const borrowMultiplier = loadWI80F48(c.borrowMultiplier)
         return {
           ...c,
           rawSupply,
@@ -186,9 +186,9 @@ export default class Cache extends BaseAccount<Schema> {
           ),
           supplyMultiplier,
           borrowMultiplier,
-        };
+        }
       }),
-    };
+    }
   }
 
   async refresh(): Promise<void> {
@@ -197,7 +197,7 @@ export default class Cache extends BaseAccount<Schema> {
       this.pubkey,
       this._st,
       this.commitment,
-    );
+    )
   }
 
   /**
@@ -205,12 +205,12 @@ export default class Cache extends BaseAccount<Schema> {
    * @returns The oracle cache for the given collateral.
    */
   getOracleBySymbol(sym: string): OracleCache {
-    const i = this.data.oracles.findIndex((x) => x.symbol === sym);
+    const i = this.data.oracles.findIndex((x) => x.symbol === sym)
     if (i < 0) {
       throw RangeError(
         `Invalid symbol ${sym} for <Cache ${this.pubkey.toBase58()}>`,
-      );
+      )
     }
-    return this.data.oracles[i]!;
+    return this.data.oracles[i]!
   }
 }

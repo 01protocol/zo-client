@@ -1,4 +1,4 @@
-import { blob, seq, struct } from "buffer-layout";
+import { blob, seq, struct } from "buffer-layout"
 import {
   accountFlagsLayout,
   i128,
@@ -6,28 +6,28 @@ import {
   publicKeyLayout,
   u128,
   u64,
-} from "./layout";
-import { Slab, SLAB_LAYOUT } from "./slab";
-import BN from "bn.js";
+} from "./layout"
+import { Slab, SLAB_LAYOUT } from "./slab"
+import BN from "bn.js"
 import {
   AccountInfo,
   AccountMeta,
   Commitment,
   Connection,
   PublicKey,
-} from "@solana/web3.js";
-import { decodeEventQueue, decodeRequestQueue } from "./queue";
-import { Buffer } from "buffer";
-import { throwIfNull } from "../utils";
-import { TransactionId } from "../types";
+} from "@solana/web3.js"
+import { decodeEventQueue, decodeRequestQueue } from "./queue"
+import { Buffer } from "buffer"
+import { throwIfNull } from "../utils"
+import { TransactionId } from "../types"
 import {
   WRAPPED_SOL_MINT,
   ZERO_ONE_DEVNET_PROGRAM_ID,
   ZO_DEX_DEVNET_PROGRAM_ID,
   ZO_DEX_MAINNET_PROGRAM_ID,
-} from "../config";
-import { Program } from "@project-serum/anchor";
-import { State } from "../index";
+} from "../config"
+import { Program } from "@project-serum/anchor"
+import { State } from "../index"
 
 export const MARKET_STATE_LAYOUT_V3 = struct([
   blob(5),
@@ -64,19 +64,19 @@ export const MARKET_STATE_LAYOUT_V3 = struct([
   blob(976),
 
   blob(7),
-]);
+])
 
 export class ZoMarket {
-  private readonly _decoded: any;
-  private readonly _baseSplTokenDecimals: number;
-  private readonly _quoteSplTokenDecimals: number;
-  private readonly _skipPreflight: boolean;
-  private readonly _commitment: Commitment;
-  private readonly _programId: PublicKey;
+  private readonly _decoded: any
+  private readonly _baseSplTokenDecimals: number
+  private readonly _quoteSplTokenDecimals: number
+  private readonly _skipPreflight: boolean
+  private readonly _commitment: Commitment
+  private readonly _programId: PublicKey
   private readonly _openOrdersAccountsCache: {
     [publicKey: string]: { accounts: ZoOpenOrders[]; ts: number };
-  };
-  private _layoutOverride?: any;
+  }
+  private _layoutOverride?: any
 
   private readonly _feeDiscountKeysCache: {
     [publicKey: string]: {
@@ -88,7 +88,7 @@ export class ZoMarket {
       }>;
       ts: number;
     };
-  };
+  }
 
   constructor(
     decoded,
@@ -98,79 +98,79 @@ export class ZoMarket {
     programId: PublicKey,
     layoutOverride?: any,
   ) {
-    const { skipPreflight = false, commitment = "recent" } = options;
+    const { skipPreflight = false, commitment = "recent" } = options
     if (!decoded.accountFlags.initialized || !decoded.accountFlags.market) {
-      throw new Error("Invalid market state");
+      throw new Error("Invalid market state")
     }
-    this._decoded = decoded;
-    this._baseSplTokenDecimals = baseMintDecimals;
-    this._quoteSplTokenDecimals = quoteMintDecimals;
-    this._skipPreflight = skipPreflight;
-    this._commitment = commitment;
-    this._programId = programId;
-    this._openOrdersAccountsCache = {};
-    this._feeDiscountKeysCache = {};
-    this._layoutOverride = layoutOverride;
+    this._decoded = decoded
+    this._baseSplTokenDecimals = baseMintDecimals
+    this._quoteSplTokenDecimals = quoteMintDecimals
+    this._skipPreflight = skipPreflight
+    this._commitment = commitment
+    this._programId = programId
+    this._openOrdersAccountsCache = {}
+    this._feeDiscountKeysCache = {}
+    this._layoutOverride = layoutOverride
   }
 
   get eventQueueAddress(): PublicKey {
-    return this._decoded.eventQueue;
+    return this._decoded.eventQueue
   }
 
   get requestQueueAddress(): PublicKey {
-    return this._decoded.requestQueue;
+    return this._decoded.requestQueue
   }
 
   get programId(): PublicKey {
-    return this._programId;
+    return this._programId
   }
 
   get address(): PublicKey {
-    return this._decoded.ownAddress;
+    return this._decoded.ownAddress
   }
 
   get publicKey(): PublicKey {
-    return this.address;
+    return this.address
   }
 
   get baseMintAddress(): PublicKey {
-    return this._decoded.baseMint;
+    return this._decoded.baseMint
   }
 
   get quoteMintAddress(): PublicKey {
-    return this._decoded.quoteMint;
+    return this._decoded.quoteMint
   }
 
   get bidsAddress(): PublicKey {
-    return this._decoded.bids;
+    return this._decoded.bids
   }
 
   get asksAddress(): PublicKey {
-    return this._decoded.asks;
+    return this._decoded.asks
   }
 
   get decoded(): any {
-    return this._decoded;
+    return this._decoded
   }
 
   get minOrderSize() {
-    return this.baseSizeLotsToNumber(new BN(1));
+    return this.baseSizeLotsToNumber(new BN(1))
   }
 
   get tickSize() {
-    return this.priceLotsToNumber(new BN(1));
+    return this.priceLotsToNumber(new BN(1))
   }
 
   private get _baseSplTokenMultiplier() {
-    return new BN(10).pow(new BN(this._baseSplTokenDecimals));
+    return new BN(10).pow(new BN(this._baseSplTokenDecimals))
   }
 
   private get _quoteSplTokenMultiplier() {
-    return new BN(10).pow(new BN(this._quoteSplTokenDecimals));
+    return new BN(10).pow(new BN(this._quoteSplTokenDecimals))
   }
 
   static getLayout(_programId: PublicKey) {
-    return MARKET_STATE_LAYOUT_V3;
+    return MARKET_STATE_LAYOUT_V3
   }
 
   static async findAccountsByMints(
@@ -192,8 +192,8 @@ export class ZoMarket {
           bytes: quoteMintAddress.toBase58(),
         },
       },
-    ];
-    return getFilteredProgramAccounts(connection, programId, filters);
+    ]
+    return getFilteredProgramAccounts(connection, programId, filters)
   }
 
   static async load(
@@ -204,23 +204,23 @@ export class ZoMarket {
     accountInfoPrefetched?: AccountInfo<Buffer>,
     layoutOverride?: any,
   ) {
-    const { commitment = "confirmed" } = options;
+    const { commitment = "confirmed" } = options
     const { owner, data } = throwIfNull(
       accountInfoPrefetched
         ? accountInfoPrefetched
         : await connection.getAccountInfo(address, commitment),
       "Market not found",
-    );
+    )
     if (!owner.equals(programId)) {
-      throw new Error("Address not owned by program: " + owner.toBase58());
+      throw new Error("Address not owned by program: " + owner.toBase58())
     }
-    const decoded = (layoutOverride ?? this.getLayout(programId)).decode(data);
+    const decoded = (layoutOverride ?? this.getLayout(programId)).decode(data)
     if (
       !decoded.accountFlags.initialized ||
       !decoded.accountFlags.market ||
       !decoded.ownAddress.equals(address)
     ) {
-      throw new Error("Invalid market");
+      throw new Error("Invalid market")
     }
     return new ZoMarket(
       decoded,
@@ -229,7 +229,7 @@ export class ZoMarket {
       options,
       programId,
       layoutOverride,
-    );
+    )
   }
 
   async loadBids(
@@ -238,8 +238,8 @@ export class ZoMarket {
   ): Promise<Orderbook> {
     const { data } = throwIfNull(
       await connection.getAccountInfo(this._decoded.bids, commitment),
-    );
-    return Orderbook.decode(this, data);
+    )
+    return Orderbook.decode(this, data)
   }
 
   async loadAsks(
@@ -248,8 +248,8 @@ export class ZoMarket {
   ): Promise<Orderbook> {
     const { data } = throwIfNull(
       await connection.getAccountInfo(this._decoded.asks, commitment),
-    );
-    return Orderbook.decode(this, data);
+    )
+    return Orderbook.decode(this, data)
   }
 
   async loadOrdersForOwner(
@@ -260,8 +260,8 @@ export class ZoMarket {
     const [bids, asks] = await Promise.all([
       this.loadBids(connection),
       this.loadAsks(connection),
-    ]);
-    return this.filterForOpenOrders(bids, asks, controlAddress);
+    ])
+    return this.filterForOpenOrders(bids, asks, controlAddress)
   }
 
   filterForOpenOrders(
@@ -270,8 +270,8 @@ export class ZoMarket {
     controlAccount: PublicKey,
   ): Order[] {
     return [...bids, ...asks].filter((order) => {
-      return order.controlAddress.equals(controlAccount);
-    });
+      return order.controlAddress.equals(controlAccount)
+    })
   }
 
   async findBaseTokenAccountsForOwner(
@@ -283,17 +283,17 @@ export class ZoMarket {
       const [wrapped, unwrapped] = await Promise.all([
         this.findBaseTokenAccountsForOwner(connection, ownerAddress, false),
         connection.getAccountInfo(ownerAddress),
-      ]);
+      ])
       if (unwrapped !== null) {
-        return [{ pubkey: ownerAddress, account: unwrapped }, ...wrapped];
+        return [{ pubkey: ownerAddress, account: unwrapped }, ...wrapped]
       }
-      return wrapped;
+      return wrapped
     }
     return await this.getTokenAccountsByOwnerForMint(
       connection,
       ownerAddress,
       this.baseMintAddress,
-    );
+    )
   }
 
   // get supportsSrmFeeDiscounts() {
@@ -419,7 +419,7 @@ export class ZoMarket {
       await connection.getTokenAccountsByOwner(ownerAddress, {
         mint: mintAddress,
       })
-    ).value;
+    ).value
   }
 
   async findQuoteTokenAccountsForOwner(
@@ -431,17 +431,17 @@ export class ZoMarket {
       const [wrapped, unwrapped] = await Promise.all([
         this.findQuoteTokenAccountsForOwner(connection, ownerAddress, false),
         connection.getAccountInfo(ownerAddress),
-      ]);
+      ])
       if (unwrapped !== null) {
-        return [{ pubkey: ownerAddress, account: unwrapped }, ...wrapped];
+        return [{ pubkey: ownerAddress, account: unwrapped }, ...wrapped]
       }
-      return wrapped;
+      return wrapped
     }
     return await this.getTokenAccountsByOwnerForMint(
       connection,
       ownerAddress,
       this.quoteMintAddress,
-    );
+    )
   }
 
   async findOpenOrdersAccountsForOwner(
@@ -449,25 +449,25 @@ export class ZoMarket {
     ownerAddress: PublicKey,
     cacheDurationMs = 0,
   ): Promise<ZoOpenOrders[]> {
-    const strOwner = ownerAddress.toBase58();
-    const now = new Date().getTime();
+    const strOwner = ownerAddress.toBase58()
+    const now = new Date().getTime()
     if (
       strOwner in this._openOrdersAccountsCache &&
       now - this._openOrdersAccountsCache[strOwner]!.ts < cacheDurationMs
     ) {
-      return this._openOrdersAccountsCache[strOwner]!.accounts;
+      return this._openOrdersAccountsCache[strOwner]!.accounts
     }
     const openOrdersAccountsForOwner = await ZoOpenOrders.findForMarketAndOwner(
       connection,
       this.address,
       ownerAddress,
       this._programId,
-    );
+    )
     this._openOrdersAccountsCache[strOwner] = {
       accounts: openOrdersAccountsForOwner,
       ts: now,
-    };
-    return openOrdersAccountsForOwner;
+    }
+    return openOrdersAccountsForOwner
   }
 
   getSplTokenBalanceFromAccountInfo(
@@ -477,64 +477,64 @@ export class ZoMarket {
     return divideBnToNumber(
       new BN(accountInfo.data.slice(64, 72), 10, "le"),
       new BN(10).pow(new BN(decimals)),
-    );
+    )
   }
 
   async loadRequestQueue(connection: Connection) {
     const { data } = throwIfNull(
       await connection.getAccountInfo(this._decoded.requestQueue),
-    );
-    return decodeRequestQueue(data);
+    )
+    return decodeRequestQueue(data)
   }
 
   async loadEventQueue(connection: Connection, commitment?: Commitment) {
     const { data } = throwIfNull(
       await connection.getAccountInfo(this._decoded.eventQueue, commitment),
-    );
-    return decodeEventQueue(data);
+    )
+    return decodeEventQueue(data)
   }
 
   async loadFills(connection: Connection, limit = 100) {
     // TODO: once there's a separate source of fills use that instead
     const { data } = throwIfNull(
       await connection.getAccountInfo(this._decoded.eventQueue),
-    );
-    const events = decodeEventQueue(data, limit);
+    )
+    const events = decodeEventQueue(data, limit)
     return events
       .filter(
         (event) => event.eventFlags.fill && event.nativeQuantityPaid.gtn(0),
       )
-      .map(this.parseFillEvent.bind(this));
+      .map(this.parseFillEvent.bind(this))
   }
 
   parseFillEvent(event) {
-    let size, price, side, priceBeforeFees;
+    let size, price, side, priceBeforeFees
     if (event.eventFlags.bid) {
-      side = "buy";
+      side = "buy"
       priceBeforeFees = event.eventFlags.maker
         ? event.nativeQuantityPaid.add(event.nativeFeeOrRebate)
-        : event.nativeQuantityPaid.sub(event.nativeFeeOrRebate);
+        : event.nativeQuantityPaid.sub(event.nativeFeeOrRebate)
       price = divideBnToNumber(
         priceBeforeFees.mul(this._baseSplTokenMultiplier),
         this._quoteSplTokenMultiplier.mul(event.nativeQuantityReleased),
-      );
+      )
       size = divideBnToNumber(
         event.nativeQuantityReleased,
         this._baseSplTokenMultiplier,
-      );
+      )
     } else {
-      side = "sell";
+      side = "sell"
       priceBeforeFees = event.eventFlags.maker
         ? event.nativeQuantityReleased.sub(event.nativeFeeOrRebate)
-        : event.nativeQuantityReleased.add(event.nativeFeeOrRebate);
+        : event.nativeQuantityReleased.add(event.nativeFeeOrRebate)
       price = divideBnToNumber(
         priceBeforeFees.mul(this._baseSplTokenMultiplier),
         this._quoteSplTokenMultiplier.mul(event.nativeQuantityPaid),
-      );
+      )
       size = divideBnToNumber(
         event.nativeQuantityPaid,
         this._baseSplTokenMultiplier,
-      );
+      )
     }
     return {
       ...event,
@@ -544,14 +544,14 @@ export class ZoMarket {
         this.quoteSplSizeToNumber(event.nativeFeeOrRebate) *
         (event.eventFlags.maker ? -1 : 1),
       size,
-    };
+    }
   }
 
   priceLotsToNumber(price: BN) {
     return divideBnToNumber(
       price.mul(this._decoded.quoteLotSize).mul(this._baseSplTokenMultiplier),
       this._decoded.baseLotSize.mul(this._quoteSplTokenMultiplier),
-    );
+    )
   }
 
   priceNumberToLots(price: number): BN {
@@ -563,53 +563,53 @@ export class ZoMarket {
           (Math.pow(10, this._baseSplTokenDecimals) *
             this._decoded.quoteLotSize.toNumber()),
       ),
-    );
+    )
   }
 
   baseSplSizeToNumber(size: BN) {
-    return divideBnToNumber(size, this._baseSplTokenMultiplier);
+    return divideBnToNumber(size, this._baseSplTokenMultiplier)
   }
 
   quoteSplSizeToNumber(size: BN) {
-    return divideBnToNumber(size, this._quoteSplTokenMultiplier);
+    return divideBnToNumber(size, this._quoteSplTokenMultiplier)
   }
 
   baseSizeLotsToNumber(size: BN) {
     return divideBnToNumber(
       size.mul(this._decoded.baseLotSize),
       this._baseSplTokenMultiplier,
-    );
+    )
   }
 
   baseSizeNumberToLots(size: number): BN {
     const native = new BN(
       Math.round(size * Math.pow(10, this._baseSplTokenDecimals)),
-    );
+    )
     // rounds down to the nearest lot size
-    return native.div(this._decoded.baseLotSize);
+    return native.div(this._decoded.baseLotSize)
   }
 
   quoteSizeLotsToNumber(size: BN) {
     return divideBnToNumber(
       size.mul(this._decoded.quoteLotSize),
       this._quoteSplTokenMultiplier,
-    );
+    )
   }
 
   quoteSizeNumberToLots(size: number): BN {
     const native = new BN(
       Math.round(size * Math.pow(10, this._quoteSplTokenDecimals)),
-    );
+    )
     // rounds down to the nearest lot size
-    return native.div(this._decoded.quoteLotSize);
+    return native.div(this._decoded.quoteLotSize)
   }
 
   quoteSizeNumberToSmoll(size: number): BN {
     const native = new BN(
       Math.round(size * Math.pow(10, this._quoteSplTokenDecimals)),
-    );
+    )
     // rounds down to the nearest lot size
-    return native;
+    return native
   }
 
   public async consumeEvents(
@@ -618,14 +618,14 @@ export class ZoMarket {
     controlAccs: PublicKey[], // make sure the indexes match
     openOrdersAccs: PublicKey[],
   ): Promise<TransactionId> {
-    const limit = 32;
+    const limit = 32
 
     // const eq = await this.loadEventQueue(program.provider.connection);
     //console.log(eq);
 
     const signer = (
       await State.getSigner(st.pubkey, ZERO_ONE_DEVNET_PROGRAM_ID)
-    )[0];
+    )[0]
     return await program.rpc.consumeEvents!(limit, {
       accounts: {
         state: st.pubkey,
@@ -637,7 +637,7 @@ export class ZoMarket {
         eventQueue: this.eventQueueAddress,
       },
       remainingAccounts: doubleSort(controlAccs, openOrdersAccs),
-    });
+    })
   }
 
   // make sure account arrays have same order of user accounts
@@ -648,20 +648,20 @@ export class ZoMarket {
     openOrdersAccs: PublicKey[],
     marginAccs: PublicKey[],
   ): Promise<TransactionId> {
-    const ra: AccountMeta[] = [];
+    const ra: AccountMeta[] = []
     controlAccs.forEach((c, i) => {
-      ra.push({ isSigner: false, isWritable: true, pubkey: c });
-    });
+      ra.push({ isSigner: false, isWritable: true, pubkey: c })
+    })
     openOrdersAccs.forEach((c) => {
-      ra.push({ isSigner: false, isWritable: true, pubkey: c });
-    });
+      ra.push({ isSigner: false, isWritable: true, pubkey: c })
+    })
     marginAccs.forEach((c) => {
-      ra.push({ isSigner: false, isWritable: true, pubkey: c });
-    });
+      ra.push({ isSigner: false, isWritable: true, pubkey: c })
+    })
 
     const signer = (
       await State.getSigner(st.pubkey, ZERO_ONE_DEVNET_PROGRAM_ID)
-    )[0];
+    )[0]
     return await program.rpc.crankPnl!({
       accounts: {
         state: st.pubkey,
@@ -673,7 +673,7 @@ export class ZoMarket {
         market: this.address,
       },
       remainingAccounts: ra,
-    });
+    })
   }
 }
 
@@ -710,37 +710,37 @@ export const _OPEN_ORDERS_LAYOUT_V2 = struct([
   u64("coinOnAsks"),
 
   blob(7),
-]);
+])
 
 export class ZoOpenOrders {
-  address: PublicKey;
-  market!: PublicKey;
-  owner!: PublicKey;
-  baseTokenFree!: BN;
-  baseTokenTotal!: BN;
-  quoteTokenFree!: BN;
-  quoteTokenTotal!: BN;
-  referrerRebatesAccrued!: BN;
-  realizedPnl!: BN;
-  fundingIndex!: BN;
-  coinOnBids!: BN;
-  coinOnAsks!: BN;
-  orders!: BN[];
-  clientIds!: BN[];
-  private _programId: PublicKey;
+  address: PublicKey
+  market!: PublicKey
+  owner!: PublicKey
+  baseTokenFree!: BN
+  baseTokenTotal!: BN
+  quoteTokenFree!: BN
+  quoteTokenTotal!: BN
+  referrerRebatesAccrued!: BN
+  realizedPnl!: BN
+  fundingIndex!: BN
+  coinOnBids!: BN
+  coinOnAsks!: BN
+  orders!: BN[]
+  clientIds!: BN[]
+  private _programId: PublicKey
 
   constructor(address: PublicKey, decoded, programId: PublicKey) {
-    this.address = address;
-    this._programId = programId;
-    Object.assign(this, decoded);
+    this.address = address
+    this._programId = programId
+    Object.assign(this, decoded)
   }
 
   get publicKey() {
-    return this.address;
+    return this.address
   }
 
   static getLayout(_programId: PublicKey) {
-    return _OPEN_ORDERS_LAYOUT_V2;
+    return _OPEN_ORDERS_LAYOUT_V2
   }
 
   static async findForOwner(
@@ -758,15 +758,15 @@ export class ZoOpenOrders {
       {
         dataSize: this.getLayout(programId).span,
       },
-    ];
+    ]
     const accounts = await getFilteredProgramAccounts(
       connection,
       programId,
       filters,
-    );
+    )
     return accounts.map(({ publicKey, accountInfo }) =>
       ZoOpenOrders.fromAccountInfo(publicKey, accountInfo, programId),
-    );
+    )
   }
 
   static async findForMarketAndOwner(
@@ -791,15 +791,15 @@ export class ZoOpenOrders {
       {
         dataSize: this.getLayout(programId).span,
       },
-    ];
+    ]
     const accounts = await getFilteredProgramAccounts(
       connection,
       programId,
       filters,
-    );
+    )
     return accounts.map(({ publicKey, accountInfo }) =>
       ZoOpenOrders.fromAccountInfo(publicKey, accountInfo, programId),
-    );
+    )
   }
 
   static async load(
@@ -807,11 +807,11 @@ export class ZoOpenOrders {
     address: PublicKey,
     programId: PublicKey,
   ) {
-    const accountInfo = await connection.getAccountInfo(address);
+    const accountInfo = await connection.getAccountInfo(address)
     if (accountInfo === null) {
-      throw new Error("Open orders account not found");
+      throw new Error("Open orders account not found")
     }
-    return ZoOpenOrders.fromAccountInfo(address, accountInfo, programId);
+    return ZoOpenOrders.fromAccountInfo(address, accountInfo, programId)
   }
 
   static fromAccountInfo(
@@ -819,15 +819,15 @@ export class ZoOpenOrders {
     accountInfo: AccountInfo<Buffer>,
     programId: PublicKey,
   ) {
-    const { owner, data } = accountInfo;
+    const { owner, data } = accountInfo
     if (!owner.equals(programId)) {
-      throw new Error("Address not owned by program");
+      throw new Error("Address not owned by program")
     }
-    const decoded = this.getLayout(programId).decode(data);
+    const decoded = this.getLayout(programId).decode(data)
     if (!decoded.accountFlags.initialized || !decoded.accountFlags.openOrders) {
-      throw new Error("Invalid open orders account");
+      throw new Error("Invalid open orders account")
     }
-    return new ZoOpenOrders(address, decoded, programId);
+    return new ZoOpenOrders(address, decoded, programId)
   }
 }
 
@@ -836,42 +836,42 @@ export const ORDERBOOK_LAYOUT = struct([
   accountFlagsLayout("accountFlags"),
   SLAB_LAYOUT.replicate("slab"),
   blob(7),
-]);
+])
 
 export class Orderbook {
-  market: ZoMarket;
-  isBids: boolean;
-  slab: Slab;
+  market: ZoMarket
+  isBids: boolean
+  slab: Slab
 
   constructor(market: ZoMarket, accountFlags, slab: Slab) {
     if (!accountFlags.initialized || !(accountFlags.bids ^ accountFlags.asks)) {
-      throw new Error("Invalid orderbook");
+      throw new Error("Invalid orderbook")
     }
-    this.market = market;
-    this.isBids = accountFlags.bids;
-    this.slab = slab;
+    this.market = market
+    this.isBids = accountFlags.bids
+    this.slab = slab
   }
 
   static get LAYOUT() {
-    return ORDERBOOK_LAYOUT;
+    return ORDERBOOK_LAYOUT
   }
 
   static decode(market: ZoMarket, buffer: Buffer) {
-    const { accountFlags, slab } = ORDERBOOK_LAYOUT.decode(buffer);
-    return new Orderbook(market, accountFlags, slab);
+    const { accountFlags, slab } = ORDERBOOK_LAYOUT.decode(buffer)
+    return new Orderbook(market, accountFlags, slab)
   }
 
   getL2(depth: number): [number, number, BN, BN][] {
-    const descending = this.isBids;
-    const levels: [BN, BN][] = []; // (price, size)
+    const descending = this.isBids
+    const levels: [BN, BN][] = [] // (price, size)
     for (const { key, quantity } of this.slab.items(descending)) {
-      const price = getPriceFromKey(key);
+      const price = getPriceFromKey(key)
       if (levels.length > 0 && levels[levels.length - 1]![0].eq(price)) {
-        levels[levels.length - 1]![1].iadd(quantity);
+        levels[levels.length - 1]![1].iadd(quantity)
       } else if (levels.length === depth) {
-        break;
+        break
       } else {
-        levels.push([price, quantity]);
+        levels.push([price, quantity])
       }
     }
     return levels.map(([priceLots, sizeLots]) => [
@@ -879,11 +879,11 @@ export class Orderbook {
       this.market.baseSizeLotsToNumber(sizeLots),
       priceLots,
       sizeLots,
-    ]);
+    ])
   }
 
   [Symbol.iterator]() {
-    return this.items(false);
+    return this.items(false)
   }
 
   *items(descending = false): Generator<Order> {
@@ -895,7 +895,7 @@ export class Orderbook {
       feeTier,
       clientOrderId,
     } of this.slab.items(descending)) {
-      const price = getPriceFromKey(key);
+      const price = getPriceFromKey(key)
       yield {
         orderId: key,
         clientId: clientOrderId,
@@ -907,7 +907,7 @@ export class Orderbook {
         size: this.market.baseSizeLotsToNumber(quantity),
         sizeLots: quantity,
         side: (this.isBids ? "buy" : "sell") as "buy" | "sell",
-      };
+      }
     }
   }
 }
@@ -926,14 +926,14 @@ export interface Order {
 }
 
 function getPriceFromKey(key) {
-  return key.ushrn(64);
+  return key.ushrn(64)
 }
 
 function divideBnToNumber(numerator: BN, denominator: BN): number {
-  const quotient = numerator.div(denominator).toNumber();
-  const rem = numerator.umod(denominator);
-  const gcd = rem.gcd(denominator);
-  return quotient + rem.div(gcd).toNumber() / denominator.div(gcd).toNumber();
+  const quotient = numerator.div(denominator).toNumber()
+  const rem = numerator.umod(denominator)
+  const gcd = rem.gcd(denominator)
+  return quotient + rem.div(gcd).toNumber() / denominator.div(gcd).toNumber()
 }
 
 async function getFilteredProgramAccounts(
@@ -949,9 +949,9 @@ async function getFilteredProgramAccounts(
       filters,
       encoding: "base64",
     },
-  ]);
+  ])
   if (resp.error) {
-    throw new Error(resp.error.message);
+    throw new Error(resp.error.message)
   }
   return resp.result.map(
     ({ pubkey, account: { data, executable, owner, lamports } }) => ({
@@ -963,35 +963,35 @@ async function getFilteredProgramAccounts(
         lamports,
       },
     }),
-  );
+  )
 }
 
 function doubleSort(a: PublicKey[], b: PublicKey[]): any[] {
-  const together: Array<PublicKey[]> = [];
+  const together: Array<PublicKey[]> = []
   if (a.length !== b.length) {
-    throw new Error("Arrays don't have same length");
+    throw new Error("Arrays don't have same length")
   }
 
   for (let i = 0; i < a.length; i++) {
     if (a[i] !== undefined && b[i] !== undefined) {
-      const slice: PublicKey[] = [a[i]!, b[i]!];
-      together.push(slice);
+      const slice: PublicKey[] = [a[i]!, b[i]!]
+      together.push(slice)
     }
   }
 
   together.sort((a, b) => {
-    return a[0]!.toBuffer().swap64().compare(b[0]!.toBuffer().swap64());
-  });
+    return a[0]!.toBuffer().swap64().compare(b[0]!.toBuffer().swap64())
+  })
 
-  const flattened: any[] = [];
+  const flattened: any[] = []
 
   for (const pair of together) {
-    flattened.push({ isSigner: false, isWritable: true, pubkey: pair[0]! });
+    flattened.push({ isSigner: false, isWritable: true, pubkey: pair[0]! })
   }
 
   for (const pair of together) {
-    flattened.push({ isSigner: false, isWritable: true, pubkey: pair[1]! });
+    flattened.push({ isSigner: false, isWritable: true, pubkey: pair[1]! })
   }
 
-  return flattened;
+  return flattened
 }

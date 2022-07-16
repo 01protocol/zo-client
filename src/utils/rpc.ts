@@ -1,4 +1,4 @@
-import { AccountInfo, Connection, PublicKey } from "@solana/web3.js";
+import { AccountInfo, Connection, PublicKey } from "@solana/web3.js"
 
 export async function getFilteredProgramAccounts(
   connection: Connection,
@@ -13,9 +13,9 @@ export async function getFilteredProgramAccounts(
       filters,
       encoding: "base64",
     },
-  ]);
+  ])
   if (resp.error) {
-    throw new Error(resp.error.message);
+    throw new Error(resp.error.message)
   }
   // @ts-ignore
   return resp.result.map(
@@ -28,7 +28,7 @@ export async function getFilteredProgramAccounts(
         lamports,
       },
     }),
-  );
+  )
 }
 
 export async function getEpoch(connection: Connection) {
@@ -37,16 +37,16 @@ export async function getEpoch(connection: Connection) {
     {
       commitment: "finalized",
     },
-  ]);
+  ])
   if (resp.error) {
-    throw new Error(resp.error.message);
+    throw new Error(resp.error.message)
   }
-  return resp.result;
+  return resp.result
 }
 
 export async function getCurrentSlot(connection: Connection) {
-  const res = await getEpoch(connection);
-  return res.absoluteSlot;
+  const res = await getEpoch(connection)
+  return res.absoluteSlot
 }
 
 export async function getSignaturesForAddress(
@@ -59,11 +59,11 @@ export async function getSignaturesForAddress(
     {
       commitment: "finalized",
     },
-  ]);
+  ])
   if (resp.error) {
-    throw new Error(resp.error.message);
+    throw new Error(resp.error.message)
   }
-  return resp.result;
+  return resp.result
 }
 
 export async function getSignaturesForAddressRecent(
@@ -76,11 +76,11 @@ export async function getSignaturesForAddressRecent(
     {
       commitment: "recent",
     },
-  ]);
+  ])
   if (resp.error) {
-    throw new Error(resp.error.message);
+    throw new Error(resp.error.message)
   }
-  return resp.result;
+  return resp.result
 }
 
 export async function getTransaction(
@@ -94,9 +94,9 @@ export async function getTransaction(
       commitment: "finalized",
       encoding: "base64",
     },
-  ]);
+  ])
   if (resp.error) {
-    throw new Error(resp.error.message);
+    throw new Error(resp.error.message)
   }
-  return resp.result;
+  return resp.result
 }

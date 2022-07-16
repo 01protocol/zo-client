@@ -1,7 +1,7 @@
-import BN from "bn.js";
-import { blob, offset, seq, struct, u32, u8, union } from "buffer-layout";
-import { publicKeyLayout, setLayoutDecoder, u128, u64, zeros } from "./layout";
-import { PublicKey } from "@solana/web3.js";
+import BN from "bn.js"
+import { blob, offset, seq, struct, u32, u8, union } from "buffer-layout"
+import { publicKeyLayout, setLayoutDecoder, u128, u64, zeros } from "./layout"
+import { PublicKey } from "@solana/web3.js"
 
 const SLAB_HEADER_LAYOUT = struct(
   [
@@ -20,10 +20,10 @@ const SLAB_HEADER_LAYOUT = struct(
     zeros(4),
   ],
   "header",
-);
+)
 
-const SLAB_NODE_LAYOUT = union(u32("tag"), blob(68), "node");
-SLAB_NODE_LAYOUT.addVariant(0, struct([]), "uninitialized");
+const SLAB_NODE_LAYOUT = union(u32("tag"), blob(68), "node")
+SLAB_NODE_LAYOUT.addVariant(0, struct([]), "uninitialized")
 SLAB_NODE_LAYOUT.addVariant(
   1,
   struct([
@@ -33,7 +33,7 @@ SLAB_NODE_LAYOUT.addVariant(
     seq(u32(), 2, "children"),
   ]),
   "innerNode",
-);
+)
 SLAB_NODE_LAYOUT.addVariant(
   2,
   struct([
@@ -46,9 +46,9 @@ SLAB_NODE_LAYOUT.addVariant(
     u64("clientOrderId"),
   ]),
   "leafNode",
-);
-SLAB_NODE_LAYOUT.addVariant(3, struct([u32("next")]), "freeNode");
-SLAB_NODE_LAYOUT.addVariant(4, struct([]), "lastFreeNode");
+)
+SLAB_NODE_LAYOUT.addVariant(3, struct([u32("next")]), "freeNode")
+SLAB_NODE_LAYOUT.addVariant(4, struct([]), "lastFreeNode")
 
 export const SLAB_LAYOUT = struct([
   SLAB_HEADER_LAYOUT,
@@ -60,36 +60,36 @@ export const SLAB_LAYOUT = struct([
     ),
     "nodes",
   ),
-]);
+])
 
 export class Slab {
-  private header: any;
-  private nodes: any;
+  private header: any
+  private nodes: any
 
   constructor(header, nodes) {
-    this.header = header;
-    this.nodes = nodes;
+    this.header = header
+    this.nodes = nodes
   }
 
   static decode(buffer: Buffer) {
-    return SLAB_LAYOUT.decode(buffer);
+    return SLAB_LAYOUT.decode(buffer)
   }
 
   get(searchKey: BN | number) {
     if (this.header.leafCount === 0) {
-      return null;
+      return null
     }
     if (!(searchKey instanceof BN)) {
-      searchKey = new BN(searchKey);
+      searchKey = new BN(searchKey)
     }
-    let index = this.header.root;
+    let index = this.header.root
     while (true) {
-      const { leafNode, innerNode } = this.nodes[index];
+      const { leafNode, innerNode } = this.nodes[index]
       if (leafNode) {
         if (leafNode.key.eq(searchKey)) {
-          return leafNode;
+          return leafNode
         }
-        return null;
+        return null
       } else if (innerNode) {
         if (
           !innerNode.key
@@ -97,20 +97,20 @@ export class Slab {
             .iushrn(128 - innerNode.prefixLen)
             .isZero()
         ) {
-          return null;
+          return null
         }
         index =
           innerNode.children[
             searchKey.testn(128 - innerNode.prefixLen - 1) ? 1 : 0
-          ];
+          ]
       } else {
-        throw new Error("Invalid slab");
+        throw new Error("Invalid slab")
       }
     }
   }
 
   [Symbol.iterator]() {
-    return this.items(false);
+    return this.items(false)
   }
 
   *items(descending = false): Generator<{
@@ -122,23 +122,23 @@ export class Slab {
     clientOrderId: BN;
   }> {
     if (this.header.leafCount === 0) {
-      return;
+      return
     }
-    const stack = [this.header.root];
+    const stack = [this.header.root]
     while (stack.length > 0) {
-      const index = stack.pop();
-      const { leafNode, innerNode } = this.nodes[index];
+      const index = stack.pop()
+      const { leafNode, innerNode } = this.nodes[index]
       if (leafNode) {
-        yield leafNode;
+        yield leafNode
       } else if (innerNode) {
         if (descending) {
-          stack.push(innerNode.children[0], innerNode.children[1]);
+          stack.push(innerNode.children[0], innerNode.children[1])
         } else {
-          stack.push(innerNode.children[1], innerNode.children[0]);
+          stack.push(innerNode.children[1], innerNode.children[0])
         }
       }
     }
   }
 }
 
-setLayoutDecoder(SLAB_LAYOUT, ({ header, nodes }) => new Slab(header, nodes));
+setLayoutDecoder(SLAB_LAYOUT, ({ header, nodes }) => new Slab(header, nodes))
