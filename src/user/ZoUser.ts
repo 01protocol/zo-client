@@ -11,7 +11,7 @@ import BN from "bn.js"
 export class ZoUser extends ZoDBUser {
 
   get state() {
-    return this.state
+    return this.margin.state
   }
 
   get orders() {
@@ -150,7 +150,7 @@ export class ZoUser extends ZoDBUser {
     await this.margin.unsubscribe()
   }
 
-  async load(account: Wallet | Keypair, cluster: Cluster, connection: Connection, opts: {
+  static async load(account: Wallet | Keypair, cluster: Cluster, connection: Connection, opts: {
     withRealm: boolean,
     commitment?: Commitment
     skipPreflight?: boolean,

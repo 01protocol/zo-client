@@ -135,10 +135,6 @@ export class ZoDBTradeUser extends ZoDBPnlUser {
         (entry) =>
           fundingOnly == (entry.tradeHistoryEntryType == TradeHistoryEntryType.Funding),
       )
-    console.log(filteredHistory.length)
-    console.log((filteredHistory.slice(
-      Math.min(filteredHistory.length, page * HISTORY_ENTRIES_PER_PAGE),
-      Math.min(filteredHistory.length, (page + 1) * HISTORY_ENTRIES_PER_PAGE))).length, Math.min(filteredHistory.length, page * HISTORY_ENTRIES_PER_PAGE), Math.min(filteredHistory.length, (page + 1) * HISTORY_ENTRIES_PER_PAGE), page, (page + 1), page * HISTORY_ENTRIES_PER_PAGE, (page + 1) * HISTORY_ENTRIES_PER_PAGE)
     return (filteredHistory
       .slice(
         Math.min(filteredHistory.length, page * HISTORY_ENTRIES_PER_PAGE),

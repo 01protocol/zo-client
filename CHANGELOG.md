@@ -8,6 +8,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.9.1]
+
+- ZoUser: added a user class which allows interacting with 01 database, and provides a convenient wrapper
+
 ## [0.9.0]
 
 - Margin, Control, State, Cache: Added subscriptions to changes 
