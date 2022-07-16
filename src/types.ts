@@ -1,9 +1,9 @@
-import { PublicKey, Transaction } from "@solana/web3.js"
-import { IdlAccounts, IdlTypes } from "@project-serum/anchor"
-import BN from "bn.js"
-import { Zo } from "./types/zo"
-import Num from "./Num"
-import Decimal from "decimal.js"
+import { PublicKey, Transaction } from "@solana/web3.js";
+import { IdlAccounts, IdlTypes } from "@project-serum/anchor";
+import BN from "bn.js";
+import { Zo } from "./types/zo";
+import Num from "./Num";
+import Decimal from "decimal.js";
 
 export interface Wallet {
   publicKey: PublicKey;
@@ -18,7 +18,7 @@ export type TransactionId = string;
 // NOTE: These intersection types are a temporary workaround,
 // as anchor's type inference isn't complete yet.
 
-export { Zo } from "./types/zo"
+export { Zo } from "./types/zo";
 
 export type OracleType = { pyth: {} } | { switchboard: {} };
 export type PerpType =
@@ -98,8 +98,6 @@ export type CacheSchema = IdlAccounts<Zo>["cache"] & {
 export type ControlSchema = IdlAccounts<Zo>["control"] & {
   openOrdersAgg: OpenOrdersInfo[];
 };
-
-
 
 export enum UpdateEvents {
   stateModified = "stateModified",

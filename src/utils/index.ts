@@ -5,8 +5,10 @@ import {
   SystemProgram,
   Transaction,
   TransactionInstruction,
-  ConfirmOptions, Finality, ConfirmedTransaction,
-} from "@solana/web3.js"
+  ConfirmOptions,
+  Finality,
+  ConfirmedTransaction,
+} from "@solana/web3.js";
 import {
   AccountLayout as TokenAccountLayout,
   AccountLayout,
@@ -16,29 +18,29 @@ import {
   Token,
   TOKEN_PROGRAM_ID,
   u64,
-} from "@solana/spl-token"
-import { Program, Provider } from "@project-serum/anchor"
-import BN from "bn.js"
-import Decimal from "decimal.js"
-import { blob, struct, u8 } from "buffer-layout"
-import { Zo, Wallet } from "../types"
+} from "@solana/spl-token";
+import { Program, Provider } from "@project-serum/anchor";
+import BN from "bn.js";
+import Decimal from "decimal.js";
+import { blob, struct, u8 } from "buffer-layout";
+import { Zo, Wallet } from "../types";
 import {
   IDL,
   RENT_PROGRAM_ID,
   WRAPPED_SOL_MINT,
   ZERO_ONE_DEVNET_PROGRAM_ID,
   ZERO_ONE_MAINNET_PROGRAM_ID,
-} from "../config"
-import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes"
+} from "../config";
+import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 
-export * from "../types/dataTypes"
+export * from "../types/dataTypes";
 
-export * from "./rpc"
-export * from "./units"
-export * from "./eventDecoder"
+export * from "./rpc";
+export * from "./units";
+export * from "./eventDecoder";
 
 export function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 export enum Cluster {
@@ -51,24 +53,29 @@ export function createProvider(
   wallet: Wallet,
   opts: ConfirmOptions = {},
 ): Provider {
-  return new Provider(conn, wallet, opts)
+  return new Provider(conn, wallet, opts);
 }
 
-
-export async function getConfirmedTransaction(connection: Connection, txId: string, finality: Finality): Promise<ConfirmedTransaction> {
-  let tx
+export async function getConfirmedTransaction(
+  connection: Connection,
+  txId: string,
+  finality: Finality,
+): Promise<ConfirmedTransaction> {
+  let tx;
   while (tx == null) {
-    tx = await connection.getTransaction(txId, {commitment: finality})
-    await sleep(200)
+    tx = await connection.getTransaction(txId, { commitment: finality });
+    await sleep(200);
   }
-  return tx
+  return tx;
 }
 
 export function getKeypairFromSecretKey(SECRET_KEY) {
   try {
-    return Keypair.fromSecretKey(Uint8Array.from(SECRET_KEY.split(',').map(el => parseInt(el))))
+    return Keypair.fromSecretKey(
+      Uint8Array.from(SECRET_KEY.split(",").map((el) => parseInt(el))),
+    );
   } catch (_) {
-    return Keypair.fromSecretKey(bs58.decode(SECRET_KEY))
+    return Keypair.fromSecretKey(bs58.decode(SECRET_KEY));
   }
 }
 
@@ -77,27 +84,27 @@ export function createProgram(
   cluster: Cluster,
 ): Program<Zo> {
   if (cluster === Cluster.Devnet) {
-    return new Program<Zo>(IDL, ZERO_ONE_DEVNET_PROGRAM_ID, provider)
+    return new Program<Zo>(IDL, ZERO_ONE_DEVNET_PROGRAM_ID, provider);
   } else {
-    return new Program<Zo>(IDL, ZERO_ONE_MAINNET_PROGRAM_ID, provider)
+    return new Program<Zo>(IDL, ZERO_ONE_MAINNET_PROGRAM_ID, provider);
   }
 }
 
 export function loadWI80F48({ data }: { data: BN }): Decimal {
   return new Decimal(
     `${data.isNeg() ? "-" : ""}0b${data.abs().toString(2)}p-48`,
-  )
+  );
 }
 
-const utf8Decoder = new TextDecoder("utf-8")
+const utf8Decoder = new TextDecoder("utf-8");
 
 export function loadSymbol({ data: s }: { data: number[] }): string {
   // Need to convert symbol, which is a [u8; 24], to a JS String.
   // Can't use String.fromCodePoint since that takes in u16,
   // when we are receiving a UTF-8 byte array.
-  let i = s.indexOf(0)
-  i = i < 0 ? s.length : i
-  return utf8Decoder.decode(new Uint8Array(s.slice(0, i)))
+  let i = s.indexOf(0);
+  i = i < 0 ? s.length : i;
+  return utf8Decoder.decode(new Uint8Array(s.slice(0, i)));
 }
 
 /**
@@ -107,35 +114,35 @@ export function loadSymbol({ data: s }: { data: number[] }): string {
 export function findIndexOf<T>(l: readonly T[], p: (T) => boolean) {
   for (let i = 0; i < l.length; ++i) {
     if (p(l[i])) {
-      return i
+      return i;
     }
   }
-  return l.length
+  return l.length;
 }
 
 export function findLastIndexOf<T>(l: readonly T[], p: (T) => boolean) {
   for (let i = l.length - 1; i >= 0; --i) {
     if (p(l[i])) {
-      return i
+      return i;
     }
   }
-  return -1
+  return -1;
 }
 
 export async function getMintInfo(
   provider: Provider,
   pubkey: PublicKey,
 ): Promise<MintInfo> {
-  const data = (await provider.connection.getAccountInfo(pubkey))?.data
-  if (!data) throw Error(`Couldn't load mint data for ${pubkey.toBase58()}`)
-  const m = MintLayout.decode(data)
+  const data = (await provider.connection.getAccountInfo(pubkey))?.data;
+  if (!data) throw Error(`Couldn't load mint data for ${pubkey.toBase58()}`);
+  const m = MintLayout.decode(data);
   return {
     mintAuthority: new PublicKey(m.mintAuthority),
     supply: u64.fromBuffer(m.supply),
     decimals: m.decimals,
     isInitialized: !!m.isInitialized,
     freezeAuthority: new PublicKey(m.freezeAuthority),
-  }
+  };
 }
 
 export async function createMintIxs(
@@ -160,7 +167,7 @@ export async function createMintIxs(
       authority,
       freezeAuthority ?? null,
     ),
-  ]
+  ];
 }
 
 export async function createTokenAccountIxs(
@@ -185,7 +192,7 @@ export async function createTokenAccountIxs(
       vault.publicKey,
       owner,
     ),
-  ]
+  ];
 }
 
 export function createMintToIxs(
@@ -203,7 +210,7 @@ export function createMintToIxs(
       [],
       amount,
     ),
-  ]
+  ];
 }
 
 export async function createMint(
@@ -212,8 +219,8 @@ export async function createMint(
   decimals: number,
   freezeAuthority?: PublicKey,
 ): Promise<PublicKey> {
-  const mint = new Keypair()
-  const tx = new Transaction()
+  const mint = new Keypair();
+  const tx = new Transaction();
   tx.add(
     ...(await createMintIxs(
       mint,
@@ -222,9 +229,9 @@ export async function createMint(
       decimals,
       freezeAuthority,
     )),
-  )
-  await provider.send(tx, [mint])
-  return mint.publicKey
+  );
+  await provider.send(tx, [mint]);
+  return mint.publicKey;
 }
 
 export async function createTokenAccount(
@@ -232,11 +239,11 @@ export async function createTokenAccount(
   mint: PublicKey,
   owner: PublicKey,
 ): Promise<PublicKey> {
-  const vault = Keypair.generate()
-  const tx = new Transaction()
-  tx.add(...(await createTokenAccountIxs(vault, provider, mint, owner)))
-  await provider.send(tx, [vault])
-  return vault.publicKey
+  const vault = Keypair.generate();
+  const tx = new Transaction();
+  tx.add(...(await createTokenAccountIxs(vault, provider, mint, owner)));
+  await provider.send(tx, [vault]);
+  return vault.publicKey;
 }
 
 export async function findAssociatedTokenAddress(
@@ -252,7 +259,7 @@ export async function findAssociatedTokenAddress(
       ],
       ASSOCIATED_TOKEN_PROGRAM_ID,
     )
-  )[0]
+  )[0];
 }
 
 export function getAssociatedTokenTransactionWithPayer(
@@ -296,13 +303,13 @@ export function getAssociatedTokenTransactionWithPayer(
       isSigner: false,
       isWritable: false,
     },
-  ]
+  ];
 
   return new TransactionInstruction({
     keys,
     programId: ASSOCIATED_TOKEN_PROGRAM_ID,
     data: Buffer.from([]),
-  })
+  });
 }
 
 export async function mintTo(
@@ -311,9 +318,9 @@ export async function mintTo(
   dest: PublicKey,
   amount: number,
 ): Promise<void> {
-  const tx = new Transaction()
-  tx.add(...createMintToIxs(mint, dest, provider.wallet.publicKey, amount))
-  await provider.send(tx, [])
+  const tx = new Transaction();
+  tx.add(...createMintToIxs(mint, dest, provider.wallet.publicKey, amount));
+  await provider.send(tx, []);
 }
 
 export function throwIfNull<T>(
@@ -321,26 +328,26 @@ export function throwIfNull<T>(
   message = "account not found",
 ): T {
   if (value === null) {
-    throw new Error(message)
+    throw new Error(message);
   }
-  return value
+  return value;
 }
 
-const MINT_LAYOUT = struct([blob(44), u8("decimals"), blob(37)])
+const MINT_LAYOUT = struct([blob(44), u8("decimals"), blob(37)]);
 
 export async function getMintDecimals(
   connection: Connection,
   mint: PublicKey,
 ): Promise<number> {
   if (mint.equals(WRAPPED_SOL_MINT)) {
-    return 9
+    return 9;
   }
   const { data } = throwIfNull(
     await connection.getAccountInfo(mint),
     "mint not found",
-  )
-  const { decimals } = MINT_LAYOUT.decode(data)
-  return decimals
+  );
+  const { decimals } = MINT_LAYOUT.decode(data);
+  return decimals;
 }
 
 export async function getWrappedSolInstructionsAndKey(
@@ -354,26 +361,26 @@ export async function getWrappedSolInstructionsAndKey(
   intermediaryKeypair: Keypair;
 }> {
   // sol wrapping code taken from jet: https://github.com/jet-lab/jet-v1/blob/30c56d5c14b68685466164fc45c96080f1d9348a/app/src/scripts/jet.ts
-  const intermediaryKeypair = Keypair.generate()
-  const intermediary = intermediaryKeypair.publicKey
+  const intermediaryKeypair = Keypair.generate();
+  const intermediary = intermediaryKeypair.publicKey;
 
   const rent = await provider.connection.getMinimumBalanceForRentExemption(
     TokenAccountLayout.span,
-  )
+  );
   const createTokenAccountIx = SystemProgram.createAccount({
     fromPubkey: provider.wallet.publicKey,
     newAccountPubkey: intermediary,
     programId: TOKEN_PROGRAM_ID,
     space: TokenAccountLayout.span,
     lamports: parseInt(initialSmollAmount.addn(rent).toString()),
-  })
+  });
 
   const initTokenAccountIx = Token.createInitAccountInstruction(
     TOKEN_PROGRAM_ID,
     WRAPPED_SOL_MINT,
     intermediary,
     provider.wallet.publicKey,
-  )
+  );
 
   const closeTokenAccountIx = Token.createCloseAccountInstruction(
     TOKEN_PROGRAM_ID,
@@ -381,7 +388,7 @@ export async function getWrappedSolInstructionsAndKey(
     provider.wallet.publicKey,
     provider.wallet.publicKey,
     [],
-  )
+  );
 
   return {
     createTokenAccountIx,
@@ -389,5 +396,5 @@ export async function getWrappedSolInstructionsAndKey(
     closeTokenAccountIx,
     intermediary,
     intermediaryKeypair,
-  }
+  };
 }

@@ -1,4 +1,4 @@
-import { BN } from "@project-serum/anchor"
+import { BN } from "@project-serum/anchor";
 
 // price number is bigUSD / bigAsset
 // smol price is smolUSD / smolAsset
@@ -7,7 +7,7 @@ export function priceNumberToSmolPrice(
   baseDecimals: number,
   quoteDecimals: number,
 ): number {
-  return (price * Math.pow(10, quoteDecimals)) / Math.pow(10, baseDecimals)
+  return (price * Math.pow(10, quoteDecimals)) / Math.pow(10, baseDecimals);
 }
 
 // price number is bigUSD / bigAsset
@@ -24,13 +24,13 @@ export function priceNumberToLots(
       (price * Math.pow(10, quoteDecimals) * baseLotSize.toNumber()) /
         (Math.pow(10, baseDecimals) * quoteLotSize.toNumber()),
     ),
-  )
+  );
 }
 
 // base number is bigAsset
 // smol is smolAsset
 export function baseNumberToSmol(size: number, baseDecimals: number): number {
-  return Math.round(size * Math.pow(10, baseDecimals))
+  return Math.round(size * Math.pow(10, baseDecimals));
 }
 
 // base number is bigAsset
@@ -40,7 +40,7 @@ export function baseNumberToLots(
   baseDecimals: number,
   baseLotSize: BN,
 ): BN {
-  const native = new BN(Math.round(size * Math.pow(10, baseDecimals)))
+  const native = new BN(Math.round(size * Math.pow(10, baseDecimals)));
   // rounds down to the nearest lot size
-  return native.div(baseLotSize)
+  return native.div(baseLotSize);
 }

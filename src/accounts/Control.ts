@@ -1,13 +1,13 @@
-import { AccountInfo, Commitment, PublicKey } from "@solana/web3.js"
-import { Program } from "@project-serum/anchor"
-import BaseAccount from "./BaseAccount"
+import { AccountInfo, Commitment, PublicKey } from "@solana/web3.js";
+import { Program } from "@project-serum/anchor";
+import BaseAccount from "./BaseAccount";
 import {
   ControlSchema,
   ControlSchema as Schema,
   UpdateEvents,
   Zo,
-} from "../types"
-import EventEmitter from "eventemitter3"
+} from "../types";
+import EventEmitter from "eventemitter3";
 
 /**
  * The Control account tracks a user's open orders and positions across all markets.
@@ -19,7 +19,7 @@ export default class Control extends BaseAccount<Schema> {
     data: ControlSchema,
     commitment?: Commitment,
   ) {
-    super(program, pubkey, data, commitment)
+    super(program, pubkey, data, commitment);
   }
 
   /**
@@ -38,7 +38,7 @@ export default class Control extends BaseAccount<Schema> {
       k,
       await Control.fetch(program, k, commitment),
       commitment,
-    )
+    );
   }
 
   /**
@@ -52,7 +52,7 @@ export default class Control extends BaseAccount<Schema> {
     k: PublicKey,
     prefetchedControlData: ControlSchema,
   ) {
-    return new this(program, k, prefetchedControlData)
+    return new this(program, k, prefetchedControlData);
   }
 
   private static async fetch(
@@ -63,36 +63,36 @@ export default class Control extends BaseAccount<Schema> {
     const data = (await program.account["control"].fetch(
       k,
       commitment,
-    )) as unknown as Schema
+    )) as unknown as Schema;
     return {
       ...data,
-    }
+    };
   }
 
-  eventEmitter: EventEmitter<UpdateEvents> | undefined
+  eventEmitter: EventEmitter<UpdateEvents> | undefined;
   async subscribe(): Promise<void> {
-    this.eventEmitter = new EventEmitter()
-    const anchorEventEmitter = await this._subscribe("control")
-    const that = this
+    this.eventEmitter = new EventEmitter();
+    const anchorEventEmitter = await this._subscribe("control");
+    const that = this;
     anchorEventEmitter.addListener("change", (account) => {
-      that.data = account
-      this.eventEmitter!.emit(UpdateEvents._controlModified)
-    })
+      that.data = account;
+      this.eventEmitter!.emit(UpdateEvents._controlModified);
+    });
   }
 
   async unsubscribe() {
     try {
-      await this.program.account["control"].unsubscribe(this.pubkey)
+      await this.program.account["control"].unsubscribe(this.pubkey);
     } catch (_) {
       //
     }
   }
 
   async refresh(): Promise<void> {
-    this.data = await Control.fetch(this.program, this.pubkey, this.commitment)
+    this.data = await Control.fetch(this.program, this.pubkey, this.commitment);
   }
 
   updateControlFromAccountInfo(accountInfo: AccountInfo<Buffer>) {
-    this.data = this.program.coder.accounts.decode("control", accountInfo.data)
+    this.data = this.program.coder.accounts.decode("control", accountInfo.data);
   }
 }

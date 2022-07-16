@@ -1,11 +1,11 @@
-import { Coder, Idl } from "@project-serum/anchor"
-import { ConfirmedTransaction } from "@solana/web3.js"
-import Num from "../Num"
-import { DEX_IDL } from "../types/dex"
-import { IDL } from "../types/zo"
+import { Coder, Idl } from "@project-serum/anchor";
+import { ConfirmedTransaction } from "@solana/web3.js";
+import Num from "../Num";
+import { DEX_IDL } from "../types/dex";
+import { IDL } from "../types/zo";
 
-export const ZO_MARK_MESSAGE = "Program log: zo-log"
-export const USDC_SYMBOL = "USDC"
+export const ZO_MARK_MESSAGE = "Program log: zo-log";
+export const USDC_SYMBOL = "USDC";
 
 export enum EventNames {
   RealizedPnlLog = "RealizedPnlLog",
@@ -36,31 +36,30 @@ export interface SwapLogExtraInfo {
 }
 
 export function processTransactionLogs({
-                                         tx,
-                                         extraInfo,
-                                       }: {
-  tx: ConfirmedTransaction
-  extraInfo: PnlLogExtraInfo | TransferLogExtraInfo | SwapLogExtraInfo | object
+  tx,
+  extraInfo,
+}: {
+  tx: ConfirmedTransaction;
+  extraInfo: PnlLogExtraInfo | TransferLogExtraInfo | SwapLogExtraInfo | object;
 }): EventLogData[] {
-  const res: Array<EventLogData> = []
-  let logMessageNow = false
+  const res: Array<EventLogData> = [];
+  let logMessageNow = false;
   for (const logMessage of tx.meta!.logMessages!) {
     if (logMessageNow) {
       const event = getLogEventsFromEvent({
         event: logMessage,
         extraInfo,
-      })
+      });
       if (event) {
-        res.push(event)
+        res.push(event);
       }
-      logMessageNow = false
+      logMessageNow = false;
     } else if (logMessage.includes(ZO_MARK_MESSAGE)) {
-      logMessageNow = true
+      logMessageNow = true;
     }
   }
-  return res
+  return res;
 }
-
 
 export interface PnlLogData {
   pnl: number;
@@ -83,156 +82,147 @@ export interface SwapLogData {
 }
 
 export interface EventLogData {
-  eventName: EventNames,
-  data: PnlLogData | DepositLogData | WithdrawLogData | SwapLogData
+  eventName: EventNames;
+  data: PnlLogData | DepositLogData | WithdrawLogData | SwapLogData;
 }
-
 
 function getLogEventsFromEvent({ event, extraInfo }): EventLogData | null {
   try {
-    const decodedEvent = decodeEvent(event)
+    const decodedEvent = decodeEvent(event);
     switch (decodedEvent!.name) {
       case EventNames.RealizedPnlLog:
         // @ts-ignore
-        const qtyReceived = decodedEvent.data.qtyReceived.toNumber()
+        const qtyReceived = decodedEvent.data.qtyReceived.toNumber();
         // @ts-ignore
-        const qtyPaid = decodedEvent.data.qtyPaid.toNumber()
-        let finalPrice, sizeFilled
+        const qtyPaid = decodedEvent.data.qtyPaid.toNumber();
+        let finalPrice, sizeFilled;
         if (extraInfo.long) {
           finalPrice = Math.abs(
             (qtyReceived / qtyPaid) *
-            Math.pow(
-              10,
-              extraInfo.collateralDecimals - extraInfo.contractDecimals,
-            ),
-          )
+              Math.pow(
+                10,
+                extraInfo.collateralDecimals - extraInfo.contractDecimals,
+              ),
+          );
           sizeFilled = Math.abs(
-            qtyPaid *
-            Math.pow(
-              10,
-              extraInfo.contractDecimals,
-            ),
-          )
+            qtyPaid * Math.pow(10, extraInfo.contractDecimals),
+          );
         } else {
           finalPrice = Math.abs(
             (qtyPaid / qtyReceived) *
-            Math.pow(
-              10,
-              extraInfo.collateralDecimals - extraInfo.contractDecimals,
-            ),
-          )
+              Math.pow(
+                10,
+                extraInfo.collateralDecimals - extraInfo.contractDecimals,
+              ),
+          );
           sizeFilled = Math.abs(
-            qtyReceived *
-            Math.pow(
-              10,
-              extraInfo.contractDecimals,
-            ),
-          )
+            qtyReceived * Math.pow(10, extraInfo.contractDecimals),
+          );
         }
-        const leverage = Math.max(1, extraInfo.accountLeverage)
+        const leverage = Math.max(1, extraInfo.accountLeverage);
         const pnl =
           leverage *
           ((((extraInfo.long ? 1 : -1) * (finalPrice - extraInfo.entryPrice)) /
-              extraInfo.entryPrice) *
-            100)
+            extraInfo.entryPrice) *
+            100);
 
         return {
           eventName: EventNames.RealizedPnlLog,
           data: { pnl, leverage, finalPrice, sizeFilled },
-        }
+        };
       case EventNames.DepositLog:
         const depositAmount = new Num(
           // @ts-ignore
           decodedEvent.data.depositAmount,
           extraInfo.decimals,
-        ).number
+        ).number;
 
         return {
           eventName: EventNames.DepositLog,
           data: { depositAmount },
-        }
+        };
       case EventNames.WithdrawLog:
         const withdrawAmount = new Num(
           // @ts-ignore
           decodedEvent.data.withdrawAmount,
           extraInfo.decimals,
-        ).number
+        ).number;
         return {
           eventName: EventNames.WithdrawLog,
           data: { withdrawAmount },
-        }
+        };
       case EventNames.SwapLog:
-        let fromAmount, toAmount
+        let fromAmount, toAmount;
         if (extraInfo.toSymbol == USDC_SYMBOL) {
           fromAmount = new Num(
             // @ts-ignore
             decodedEvent.data.baseDelta,
             extraInfo.fromDecimals,
-          ).number
+          ).number;
           toAmount = new Num(
             // @ts-ignore
             decodedEvent.data.quoteDelta,
             extraInfo.toDecimals,
-          ).number
+          ).number;
         } else {
           fromAmount = new Num(
             // @ts-ignore
             decodedEvent.data.quoteDelta,
             extraInfo.fromDecimals,
-          ).number
+          ).number;
           toAmount = new Num(
             // @ts-ignore
             decodedEvent.data.baseDelta,
             extraInfo.toDecimals,
-          ).number
+          ).number;
         }
         return {
           eventName: EventNames.SwapLog,
           data: { fromAmount, toAmount },
-        }
+        };
     }
   } catch (_) {
     //
   }
-  return null
+  return null;
 }
 
 function decodeMsg(coder: Coder<string>, msg: string) {
-  const event = coder.events.decode(msg)
+  const event = coder.events.decode(msg);
   if (event) {
-    return event
+    return event;
   }
-  return null
+  return null;
 }
 
 function decodeDexEvent(msg: string | undefined) {
   try {
-    const coder = new Coder(DEX_IDL as Idl)
-    return decodeMsg(coder, msg!)
+    const coder = new Coder(DEX_IDL as Idl);
+    return decodeMsg(coder, msg!);
   } catch (_) {
-    return null
+    return null;
   }
 }
 
 function decodeZoEvent(msg: string | undefined) {
   try {
-    const coder = new Coder(IDL as Idl)
-    return decodeMsg(coder, msg!)
+    const coder = new Coder(IDL as Idl);
+    return decodeMsg(coder, msg!);
   } catch (_) {
-    return null
+    return null;
   }
 }
 
 function decodeEvent(msgRaw: string) {
   try {
     const msg =
-      msgRaw.split("Program log: ")[msgRaw.split("Program log: ").length - 1]
-    const dexMsg = decodeDexEvent(msg)
+      msgRaw.split("Program log: ")[msgRaw.split("Program log: ").length - 1];
+    const dexMsg = decodeDexEvent(msg);
     if (dexMsg) {
-      return dexMsg
+      return dexMsg;
     }
-    return decodeZoEvent(msg)
+    return decodeZoEvent(msg);
   } catch (_) {
-    return null
+    return null;
   }
 }

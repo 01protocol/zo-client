@@ -1,28 +1,39 @@
-import { Commitment, Connection, Keypair, PublicKey } from "@solana/web3.js"
-import { MarketInfo, PositionInfo } from "../types/dataTypes"
-import Num from "../Num"
-import { USD_DECIMALS, ZO_DEVNET_STATE_KEY, ZO_MAINNET_STATE_KEY } from "../config"
-import Decimal from "decimal.js"
-import { Cluster, createProgram, Margin, State, Wallet, ZoUser } from "../index"
-import { Provider } from "@project-serum/anchor"
-import * as Realm from "realm-web"
+import { Commitment, Connection, Keypair, PublicKey } from "@solana/web3.js";
+import { MarketInfo, PositionInfo } from "../types/dataTypes";
+import Num from "../Num";
+import {
+  USD_DECIMALS,
+  ZO_DEVNET_STATE_KEY,
+  ZO_MAINNET_STATE_KEY,
+} from "../config";
+import Decimal from "decimal.js";
+import {
+  Cluster,
+  createProgram,
+  Margin,
+  State,
+  Wallet,
+  ZoUser,
+} from "../index";
+import { Provider } from "@project-serum/anchor";
+import * as Realm from "realm-web";
 
 export abstract class ZoBaseUser {
   /**
    * internal info
    */
-  margin: Margin
-  realmConnected: boolean
-  realm: any
-  positionsArr: PositionInfo[] = []
+  margin: Margin;
+  realmConnected: boolean;
+  realm: any;
+  positionsArr: PositionInfo[] = [];
 
   constructor(margin: Margin, realm?: any, realmConnected?: boolean) {
-    this.margin = margin
+    this.margin = margin;
     if (realmConnected) {
-      this.realmConnected = realmConnected
-      this.realm = realm
+      this.realmConnected = realmConnected;
+      this.realm = realm;
     } else {
-      this.realmConnected = false
+      this.realmConnected = false;
     }
   }
   /**
@@ -34,20 +45,20 @@ export abstract class ZoBaseUser {
     markets: { [key: string]: MarketInfo },
     indexToMarketKey: { [key: number]: string },
   ): PositionInfo[] {
-    const positionsArr: PositionInfo[] = []
-    const positions: { [key: string]: PositionInfo } = {}
-    const recordedMarkets = {}
-    let index = 0
+    const positionsArr: PositionInfo[] = [];
+    const positions: { [key: string]: PositionInfo } = {};
+    const recordedMarkets = {};
+    let index = 0;
     for (const oo of this.margin.control.data.openOrdersAgg) {
       if (
         oo.key.toString() != PublicKey.default.toString() &&
         markets[indexToMarketKey[index]!]
       ) {
-        const market = markets[indexToMarketKey[index]!]!
-        const coins = new Num(oo.posSize, market.assetDecimals)
-        const pCoins = new Num(oo.nativePcTotal, USD_DECIMALS)
-        const realizedPnl = new Num(oo.realizedPnl, market.assetDecimals)
-        const fundingIndex = new Num(oo.fundingIndex, USD_DECIMALS).decimal
+        const market = markets[indexToMarketKey[index]!]!;
+        const coins = new Num(oo.posSize, market.assetDecimals);
+        const pCoins = new Num(oo.nativePcTotal, USD_DECIMALS);
+        const realizedPnl = new Num(oo.realizedPnl, market.assetDecimals);
+        const fundingIndex = new Num(oo.fundingIndex, USD_DECIMALS).decimal;
         const position = {
           coins: new Num(Math.abs(coins.number), coins.decimals),
           pCoins: new Num(Math.abs(pCoins.number), pCoins.decimals),
@@ -55,12 +66,12 @@ export abstract class ZoBaseUser {
           fundingIndex: fundingIndex,
           marketKey: market.symbol,
           isLong: coins.number > 0,
-        }
-        positionsArr.push(position)
-        positions[market.symbol] = position
-        recordedMarkets[market.symbol] = true
+        };
+        positionsArr.push(position);
+        positions[market.symbol] = position;
+        recordedMarkets[market.symbol] = true;
       }
-      index++
+      index++;
     }
 
     for (const market of Object.values(markets)) {
@@ -72,12 +83,12 @@ export abstract class ZoBaseUser {
           fundingIndex: new Decimal(1),
           marketKey: market.symbol,
           isLong: true,
-        }
-        positionsArr.push(position)
-        positions[market.symbol] = position
+        };
+        positionsArr.push(position);
+        positions[market.symbol] = position;
       }
     }
-    this.positionsArr = positionsArr
-    return positionsArr
+    this.positionsArr = positionsArr;
+    return positionsArr;
   }
 }
