@@ -6,6 +6,8 @@ import {
   Transaction,
   TransactionInstruction,
   ConfirmOptions,
+  Finality,
+  ConfirmedTransaction,
 } from "@solana/web3.js";
 import {
   AccountLayout as TokenAccountLayout,
@@ -29,11 +31,13 @@ import {
   ZERO_ONE_DEVNET_PROGRAM_ID,
   ZERO_ONE_MAINNET_PROGRAM_ID,
 } from "../config";
+import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 
 export * from "../types/dataTypes";
 
 export * from "./rpc";
 export * from "./units";
+export * from "./eventDecoder";
 
 export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -50,6 +54,29 @@ export function createProvider(
   opts: ConfirmOptions = {},
 ): Provider {
   return new Provider(conn, wallet, opts);
+}
+
+export async function getConfirmedTransaction(
+  connection: Connection,
+  txId: string,
+  finality: Finality,
+): Promise<ConfirmedTransaction> {
+  let tx;
+  while (tx == null) {
+    tx = await connection.getTransaction(txId, { commitment: finality });
+    await sleep(200);
+  }
+  return tx;
+}
+
+export function getKeypairFromSecretKey(SECRET_KEY) {
+  try {
+    return Keypair.fromSecretKey(
+      Uint8Array.from(SECRET_KEY.split(",").map((el) => parseInt(el))),
+    );
+  } catch (_) {
+    return Keypair.fromSecretKey(bs58.decode(SECRET_KEY));
+  }
 }
 
 export function createProgram(

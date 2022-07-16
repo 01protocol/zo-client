@@ -112,3 +112,8 @@ export const USDC_MAINNET_MINT_ADDRESS = new PublicKey(
 export const USDC_DEVNET_MINT_ADDRESS = new PublicKey(
   "7UT1javY6X1M9R2UrPGrwcZ78SX3huaXyETff5hm5YdX",
 );
+
+export const HISTORY_ENTRIES_PER_PAGE = 5;
+export const ALL_MARKETS = "ALL_HISTORY";
+export const FUNDING_HISTORY = "FUNDING_HISTORY";
+export const ALL_HISTORY = "ALL_MARKETS";

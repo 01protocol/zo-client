@@ -5671,4 +5671,4 @@ export const IDL: Zo = {
       "msg": "This collateral is disabled"
     }
   ]
-};
+}

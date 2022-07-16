@@ -175,6 +175,14 @@ export default class State extends BaseAccount<Schema> {
     await Promise.all(promises);
   }
 
+  getMarketImf(marketKey: string): Decimal {
+    return this.getMarketMmf(marketKey).mul(2);
+  }
+
+  getMarketMmf(marketKey: string): Decimal {
+    return this.markets[marketKey]!.pmmf;
+  }
+
   async unsubscribeFromAllOrderbooks() {
     const promises: Array<Promise<boolean>> = [];
     for (const symbol of Object.keys(this.markets)) {
@@ -726,5 +734,17 @@ export default class State extends BaseAccount<Schema> {
         : null,
       lastSampleUpdate: lastSampleStartTime,
     };
+  }
+
+  getBestAsk(marketKey: string) {
+    const firstAsk = this.zoMarketAccounts[marketKey]!.asks.getL2(1)[0];
+    if (firstAsk) return firstAsk[0];
+    return 1_000_000_000;
+  }
+
+  getBestBid(marketKey: string) {
+    const firstBid = this.zoMarketAccounts[marketKey]!.bids.getL2(1)[0];
+    if (firstBid) return firstBid[0];
+    return 0;
   }
 }

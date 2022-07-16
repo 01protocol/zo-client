@@ -2,6 +2,8 @@ import { PublicKey, Transaction } from "@solana/web3.js";
 import { IdlAccounts, IdlTypes } from "@project-serum/anchor";
 import BN from "bn.js";
 import { Zo } from "./types/zo";
+import Num from "./Num";
+import Decimal from "decimal.js";
 
 export interface Wallet {
   publicKey: PublicKey;

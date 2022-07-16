@@ -3,11 +3,17 @@ import { Program, ProgramAccount } from "@project-serum/anchor";
 import State from "../State";
 import Num from "../../Num";
 import Decimal from "decimal.js";
-import { OOInfo, PositionInfo, TradeInfo } from "../../types/dataTypes";
+import {
+  OOInfo,
+  OrderInfo,
+  PositionInfo,
+  TradeInfo,
+} from "../../types/dataTypes";
 import MarginWeb3 from "./MarginWeb3";
 import { Zo } from "../../types/zo";
 import Cache from "../Cache";
 import { ControlSchema, MarginSchema } from "../../types";
+import BN from "bn.js";
 
 /**
  * The margin account is a PDA generated using
@@ -92,7 +98,7 @@ export default abstract class Margin extends MarginWeb3 {
   /**
    * get deposited collateral value in USD terms
    */
-  get unweightedCollateralValue() {
+  get unweightedCollateralValue(): Decimal {
     let depositedCollateral = new Decimal(0);
     for (const marketKey of Object.keys(this.balances)) {
       depositedCollateral = depositedCollateral.add(
@@ -108,7 +114,7 @@ export default abstract class Margin extends MarginWeb3 {
   /**
    * Account value(with unweighted collateral)
    */
-  get unweightedAccountValue() {
+  get unweightedAccountValue(): Decimal {
     return this.unweightedCollateralValue.add(this.cumulativeUnrealizedPnL);
   }
 
@@ -293,6 +299,26 @@ export default abstract class Margin extends MarginWeb3 {
       res = res.add(size);
     }
     return res.add(this.borrowPositionNotionalValue);
+  }
+
+  longOrderSize(marketKey: string): Decimal {
+    let res = new Decimal(0);
+    this.orders
+      .filter((order) => order.marketKey == marketKey && order.long)
+      .forEach((order) => (res = res.add(order.coins.decimal)));
+    return res;
+  }
+
+  shortOrderSize(marketKey: string): Decimal {
+    let res = new Decimal(0);
+    this.orders
+      .filter((order) => order.marketKey == marketKey && !order.long)
+      .forEach((order) => (res = res.add(order.coins.decimal)));
+    return res;
+  }
+
+  openSize(marketKey: string): Decimal {
+    return this.longOrderSize(marketKey).add(this.shortOrderSize(marketKey));
   }
 
   /**
@@ -568,7 +594,7 @@ export default abstract class Margin extends MarginWeb3 {
   static async load(
     program: Program<Zo>,
     st: State,
-    ch?: Cache,
+    ch?: Cache | null,
     owner?: PublicKey,
     commitment = "processed" as Commitment,
   ): Promise<Margin> {
@@ -683,7 +709,7 @@ export default abstract class Margin extends MarginWeb3 {
 
   /* -------------------------------------------------------------------------- */
 
-  liqPrice(position: PositionInfo) {
+  liqPrice(position: PositionInfo): number {
     const marketKey = position.marketKey;
     const pmmf = this.state.markets[marketKey]!.pmmf;
     const indexPrice = this.state.markets[marketKey]!.indexPrice.decimal;
@@ -791,7 +817,7 @@ export default abstract class Margin extends MarginWeb3 {
         this.state.markets[marketKey]!.indexPrice.decimal,
       );
       imfWeight = imfWeight.add(posNotional);
-      const pimf = this.state.markets[marketKey]!.pmmf.mul(2);
+      const pimf = this.state.getMarketImf(marketKey);
       imfWeightedTotal = imfWeightedTotal.add(pimf.mul(posNotional));
     }
     return [imfWeightedTotal, imfWeight];
@@ -957,6 +983,24 @@ export default abstract class Margin extends MarginWeb3 {
     ).abs();
     const weightedBorrow = weight.mul(factor);
     return { weight, weightedBorrow };
+  }
+
+  getOrderByOrderId(orderId: string | BN): OrderInfo | null {
+    if (typeof orderId == "string") {
+      for (const order of this.orders) {
+        if (order.orderId.toString() == orderId) {
+          return order;
+        }
+      }
+      return null;
+    } else {
+      for (const order of this.orders) {
+        if (order.orderId.toString() == orderId.toString()) {
+          return order;
+        }
+      }
+      return null;
+    }
   }
 
   positionToString(position: PositionInfo) {

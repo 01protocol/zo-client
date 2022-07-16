@@ -10,6 +10,10 @@ export { default as Cache } from "./accounts/Cache";
 export { default as Control } from "./accounts/Control";
 export { default as MarginsCluster } from "./accounts/margin/MarginsCluster";
 
+export * from "./user/zoDBUser/ZoDBUser";
+export { ZoBaseUser } from "./user/ZoBaseUser";
+export { ZoUser } from "./user/ZoUser";
+
 export { decodeEvent } from "./utils/events";
 
 export { ZoMarket, Orderbook, ZoOpenOrders } from "./zoDex/zoMarket";
