@@ -8,6 +8,7 @@ import { Margin, State } from "../index"
 import Decimal from "decimal.js"
 import BN from "bn.js"
 import EventEmitter from "eventemitter3"
+import * as Realm from 'realm-web'
 
 export class ZoUser extends ZoDBUser {
 	get program() {
