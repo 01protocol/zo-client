@@ -117,5 +117,9 @@ export const HISTORY_ENTRIES_PER_PAGE = 5
 export const ALL_MARKETS = "ALL_HISTORY"
 export const FUNDING_HISTORY = "FUNDING_HISTORY"
 export const ALL_HISTORY = "ALL_MARKETS"
-export const ZAMM_PROGRAM_ID = new PublicKey("6N71ta5gVjN65hSTDnK4fy4B1YWGgMLyeSu8WEr8Uh2J")
-export const ZAMM_SOL_KEY = new PublicKey("Fe5bofsZuBi8fPez2aKzBa9uTc2iRV4pPU2D1SHMfXDt")
+export const ZAMM_PROGRAM_ID = new PublicKey(
+	"6N71ta5gVjN65hSTDnK4fy4B1YWGgMLyeSu8WEr8Uh2J",
+)
+export const ZAMM_SOL_KEY = new PublicKey(
+	"Fe5bofsZuBi8fPez2aKzBa9uTc2iRV4pPU2D1SHMfXDt",
+)

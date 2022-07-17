@@ -90,8 +90,10 @@ export function createProgram(
 	}
 }
 
-export function getClusterFromZoProgram(program: Program<Zo>){
-	if(program.programId.toString()==ZERO_ONE_MAINNET_PROGRAM_ID.toString()){
+export function getClusterFromZoProgram(program: Program<Zo>) {
+	if (
+		program.programId.toString() == ZERO_ONE_MAINNET_PROGRAM_ID.toString()
+	) {
 		return Cluster.Mainnet
 	}
 	return Cluster.Devnet
@@ -408,8 +410,7 @@ export async function getWrappedSolInstructionsAndKey(
 	}
 }
 
-
-export function walletFromKeyPair(keypair:Keypair):Wallet {
+export function walletFromKeyPair(keypair: Keypair): Wallet {
 	return {
 		publicKey: keypair.publicKey,
 		signTransaction: async (tx) => {
@@ -421,6 +422,6 @@ export function walletFromKeyPair(keypair:Keypair):Wallet {
 				await tx.sign(keypair)
 			}
 			return txs
-		}
+		},
 	}
 }

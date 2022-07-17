@@ -152,11 +152,14 @@ export default class State extends BaseAccount<Schema> {
 			this.eventEmitter!.emit(UpdateEvents.stateModified)
 		})
 		await this.cache.subscribe()
-		this.cache.eventEmitter!.addListener(UpdateEvents._cacheModified, () => {
-			that.loadAssets()
-			that.loadMarkets()
-			this.eventEmitter!.emit(UpdateEvents._cacheModified)
-		})
+		this.cache.eventEmitter!.addListener(
+			UpdateEvents._cacheModified,
+			() => {
+				that.loadAssets()
+				that.loadMarkets()
+				this.eventEmitter!.emit(UpdateEvents._cacheModified)
+			},
+		)
 	}
 
 	_obEmitters: { [key: string]: EventEmitter<string> } = {}
@@ -267,7 +270,7 @@ export default class State extends BaseAccount<Schema> {
 
 	async unsubscribeFromOrderbook(symbol: string) {
 		try {
-			if(this._obEmittersKeys[symbol]) {
+			if (this._obEmittersKeys[symbol]) {
 				this.connection
 					.removeAccountChangeListener(this._obEmittersKeys[symbol]!)
 					.then()
@@ -311,7 +314,7 @@ export default class State extends BaseAccount<Schema> {
 
 	async unsubscribeFromEventQueue(symbol: string) {
 		try {
-			if(this._eqEmittersKeys[symbol]) {
+			if (this._eqEmittersKeys[symbol]) {
 				this.connection
 					.removeAccountChangeListener(this._eqEmittersKeys[symbol]!)
 					.then()
@@ -575,13 +578,19 @@ export default class State extends BaseAccount<Schema> {
 	}) {
 		if (this.zoMarketAccounts[market.symbol]) {
 			let fetchedAlready = true
-			if(withOrderbooks && this.zoMarketAccounts[market.symbol]!.asks==null) {
+			if (
+				withOrderbooks &&
+				this.zoMarketAccounts[market.symbol]!.asks == null
+			) {
 				fetchedAlready = false
 			}
-			if(withEventQueues && this.zoMarketAccounts[market.symbol]!.eventQueue==null) {
+			if (
+				withEventQueues &&
+				this.zoMarketAccounts[market.symbol]!.eventQueue == null
+			) {
 				fetchedAlready = false
 			}
-			if(fetchedAlready) {
+			if (fetchedAlready) {
 				return this.zoMarketAccounts[market.symbol]!
 			}
 		}

@@ -27,7 +27,10 @@ export default abstract class BaseAccount<T> {
 			: ZO_DEX_MAINNET_PROGRAM_ID
 	}
 
-	protected async _subscribe(accountName: string, programPassed?:Program<any>) {
+	protected async _subscribe(
+		accountName: string,
+		programPassed?: Program<any>,
+	) {
 		const program = programPassed ? programPassed : this.program
 		const eventEmitterMain = await program.account[
 			accountName.toLowerCase()
