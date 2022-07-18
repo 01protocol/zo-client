@@ -28,6 +28,10 @@ export abstract class ZoBaseUser {
 		} else {
 			this.realmConnected = false
 		}
+		this.loadPositionsArr(
+			margin.state.markets,
+			margin.state.indexToMarketKey,
+		)
 	}
 	/**
 	 * loading positions, note that markets have to be loaded in the correct order. It also removes the sign from coins & pCoins.

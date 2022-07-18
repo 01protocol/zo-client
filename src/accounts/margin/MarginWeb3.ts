@@ -71,6 +71,14 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	orders: OrderInfo[] = []
 	_balances: { [key: string]: Num } = {}
 
+	/**
+	 * returns the position info for the specific market key
+	 * @marketKey  market key
+	 */
+	position(marketKey: string) {
+		return this.positions.find((el) => el.marketKey === marketKey)!
+	}
+
 	protected constructor(
 		program: Program<Zo>,
 		pubkey: PublicKey,
@@ -468,13 +476,16 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		await this.loadOrders()
 	}
 
-	eventEmitter: EventEmitter<UpdateEvents> | undefined
+	eventEmitter: EventEmitter<UpdateEvents> | null = null
 
 	/**
 	 * Refreshes the data on the Margin, state, cache and control accounts.
 	 */
 	async subscribe() {
-		await this.unsubscribe()
+		await this.subLock.waitAndLock()
+		if (this.eventEmitter) {
+			return
+		}
 		this.eventEmitter = new EventEmitter()
 		const anchorEventEmitter = await this._subscribe("margin")
 		const that = this
@@ -515,21 +526,26 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 				this.eventEmitter!.emit(UpdateEvents._cacheModified)
 			},
 		)
+		this.subLock.unlock()
 	}
 
 	async unsubscribe() {
+		await this.subLock.waitAndLock()
 		try {
 			await this.program.account["margin"]!.unsubscribe(this.pubkey)
 			await this.control.unsubscribe()
 			await this.state.unsubscribe()
+			this.eventEmitter!.removeAllListeners()
 			if (this.backupSubscriberChannel) {
 				await this.program.provider.connection.removeProgramAccountChangeListener(
 					this.backupSubscriberChannel,
 				)
 			}
+			this.eventEmitter = null
 		} catch (_) {
 			//
 		}
+		this.subLock.unlock()
 	}
 
 	/**
@@ -893,9 +909,11 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	async closePosition(symbol: string): Promise<TransactionId> {
 		const market = await this.state.getMarketBySymbol(symbol)
 		const oo = await this.getOpenOrdersInfoBySymbol(symbol)
-		const position = this.positions[symbol]
+		const position = this.position(symbol)!
 		const isLong = !position.isLong
-		const price = this.state.markets[symbol]!.markPrice.number * 5
+		const price = isLong
+			? this.state.markets[symbol]!.markPrice.number * 5
+			: this.state.markets[symbol]!.markPrice.number * 0.1
 		const limitPriceBn = market.priceNumberToLots(price)
 		const maxBaseQtyBn = market.baseSizeNumberToLots(position.coins.number)
 		const takerFee =
@@ -919,7 +937,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 			limitPriceBn,
 			maxBaseQtyBn,
 			maxQuoteQtyBn,
-			{ limit: {} },
+			{ immediateOrCancel: {} },
 			10,
 			new BN(0),
 			{

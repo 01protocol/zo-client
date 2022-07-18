@@ -50,7 +50,7 @@ type Schema = Omit<CacheSchema, "oracles" | "marks" | "borrowCache"> & {
  * The Cache account stores and tracks oracle prices, mark prices, funding and borrow lending multipliers.
  */
 export default class Cache extends BaseAccount<Schema> {
-	eventEmitter: EventEmitter<UpdateEvents> | undefined
+	eventEmitter: EventEmitter<UpdateEvents> | null = null
 
 	private constructor(
 		program: Program<Zo>,
@@ -107,7 +107,10 @@ export default class Cache extends BaseAccount<Schema> {
 	}
 
 	async subscribe(): Promise<void> {
-		await this.unsubscribe()
+		await this.subLock.waitAndLock()
+		if (this.eventEmitter) {
+			return
+		}
 		this.eventEmitter = new EventEmitter()
 		const anchorEventEmitter = await this._subscribe("cache")
 		const that = this
@@ -115,14 +118,19 @@ export default class Cache extends BaseAccount<Schema> {
 			that.data = Cache.processRawCacheData(account, that._st)
 			this.eventEmitter!.emit(UpdateEvents._cacheModified)
 		})
+		this.subLock.unlock()
 	}
 
 	async unsubscribe() {
+		await this.subLock.waitAndLock()
 		try {
 			await this.program.account["cache"].unsubscribe(this.pubkey)
+			this.eventEmitter!.removeAllListeners()
+			this.eventEmitter = null
 		} catch (_) {
 			//
 		}
+		this.subLock.unlock()
 	}
 
 	private static processRawCacheData(

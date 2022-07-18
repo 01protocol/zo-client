@@ -1,13 +1,13 @@
 import {
+	ConfirmedTransaction,
+	ConfirmOptions,
 	Connection,
+	Finality,
 	Keypair,
 	PublicKey,
 	SystemProgram,
 	Transaction,
 	TransactionInstruction,
-	ConfirmOptions,
-	Finality,
-	ConfirmedTransaction,
 } from "@solana/web3.js"
 import {
 	AccountLayout as TokenAccountLayout,
@@ -23,7 +23,7 @@ import { Program, Provider } from "@project-serum/anchor"
 import BN from "bn.js"
 import Decimal from "decimal.js"
 import { blob, struct, u8 } from "buffer-layout"
-import { Zo, Wallet } from "../types"
+import { Wallet, Zo } from "../types"
 import {
 	IDL,
 	RENT_PROGRAM_ID,
@@ -38,6 +38,7 @@ export * from "../types/dataTypes"
 export * from "./rpc"
 export * from "./units"
 export * from "./eventDecoder"
+export { AsyncLock } from "./AsyncLock"
 
 export function sleep(ms: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms))

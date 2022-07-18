@@ -13,7 +13,7 @@ import {
 import Decimal from "decimal.js"
 import _ from "lodash"
 import Num from "../Num"
-import { loadSymbol } from "../utils"
+import { AsyncLock, loadSymbol } from "../utils"
 import BaseAccount from "./BaseAccount"
 import EventEmitter from "eventemitter3"
 import { decodeEventQueue, Event } from "../zoDex/queue"
@@ -138,201 +138,8 @@ export default class State extends BaseAccount<Schema> {
 		return State.processRawStateData(data)
 	}
 
-	eventEmitter: EventEmitter<UpdateEvents> | undefined
-
-	async subscribe() {
-		await this.unsubscribe()
-		this.eventEmitter = new EventEmitter()
-		const anchorEventEmitter = await this._subscribe("state")
-		const that = this
-		anchorEventEmitter.addListener("change", async (account) => {
-			that.data = State.processRawStateData(account)
-			that.loadAssets()
-			that.loadMarkets()
-			this.eventEmitter!.emit(UpdateEvents.stateModified)
-		})
-		await this.cache.subscribe()
-		this.cache.eventEmitter!.addListener(
-			UpdateEvents._cacheModified,
-			() => {
-				that.loadAssets()
-				that.loadMarkets()
-				this.eventEmitter!.emit(UpdateEvents._cacheModified)
-			},
-		)
-	}
-
-	_obEmitters: { [key: string]: EventEmitter<string> } = {}
-	_obEmittersKeys: { [key: string]: number } = {}
-	_eqEmitters: { [key: string]: EventEmitter<string> } = {}
-	_eqEmittersKeys: { [key: string]: number } = {}
-
-	obEmitter(symbol: string) {
-		return this._obEmitters[symbol]
-	}
-
-	eqEmitter(symbol: string) {
-		return this._eqEmitters[symbol]
-	}
-
-	async subscribeToAllOrderbooks() {
-		const promises: Array<Promise<boolean>> = []
-		for (const symbol of Object.keys(this.markets)) {
-			promises.push(
-				new Promise(async (res) => {
-					await this.subscribeToOrderbook(symbol)
-					res(true)
-				}),
-			)
-		}
-		await Promise.all(promises)
-	}
-
-	getMarketImf(marketKey: string): Decimal {
-		return this.getMarketMmf(marketKey).mul(2)
-	}
-
-	getMarketMmf(marketKey: string): Decimal {
-		return this.markets[marketKey]!.pmmf
-	}
-
-	async unsubscribeFromAllOrderbooks() {
-		const promises: Array<Promise<boolean>> = []
-		for (const symbol of Object.keys(this.markets)) {
-			promises.push(
-				new Promise(async (res) => {
-					await this.unsubscribeFromOrderbook(symbol)
-					res(true)
-				}),
-			)
-		}
-		await Promise.all(promises)
-	}
-
-	async subscribeToOrderbook(symbol: string) {
-		this._obEmitters[symbol] = new EventEmitter()
-		const { dexMarket } = await this.getZoMarketAccounts({
-			market: this.markets[symbol]!,
-			withOrderbooks: true,
-			withEventQueues: false,
-		})
-		const marketPubKey = dexMarket.publicKey
-		this._obEmittersKeys[symbol] = this.connection.onAccountChange(
-			marketPubKey,
-			async (zoMarketBuffer) => {
-				const zoMarket = await ZoMarket.load(
-					this.provider.connection,
-					marketPubKey,
-					{ commitment: this.commitment },
-					this.getDexProgram(),
-					zoMarketBuffer,
-				)
-				let bidsOrderbook, asksOrderbook
-				const promises: Array<Promise<boolean>> = []
-				promises.push(
-					new Promise(async (res) => {
-						bidsOrderbook = await zoMarket.loadBids(
-							this.provider.connection,
-							this.commitment,
-						)
-						res(true)
-					}),
-				)
-				promises.push(
-					new Promise(async (res) => {
-						asksOrderbook = await zoMarket.loadAsks(
-							this.provider.connection,
-							this.commitment,
-						)
-						res(true)
-					}),
-				)
-				await Promise.all(promises)
-				this.zoMarketAccounts[symbol]!.bids = bidsOrderbook
-				this.zoMarketAccounts[symbol]!.asks = asksOrderbook
-				if (this._obEmitters[symbol]) {
-					this._obEmitters[symbol]!.emit(
-						State.getOrderbookUpdateEventName(symbol),
-						{
-							bidsOrderbook: bidsOrderbook,
-							asksOrderbook: asksOrderbook,
-						},
-					)
-				}
-			},
-			this.commitment,
-		)
-	}
-
-	static getOrderbookUpdateEventName(symbol: string) {
-		return UpdateEvents.orderbookModified + "-" + symbol
-	}
-
-	async unsubscribeFromOrderbook(symbol: string) {
-		try {
-			if (this._obEmittersKeys[symbol]) {
-				this.connection
-					.removeAccountChangeListener(this._obEmittersKeys[symbol]!)
-					.then()
-				delete this._obEmittersKeys[symbol]
-				delete this._obEmitters[symbol]
-			}
-		} catch (_) {
-			//
-		}
-	}
-
-	async subscribeToEventQueue(symbol: string) {
-		this._eqEmitters[symbol] = new EventEmitter()
-		const { dexMarket } = await this.getZoMarketAccounts({
-			market: this.markets[symbol]!,
-			withOrderbooks: false,
-			withEventQueues: true,
-		})
-		const eventQueueAddress = dexMarket.eventQueueAddress
-		this._eqEmittersKeys[symbol] = this.connection.onAccountChange(
-			eventQueueAddress,
-			async (eventQueueBuffer) => {
-				const eventQueue = decodeEventQueue(eventQueueBuffer.data)
-				this.zoMarketAccounts[symbol]!.eventQueue = eventQueue
-				if (this._eqEmitters[symbol]) {
-					this._eqEmitters[symbol]!.emit(
-						State.getEventQueueUpdateEventName(symbol),
-						{
-							eventQueue: eventQueue,
-						},
-					)
-				}
-			},
-			this.commitment,
-		)
-	}
-
 	static getEventQueueUpdateEventName(symbol: string) {
 		return UpdateEvents.eventQueueModified + "-" + symbol
-	}
-
-	async unsubscribeFromEventQueue(symbol: string) {
-		try {
-			if (this._eqEmittersKeys[symbol]) {
-				this.connection
-					.removeAccountChangeListener(this._eqEmittersKeys[symbol]!)
-					.then()
-				delete this._eqEmittersKeys[symbol]
-				delete this._eqEmitters[symbol]
-			}
-		} catch (_) {
-			//
-		}
-	}
-
-	async unsubscribe() {
-		try {
-			await this.program.account["state"]!.unsubscribe(this.pubkey)
-			await this.cache.unsubscribe()
-		} catch (_) {
-			//
-		}
 	}
 
 	private static processRawStateData(data: StateSchema): Schema {
@@ -474,23 +281,8 @@ export default class State extends BaseAccount<Schema> {
 
 	/* -------------------------------------------------------------------------- */
 	/*                                                                            */
-	/*                      Subscription related functions                        */
-	/*                                                                            */
-	/* -------------------------------------------------------------------------- */
-
-	cacheRefreshCycleId: any
-
-	async stopCacheRefreshCycle(): Promise<void> {
-		clearInterval(this.cacheRefreshCycleId)
-	}
-
-	subscriptionEventEmitter: EventEmitter | undefined
-
-	/* -------------------------------------------------------------------------- */
-	/*                                                                            */
 	/*                                Data stuff below                            */
 	/*                                                                            */
-
 	/* -------------------------------------------------------------------------- */
 
 	/**
@@ -843,5 +635,253 @@ export default class State extends BaseAccount<Schema> {
 		const firstBid = this.zoMarketAccounts[marketKey]!.bids.getL2(1)[0]
 		if (firstBid) return firstBid[0]
 		return 0
+	}
+
+	getMarketImf(marketKey: string): Decimal {
+		return this.getMarketMmf(marketKey).mul(2)
+	}
+
+	getMarketMmf(marketKey: string): Decimal {
+		return this.markets[marketKey]!.pmmf
+	}
+
+	static getOrderbookUpdateEventName(symbol: string) {
+		return UpdateEvents.orderbookModified + "-" + symbol
+	}
+
+	/**
+	 * Subscriptions
+	 */
+
+	eventEmitter: EventEmitter<UpdateEvents> | null = null
+
+	async subscribe() {
+		await this.subLock.waitAndLock()
+		if (this.eventEmitter) return
+		this.eventEmitter = new EventEmitter()
+		const anchorEventEmitter = await this._subscribe("state")
+		const that = this
+		anchorEventEmitter.addListener("change", async (account) => {
+			that.data = State.processRawStateData(account)
+			that.loadAssets()
+			that.loadMarkets()
+			this.eventEmitter!.emit(UpdateEvents.stateModified)
+		})
+		await this.cache.subscribe()
+		this.cache.eventEmitter!.addListener(
+			UpdateEvents._cacheModified,
+			() => {
+				that.loadAssets()
+				that.loadMarkets()
+				this.eventEmitter!.emit(UpdateEvents._cacheModified)
+			},
+		)
+		this.subLock.unlock()
+	}
+
+	async unsubscribe() {
+		await this.subLock.waitAndLock()
+		try {
+			await this.program.account["state"]!.unsubscribe(this.pubkey)
+			this.eventEmitter!.removeAllListeners()
+			await this.cache.unsubscribe()
+			this.eventEmitter = null
+		} catch (_) {
+			//
+		}
+		this.subLock.unlock()
+	}
+
+	/**
+	 * OB listeners
+	 */
+
+	_obEmitters: { [key: string]: EventEmitter<string> } = {}
+	_obEmittersKeys: { [key: string]: number } = {}
+	_obEmittersLocks: { [key: string]: AsyncLock } = {}
+
+	obEmitter(symbol: string) {
+		return this._obEmitters[symbol]
+	}
+
+	async subscribeToOrderbook(symbol: string) {
+		if (this._obEmittersLocks[symbol]) {
+			await this._obEmittersLocks[symbol]!.waitAndLock()
+		} else {
+			this._obEmittersLocks[symbol] = new AsyncLock()
+			await this._obEmittersLocks[symbol]!.waitAndLock()
+		}
+		if (this._obEmitters[symbol]) return
+		this._obEmitters[symbol] = new EventEmitter()
+		const { dexMarket } = await this.getZoMarketAccounts({
+			market: this.markets[symbol]!,
+			withOrderbooks: true,
+			withEventQueues: false,
+		})
+		const marketPubKey = dexMarket.publicKey
+		this._obEmittersKeys[symbol] = this.connection.onAccountChange(
+			marketPubKey,
+			async (zoMarketBuffer) => {
+				const zoMarket = await ZoMarket.load(
+					this.provider.connection,
+					marketPubKey,
+					{ commitment: this.commitment },
+					this.getDexProgram(),
+					zoMarketBuffer,
+				)
+				let bidsOrderbook, asksOrderbook
+				const promises: Array<Promise<boolean>> = []
+				promises.push(
+					new Promise(async (res) => {
+						bidsOrderbook = await zoMarket.loadBids(
+							this.provider.connection,
+							this.commitment,
+						)
+						res(true)
+					}),
+				)
+				promises.push(
+					new Promise(async (res) => {
+						asksOrderbook = await zoMarket.loadAsks(
+							this.provider.connection,
+							this.commitment,
+						)
+						res(true)
+					}),
+				)
+				await Promise.all(promises)
+				this.zoMarketAccounts[symbol]!.bids = bidsOrderbook
+				this.zoMarketAccounts[symbol]!.asks = asksOrderbook
+				if (this._obEmitters[symbol]) {
+					this._obEmitters[symbol]!.emit(
+						State.getOrderbookUpdateEventName(symbol),
+						{
+							bidsOrderbook: bidsOrderbook,
+							asksOrderbook: asksOrderbook,
+						},
+					)
+				}
+			},
+			this.commitment,
+		)
+		this._obEmittersLocks[symbol]!.unlock()
+	}
+
+	async unsubscribeFromOrderbook(symbol: string) {
+		if (this._obEmittersLocks[symbol]) {
+			await this._obEmittersLocks[symbol]!.waitAndLock()
+		} else {
+			this._obEmittersLocks[symbol] = new AsyncLock()
+			await this._obEmittersLocks[symbol]!.waitAndLock()
+		}
+		try {
+			if (this._obEmittersKeys[symbol]) {
+				this.connection
+					.removeAccountChangeListener(this._obEmittersKeys[symbol]!)
+					.then()
+
+				this.eventEmitter!.removeAllListeners()
+				delete this._obEmittersKeys[symbol]
+				delete this._obEmitters[symbol]
+			}
+		} catch (_) {
+			//
+		}
+		this._obEmittersLocks[symbol]!.unlock()
+	}
+
+	async subscribeToAllOrderbooks() {
+		const promises: Array<Promise<boolean>> = []
+		for (const symbol of Object.keys(this.markets)) {
+			promises.push(
+				new Promise(async (res) => {
+					await this.subscribeToOrderbook(symbol)
+					res(true)
+				}),
+			)
+		}
+		await Promise.all(promises)
+	}
+
+	async unsubscribeFromAllOrderbooks() {
+		const promises: Array<Promise<boolean>> = []
+		for (const symbol of Object.keys(this.markets)) {
+			promises.push(
+				new Promise(async (res) => {
+					await this.unsubscribeFromOrderbook(symbol)
+					res(true)
+				}),
+			)
+		}
+		await Promise.all(promises)
+	}
+
+	/**
+	 * Event Queue listeners
+	 */
+
+	_eqEmitters: { [key: string]: EventEmitter<string> } = {}
+	_eqEmittersKeys: { [key: string]: number } = {}
+	_eqEmittersLocks: { [key: string]: AsyncLock } = {}
+
+	eqEmitter(symbol: string) {
+		return this._eqEmitters[symbol]
+	}
+
+	async subscribeToEventQueue(symbol: string) {
+		if (this._eqEmittersLocks[symbol]) {
+			await this._eqEmittersLocks[symbol]!.waitAndLock()
+		} else {
+			this._eqEmittersLocks[symbol] = new AsyncLock()
+			await this._eqEmittersLocks[symbol]!.waitAndLock()
+		}
+		if (this._eqEmitters[symbol]) return
+		this._eqEmitters[symbol] = new EventEmitter()
+		const { dexMarket } = await this.getZoMarketAccounts({
+			market: this.markets[symbol]!,
+			withOrderbooks: false,
+			withEventQueues: true,
+		})
+		const eventQueueAddress = dexMarket.eventQueueAddress
+		this._eqEmittersKeys[symbol] = this.connection.onAccountChange(
+			eventQueueAddress,
+			async (eventQueueBuffer) => {
+				const eventQueue = decodeEventQueue(eventQueueBuffer.data)
+				this.zoMarketAccounts[symbol]!.eventQueue = eventQueue
+				if (this._eqEmitters[symbol]) {
+					this._eqEmitters[symbol]!.emit(
+						State.getEventQueueUpdateEventName(symbol),
+						{
+							eventQueue: eventQueue,
+						},
+					)
+				}
+			},
+			this.commitment,
+		)
+		this._eqEmittersLocks[symbol]!.unlock()
+	}
+
+	async unsubscribeFromEventQueue(symbol: string) {
+		if (this._eqEmittersLocks[symbol]) {
+			await this._eqEmittersLocks[symbol]!.waitAndLock()
+		} else {
+			this._eqEmittersLocks[symbol] = new AsyncLock()
+			await this._eqEmittersLocks[symbol]!.waitAndLock()
+		}
+		try {
+			if (this._eqEmittersKeys[symbol]) {
+				this.connection
+					.removeAccountChangeListener(this._eqEmittersKeys[symbol]!)
+					.then()
+
+				this.eventEmitter!.removeAllListeners()
+				delete this._eqEmittersKeys[symbol]
+				delete this._eqEmitters[symbol]
+			}
+		} catch (_) {
+			//
+		}
+		this._eqEmittersLocks[symbol]!.unlock()
 	}
 }

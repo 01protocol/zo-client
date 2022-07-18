@@ -1,14 +1,20 @@
 import { ZoDBUser } from "./zoDBUser/ZoDBUser"
 import { UpdateEvents, Wallet } from "../types"
 import { Commitment, Connection, Keypair } from "@solana/web3.js"
-import { Cluster, createProgram, OrderInfo, PositionInfo } from "../utils"
+import {
+	AsyncLock,
+	Cluster,
+	createProgram,
+	OrderInfo,
+	PositionInfo,
+} from "../utils"
 import { Provider } from "@project-serum/anchor"
 import { ZO_DEVNET_STATE_KEY, ZO_MAINNET_STATE_KEY } from "../config"
 import { Margin, State } from "../index"
 import Decimal from "decimal.js"
 import BN from "bn.js"
 import EventEmitter from "eventemitter3"
-import * as Realm from 'realm-web'
+import * as Realm from "realm-web"
 
 export class ZoUser extends ZoDBUser {
 	get program() {
@@ -171,37 +177,66 @@ export class ZoUser extends ZoDBUser {
 		}
 	}
 
-	eventEmitter: EventEmitter<UpdateEvents> | undefined
+	subLock = new AsyncLock()
+	eventEmitter: EventEmitter<UpdateEvents> | null = null
 
 	async subscribe() {
+		await this.subLock.waitAndLock()
+		if (this.eventEmitter) {
+			return
+		}
 		this.eventEmitter = new EventEmitter()
 		await this.margin.subscribe()
-
 		this.margin.eventEmitter!.addListener(
 			UpdateEvents.marginModified,
 			() => {
 				this.eventEmitter!.emit(UpdateEvents.marginModified)
+
+				this.loadPositionsArr(
+					this.margin.state.markets,
+					this.margin.state.indexToMarketKey,
+				)
 			},
 		)
 		this.margin.control.eventEmitter!.addListener(
 			UpdateEvents.controlModified,
 			() => {
 				this.eventEmitter!.emit(UpdateEvents.controlModified)
+
+				this.loadPositionsArr(
+					this.margin.state.markets,
+					this.margin.state.indexToMarketKey,
+				)
 			},
 		)
 		this.state.eventEmitter!.addListener(UpdateEvents.stateModified, () => {
 			this.eventEmitter!.emit(UpdateEvents.stateModified)
+
+			this.loadPositionsArr(
+				this.margin.state.markets,
+				this.margin.state.indexToMarketKey,
+			)
 		})
 		this.state.cache.eventEmitter!.addListener(
 			UpdateEvents._cacheModified,
 			() => {
 				this.eventEmitter!.emit(UpdateEvents._cacheModified)
+
+				this.loadPositionsArr(
+					this.margin.state.markets,
+					this.margin.state.indexToMarketKey,
+				)
 			},
 		)
+		this.subLock.unlock()
 	}
 
 	async unsubscribe() {
+		await this.subLock.waitAndLock()
 		await this.margin.unsubscribe()
+		this.eventEmitter!.removeAllListeners()
+		this.eventEmitter = null
+		this.subLock.unlock()
 	}
 
 	static async load(

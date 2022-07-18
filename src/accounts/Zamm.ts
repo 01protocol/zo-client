@@ -28,7 +28,7 @@ type Schema = Omit<ZammSchema, "rewardIndex" | "status">
  * The Zamm account stores and tracks oracle prices, mark prices, funding and borrow lending multipliers.
  */
 export default class Zamm extends BaseAccount<Schema> {
-	eventEmitter: EventEmitter<UpdateEvents> | undefined
+	eventEmitter: EventEmitter<UpdateEvents> | null = null
 	marketSymbol = "SOL-PERP"
 	X = new Decimal(0)
 	Y = new Decimal(0)
@@ -92,7 +92,10 @@ export default class Zamm extends BaseAccount<Schema> {
 	}
 
 	async subscribe(xSensitivity = 100, ySensitivity = 10): Promise<void> {
-		await this.unsubscribe()
+		await this.subLock.waitAndLock()
+		if (this.eventEmitter) {
+			return
+		}
 		await this.zammMargin.subscribe()
 		await this.zammMargin.state.subscribeToEventQueue(this.marketSymbol)
 		this.eventEmitter = new EventEmitter()
@@ -146,15 +149,19 @@ export default class Zamm extends BaseAccount<Schema> {
 	}
 
 	async unsubscribe() {
+		await this.subLock.waitAndLock()
 		try {
 			await this.zammProgram.account["zamm"].unsubscribe(this.pubkey)
 			await this.zammMargin.unsubscribe()
 			await this.zammMargin.state.unsubscribeFromEventQueue(
 				this.marketSymbol,
 			)
+			this.eventEmitter!.removeAllListeners()
+			this.eventEmitter = null
 		} catch (_) {
 			//
 		}
+		this.subLock.unlock()
 	}
 
 	async getXY() {

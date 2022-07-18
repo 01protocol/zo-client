@@ -69,9 +69,11 @@ export default class Control extends BaseAccount<Schema> {
 		}
 	}
 
-	eventEmitter: EventEmitter<UpdateEvents> | undefined
+	eventEmitter: EventEmitter<UpdateEvents> | null = null
+
 	async subscribe(): Promise<void> {
-		await this.unsubscribe()
+		await this.subLock.waitAndLock()
+		if (this.eventEmitter) return
 		this.eventEmitter = new EventEmitter()
 		const anchorEventEmitter = await this._subscribe("control")
 		const that = this
@@ -79,14 +81,19 @@ export default class Control extends BaseAccount<Schema> {
 			that.data = account
 			this.eventEmitter!.emit(UpdateEvents.controlModified)
 		})
+		this.subLock.unlock()
 	}
 
 	async unsubscribe() {
+		await this.subLock.waitAndLock()
 		try {
 			await this.program.account["control"].unsubscribe(this.pubkey)
+			this.eventEmitter!.removeAllListeners()
+			this.eventEmitter = null
 		} catch (_) {
 			//
 		}
+		this.subLock.unlock()
 	}
 
 	async refresh(): Promise<void> {

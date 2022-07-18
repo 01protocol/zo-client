@@ -737,14 +737,6 @@ export default abstract class Margin extends MarginWeb3 {
 	}
 
 	/**
-	 * returns the position info for the specific market key
-	 * @marketKey  market key
-	 */
-	position(marketKey: string) {
-		return this.positions.find((el) => el.marketKey === marketKey)!
-	}
-
-	/**
 	 * returns unrealized pnl for the position
 	 * @param position
 	 */

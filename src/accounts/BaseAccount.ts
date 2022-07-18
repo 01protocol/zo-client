@@ -7,12 +7,14 @@ import {
 	ZO_DEX_DEVNET_PROGRAM_ID,
 	ZO_DEX_MAINNET_PROGRAM_ID,
 } from "../config"
+import { AsyncLock } from "../utils/AsyncLock"
 
 /**
  * Base implementation for account classes.
  */
 export default abstract class BaseAccount<T> {
 	protected backupSubscriberChannel: number | undefined
+	protected subLock = new AsyncLock()
 
 	protected constructor(
 		private _program: Program<Zo>,
