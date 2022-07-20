@@ -1,13 +1,7 @@
 import { ZoDBUser } from "./zoDBUser/ZoDBUser"
-import { UpdateEvents, Wallet } from "../types"
+import { ChangeEvent, UpdateEvents, Wallet } from "../types"
 import { Commitment, Connection, Keypair } from "@solana/web3.js"
-import {
-	AsyncLock,
-	Cluster,
-	createProgram,
-	OrderInfo,
-	PositionInfo,
-} from "../utils"
+import { AsyncLock, Cluster, createProgram, OrderInfo, PositionInfo } from "../utils"
 import { Provider } from "@project-serum/anchor"
 import { ZO_DEVNET_STATE_KEY, ZO_MAINNET_STATE_KEY } from "../config"
 import { Margin, State } from "../index"
@@ -178,76 +172,76 @@ export class ZoUser extends ZoDBUser {
 	}
 
 	subLock = new AsyncLock()
-	eventEmitter: EventEmitter<UpdateEvents> | null = null
+	eventEmitter: EventEmitter<UpdateEvents, ChangeEvent<any>> | null = null
 
-	async subscribe() {
+	async subscribe(withBackup = false) {
 		await this.subLock.waitAndLock()
 		if (this.eventEmitter) {
 			return
 		}
 		this.eventEmitter = new EventEmitter()
-		await this.margin.subscribe()
-		this.margin.eventEmitter!.addListener(
-			UpdateEvents.marginModified,
-			() => {
-				this.eventEmitter!.emit(UpdateEvents.marginModified)
+		await this.margin.subscribe(withBackup)
+    this.margin.eventEmitter!.addListener(
+    	UpdateEvents.marginModified,
+    	(data) => {
+        this.eventEmitter!.emit(UpdateEvents.marginModified, data)
 
-				this.loadPositionsArr(
-					this.margin.state.markets,
-					this.margin.state.indexToMarketKey,
-				)
-			},
-		)
-		this.margin.control.eventEmitter!.addListener(
-			UpdateEvents.controlModified,
-			() => {
-				this.eventEmitter!.emit(UpdateEvents.controlModified)
+        this.loadPositionsArr(
+        	this.margin.state.markets,
+        	this.margin.state.indexToMarketKey,
+        )
+    	},
+    )
+    this.margin.control.eventEmitter!.addListener(
+    	UpdateEvents.controlModified,
+    	(data) => {
+        this.eventEmitter!.emit(UpdateEvents.controlModified, data)
 
-				this.loadPositionsArr(
-					this.margin.state.markets,
-					this.margin.state.indexToMarketKey,
-				)
-			},
-		)
-		this.state.eventEmitter!.addListener(UpdateEvents.stateModified, () => {
-			this.eventEmitter!.emit(UpdateEvents.stateModified)
+        this.loadPositionsArr(
+        	this.margin.state.markets,
+        	this.margin.state.indexToMarketKey,
+        )
+    	},
+    )
+    this.state.eventEmitter!.addListener(UpdateEvents.stateModified,
+    	(data) => {
+        this.eventEmitter!.emit(UpdateEvents.stateModified, data)
+        this.loadPositionsArr(
+        	this.margin.state.markets,
+        	this.margin.state.indexToMarketKey,
+        )
+    	})
+    this.state.eventEmitter!.addListener(
+    	UpdateEvents._cacheModified,
+    	(data) => {
+        this.eventEmitter!.emit(UpdateEvents._cacheModified, data)
 
-			this.loadPositionsArr(
-				this.margin.state.markets,
-				this.margin.state.indexToMarketKey,
-			)
-		})
-		this.state.cache.eventEmitter!.addListener(
-			UpdateEvents._cacheModified,
-			() => {
-				this.eventEmitter!.emit(UpdateEvents._cacheModified)
-
-				this.loadPositionsArr(
-					this.margin.state.markets,
-					this.margin.state.indexToMarketKey,
-				)
-			},
-		)
-		this.subLock.unlock()
+        this.loadPositionsArr(
+        	this.margin.state.markets,
+        	this.margin.state.indexToMarketKey,
+        )
+    	},
+    )
+    this.subLock.unlock()
 	}
 
 	async unsubscribe() {
 		await this.subLock.waitAndLock()
 		await this.margin.unsubscribe()
-		this.eventEmitter!.removeAllListeners()
-		this.eventEmitter = null
-		this.subLock.unlock()
+    this.eventEmitter!.removeAllListeners()
+    this.eventEmitter = null
+    this.subLock.unlock()
 	}
 
 	static async load(
 		account: Wallet | Keypair,
 		cluster: Cluster,
 		opts: {
-			withRealm: boolean
-			commitment?: Commitment
-			skipPreflight?: boolean
-			rpcUrl: string
-		},
+      withRealm: boolean
+      commitment?: Commitment
+      skipPreflight?: boolean
+      rpcUrl: string
+    },
 	) {
 		let wallet: Wallet
 		if (account instanceof Keypair) {
@@ -275,9 +269,9 @@ export class ZoUser extends ZoDBUser {
 		})
 		const program = createProgram(provider, cluster)
 		const stateKey =
-			cluster == Cluster.Devnet
-				? ZO_DEVNET_STATE_KEY
-				: ZO_MAINNET_STATE_KEY
+      cluster == Cluster.Devnet
+      	? ZO_DEVNET_STATE_KEY
+      	: ZO_MAINNET_STATE_KEY
 		const state = await State.load(program, stateKey, opts.commitment)
 		const margin = await Margin.load(
 			program,

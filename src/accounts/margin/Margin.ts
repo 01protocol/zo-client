@@ -1008,7 +1008,7 @@ Margin: ${this.pubkey.toString()},
 Wallet: ${this.owner && this.owner.toString()},
 Control: ${this.control.pubkey.toString()},
 Balances: [${
-			"\n" +
+	"\n" +
 			Object.keys(this.balances)
 				.filter((symbol) => this.balances[symbol]!.number != 0)
 				.map(
@@ -1020,10 +1020,10 @@ Balances: [${
 						"\n}",
 				)
 				.reduce((res, el) => res + ",\n" + el, "")
-		}
+}
 ],
 Positions:[ ${
-			"\n" +
+	"\n" +
 			this.positions
 				.filter(
 					(position) =>
@@ -1032,7 +1032,7 @@ Positions:[ ${
 				)
 				.map((position) => this.positionToString(position))
 				.reduce((res, el) => res + ",\n" + el, "")
-		}
+}
 ],
    `
 	}

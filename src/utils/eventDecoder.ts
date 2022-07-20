@@ -94,99 +94,99 @@ function getLogEventsFromEvent({ event, extraInfo }): EventLogData | null {
 	try {
 		const decodedEvent = decodeEvent(event)
 		switch (decodedEvent!.name) {
-			case EventNames.RealizedPnlLog:
-				// @ts-ignore
-				const qtyReceived = decodedEvent.data.qtyReceived.toNumber()
-				// @ts-ignore
-				const qtyPaid = decodedEvent.data.qtyPaid.toNumber()
-				let finalPrice, sizeFilled
-				if (extraInfo.long) {
-					finalPrice = Math.abs(
-						(qtyReceived / qtyPaid) *
+		case EventNames.RealizedPnlLog:
+			// @ts-ignore
+			const qtyReceived = decodedEvent.data.qtyReceived.toNumber()
+			// @ts-ignore
+			const qtyPaid = decodedEvent.data.qtyPaid.toNumber()
+			let finalPrice, sizeFilled
+			if (extraInfo.long) {
+				finalPrice = Math.abs(
+					(qtyReceived / qtyPaid) *
 							Math.pow(
 								10,
 								extraInfo.collateralDecimals -
 									extraInfo.contractDecimals,
 							),
-					)
-					sizeFilled = Math.abs(
-						qtyPaid * Math.pow(10, extraInfo.contractDecimals),
-					)
-				} else {
-					finalPrice = Math.abs(
-						(qtyPaid / qtyReceived) *
+				)
+				sizeFilled = Math.abs(
+					qtyPaid * Math.pow(10, extraInfo.contractDecimals),
+				)
+			} else {
+				finalPrice = Math.abs(
+					(qtyPaid / qtyReceived) *
 							Math.pow(
 								10,
 								extraInfo.collateralDecimals -
 									extraInfo.contractDecimals,
 							),
-					)
-					sizeFilled = Math.abs(
-						qtyReceived * Math.pow(10, extraInfo.contractDecimals),
-					)
-				}
-				const leverage = Math.max(1, extraInfo.accountLeverage)
-				const pnl =
+				)
+				sizeFilled = Math.abs(
+					qtyReceived * Math.pow(10, extraInfo.contractDecimals),
+				)
+			}
+			const leverage = Math.max(1, extraInfo.accountLeverage)
+			const pnl =
 					leverage *
 					((((extraInfo.long ? 1 : -1) *
 						(finalPrice - extraInfo.entryPrice)) /
 						extraInfo.entryPrice) *
 						100)
 
-				return {
-					eventName: EventNames.RealizedPnlLog,
-					data: { pnl, leverage, finalPrice, sizeFilled },
-				}
-			case EventNames.DepositLog:
-				const depositAmount = new Num(
-					// @ts-ignore
-					decodedEvent.data.depositAmount,
-					extraInfo.decimals,
-				).number
+			return {
+				eventName: EventNames.RealizedPnlLog,
+				data: { pnl, leverage, finalPrice, sizeFilled },
+			}
+		case EventNames.DepositLog:
+			const depositAmount = new Num(
+				// @ts-ignore
+				decodedEvent.data.depositAmount,
+				extraInfo.decimals,
+			).number
 
-				return {
-					eventName: EventNames.DepositLog,
-					data: { depositAmount },
-				}
-			case EventNames.WithdrawLog:
-				const withdrawAmount = new Num(
+			return {
+				eventName: EventNames.DepositLog,
+				data: { depositAmount },
+			}
+		case EventNames.WithdrawLog:
+			const withdrawAmount = new Num(
+				// @ts-ignore
+				decodedEvent.data.withdrawAmount,
+				extraInfo.decimals,
+			).number
+			return {
+				eventName: EventNames.WithdrawLog,
+				data: { withdrawAmount },
+			}
+		case EventNames.SwapLog:
+			let fromAmount, toAmount
+			if (extraInfo.toSymbol == USDC_SYMBOL) {
+				fromAmount = new Num(
 					// @ts-ignore
-					decodedEvent.data.withdrawAmount,
-					extraInfo.decimals,
+					decodedEvent.data.baseDelta,
+					extraInfo.fromDecimals,
 				).number
-				return {
-					eventName: EventNames.WithdrawLog,
-					data: { withdrawAmount },
-				}
-			case EventNames.SwapLog:
-				let fromAmount, toAmount
-				if (extraInfo.toSymbol == USDC_SYMBOL) {
-					fromAmount = new Num(
-						// @ts-ignore
-						decodedEvent.data.baseDelta,
-						extraInfo.fromDecimals,
-					).number
-					toAmount = new Num(
-						// @ts-ignore
-						decodedEvent.data.quoteDelta,
-						extraInfo.toDecimals,
-					).number
-				} else {
-					fromAmount = new Num(
-						// @ts-ignore
-						decodedEvent.data.quoteDelta,
-						extraInfo.fromDecimals,
-					).number
-					toAmount = new Num(
-						// @ts-ignore
-						decodedEvent.data.baseDelta,
-						extraInfo.toDecimals,
-					).number
-				}
-				return {
-					eventName: EventNames.SwapLog,
-					data: { fromAmount, toAmount },
-				}
+				toAmount = new Num(
+					// @ts-ignore
+					decodedEvent.data.quoteDelta,
+					extraInfo.toDecimals,
+				).number
+			} else {
+				fromAmount = new Num(
+					// @ts-ignore
+					decodedEvent.data.quoteDelta,
+					extraInfo.fromDecimals,
+				).number
+				toAmount = new Num(
+					// @ts-ignore
+					decodedEvent.data.baseDelta,
+					extraInfo.toDecimals,
+				).number
+			}
+			return {
+				eventName: EventNames.SwapLog,
+				data: { fromAmount, toAmount },
+			}
 		}
 	} catch (_) {
 		//

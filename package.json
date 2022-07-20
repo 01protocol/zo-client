@@ -1,13 +1,14 @@
 {
   "name": "@zero_one/client",
-  "version": "0.9.5",
+  "version": "0.9.6",
   "license": "Apache-2.0",
   "description": "TypeScript Client API",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
   "scripts": {
-    "build": "tsc && tsc -p tsconfig.cjs.json",
+    "build": "tsc  && tsc -p tsconfig.cjs.json",
+    "dev": "tsc --watch && tsc -p tsconfig.cjs.json",
     "build-docs": "typedoc --out docs src/index.ts",
     "lint-format": "prettier --check ./src",
     "lint": "prettier --write ./src",

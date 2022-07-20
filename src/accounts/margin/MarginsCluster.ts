@@ -24,15 +24,16 @@ export default class MarginsCluster {
 	state: State
 
 	constructor(
-		public readonly program: Program<Zo>,
-		public readonly cluster: Cluster,
-		readonly config: MarginsClusterConfig = DEFAULT_MARGINS_CLUSTER_CONFIG,
-	) {}
+    public readonly program: Program<Zo>,
+    public readonly cluster: Cluster,
+    readonly config: MarginsClusterConfig = DEFAULT_MARGINS_CLUSTER_CONFIG,
+	) {
+	}
 
 	hardRefreshIntervalId: any
 
 	async launch() {
-		this.eventEmitter = new EventEmitter<UpdateEvents>()
+		this.eventEmitter = new EventEmitter<UpdateEvents, any>()
 		this.state = await State.load(
 			this.program,
 			this.cluster == Cluster.Devnet
@@ -52,8 +53,8 @@ export default class MarginsCluster {
 			this.config.hardRefreshInterval,
 		)
 		this.log("MarginsCluster listeners launched")
-		this.eventEmitter!.emit(UpdateEvents.marginModified, null)
-		this.log("MarginsCluster running")
+    this.eventEmitter!.emit(UpdateEvents.marginModified, null)
+    this.log("MarginsCluster running")
 	}
 
 	async hardRefreshAccounts() {
@@ -68,8 +69,8 @@ export default class MarginsCluster {
 		await this.loadAccounts()
 		this.startMarginsListener()
 		this.startControlsListener()
-		this.eventEmitter!.emit(UpdateEvents.marginModified, null)
-		this.log("Hard refresh complete")
+    this.eventEmitter!.emit(UpdateEvents.marginModified, null)
+    this.log("Hard refresh complete")
 	}
 
 	private async loadAccounts() {
@@ -95,79 +96,79 @@ export default class MarginsCluster {
 	private startMarginsListener() {
 		const that = this
 		this.marginListener =
-			this.program.provider.connection.onProgramAccountChange(
-				that.program.programId,
-				async (account: KeyedAccountInfo) => {
-					try {
-						const accountInfo = account.accountInfo
-						const pubkey = account.accountId
-						if (that.margins[pubkey.toString()]) {
-							await that.margins[
-								pubkey.toString()
-							]!.updateWithAccountInfo(accountInfo)
-						} else {
-							that.margins[pubkey.toString()] =
-								await Margin.loadFromAccountInfo(
-									that.program,
-									that.state,
-									accountInfo,
-									this.config.loadWithOrders,
-									this.config.commitment,
-								)
-							that.controlToMarginKey.set(
-								that.margins[
-									pubkey.toString()
-								]!.control.pubkey.toString(),
-								that.margins[
-									pubkey.toString()
-								]!.pubkey.toString(),
-							)
-						}
-						that.eventEmitter!.emit(
-							UpdateEvents.marginModified,
-							pubkey.toString(),
-						)
-					} catch (_) {
-						console.warn(
-							"Failed to load an updated margin account!",
-						)
-					}
-				},
-				"confirmed",
-				[{ dataSize: that.program.account["margin"].size }],
-			)
+      this.program.provider.connection.onProgramAccountChange(
+      	that.program.programId,
+      	async (account: KeyedAccountInfo) => {
+      		try {
+      			const accountInfo = account.accountInfo
+      			const pubkey = account.accountId
+      			if (that.margins[pubkey.toString()]) {
+      				await that.margins[
+      					pubkey.toString()
+      				]!.updateWithAccountInfo(accountInfo)
+      			} else {
+      				that.margins[pubkey.toString()] =
+                await Margin.loadFromAccountInfo(
+                	that.program,
+                	that.state,
+                	accountInfo,
+                	this.config.loadWithOrders,
+                	this.config.commitment,
+                )
+      				that.controlToMarginKey.set(
+                that.margins[
+                	pubkey.toString()
+                ]!.control.pubkey.toString(),
+                that.margins[
+                	pubkey.toString()
+                ]!.pubkey.toString(),
+      				)
+      			}
+            that.eventEmitter!.emit(
+            	UpdateEvents.marginModified,
+            	pubkey.toString(),
+            )
+      		} catch (_) {
+      			console.warn(
+      				"Failed to load an updated margin account!",
+      			)
+      		}
+      	},
+      	"confirmed",
+      	[{ dataSize: that.program.account["margin"].size }],
+      )
 	}
 
 	private startControlsListener() {
 		const that = this
 		this.controlListener =
-			this.program.provider.connection.onProgramAccountChange(
-				that.program.programId,
-				async (account: KeyedAccountInfo) => {
-					try {
-						const accountInfo = account.accountInfo
-						const pubkey = account.accountId
-						const marginKey = that.controlToMarginKey.get(
-							pubkey.toString(),
-						)
-						if (marginKey) {
-							await that.margins[
-								marginKey
-							]!.updateControlFromAccountInfo(accountInfo)
-							that.eventEmitter!.emit(
-								UpdateEvents.controlModified,
-								marginKey,
-							)
-						}
-					} catch (_) {
-						console.warn(
-							"Failed to load an updated control account!",
-						)
-					}
-				},
-				"confirmed",
-				[{ dataSize: that.program.account["control"].size }],
-			)
+      this.program.provider.connection.onProgramAccountChange(
+      	that.program.programId,
+      	async (account: KeyedAccountInfo) => {
+      		try {
+      			const accountInfo = account.accountInfo
+      			const pubkey = account.accountId
+      			const marginKey = that.controlToMarginKey.get(
+      				pubkey.toString(),
+      			)
+      			if (marginKey) {
+      				await that.margins[
+      					marginKey
+      				]!.updateControlFromAccountInfo(accountInfo)
+              that.eventEmitter!.emit(
+              	UpdateEvents.controlModified,
+              	marginKey,
+              )
+      			}
+      		} catch (_) {
+      			console.warn(
+      				"Failed to load an updated control account!",
+      			)
+      		}
+      	},
+      	"confirmed",
+      	[{ dataSize: that.program.account["control"].size }],
+      )
 	}
 
 	async kill() {
@@ -185,10 +186,10 @@ export default class MarginsCluster {
 	}
 
 	/**
-	 * Log a message to the console if verbose is enabled
-	 * @param msg
-	 * @private
-	 */
+   * Log a message to the console if verbose is enabled
+   * @param msg
+   * @private
+   */
 	private log(...msg) {
 		if (this.config.verbose) {
 			console.log(...msg)

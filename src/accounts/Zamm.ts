@@ -1,20 +1,10 @@
-import {
-	Commitment,
-	PublicKey,
-	SystemProgram,
-	SYSVAR_RENT_PUBKEY,
-} from "@solana/web3.js"
+import { Commitment, PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js"
 import { Program, utils } from "@project-serum/anchor"
 import BaseAccount from "./BaseAccount"
 import State from "./State"
 import { UpdateEvents, ZammSchema, Zo } from "../types"
 import EventEmitter from "eventemitter3"
-import {
-	TOKEN_PROGRAM_ID,
-	USDC_DECIMALS,
-	WRAPPED_SOL_MINT,
-	ZAMM_PROGRAM_ID,
-} from "../config"
+import { TOKEN_PROGRAM_ID, USDC_DECIMALS, WRAPPED_SOL_MINT, ZAMM_PROGRAM_ID } from "../config"
 import { ZAMM_IDL, ZammIdlType } from "../types/zamm"
 import Margin from "./margin/Margin"
 import BN from "bn.js"
@@ -28,29 +18,29 @@ type Schema = Omit<ZammSchema, "rewardIndex" | "status">
  * The Zamm account stores and tracks oracle prices, mark prices, funding and borrow lending multipliers.
  */
 export default class Zamm extends BaseAccount<Schema> {
-	eventEmitter: EventEmitter<UpdateEvents> | null = null
+	eventEmitter: EventEmitter<UpdateEvents, any> | null = null
 	marketSymbol = "SOL-PERP"
 	X = new Decimal(0)
 	Y = new Decimal(0)
 
 	private constructor(
-		public zammProgram: Program<ZammIdlType>,
-		k: PublicKey,
-		data: Schema,
-		public zammMargin: Margin,
-		public zoProgram: Program<Zo>,
-		commitment?: Commitment,
+    public zammProgram: Program<ZammIdlType>,
+    k: PublicKey,
+    data: Schema,
+    public zammMargin: Margin,
+    public zoProgram: Program<Zo>,
+    commitment?: Commitment,
 	) {
 		super(zoProgram, k, data, commitment)
 	}
 
 	/**
-	 * Loads a new Zamm object from its public key.
-	 * @param zoProgram
-	 * @param k The zamm account's public key.
-	 * @param state
-	 * @param commitment
-	 */
+   * Loads a new Zamm object from its public key.
+   * @param zoProgram
+   * @param k The zamm account's public key.
+   * @param state
+   * @param commitment
+   */
 	static async load(
 		zoProgram: Program<Zo>,
 		k: PublicKey,
@@ -91,18 +81,23 @@ export default class Zamm extends BaseAccount<Schema> {
 		)
 	}
 
-	async subscribe(xSensitivity = 100, ySensitivity = 10): Promise<void> {
+	/**
+   *
+   * @param xSensitivity - sensitivity to x changes
+   * @param ySensitivity - sensitivity to y changes
+   * @param withBackup - have a backup 'confirmed' channel to listen to
+   * @param stateLimit - state limit frequency update
+   * @param cacheLimit - cache limit frequency update
+   */
+	async subscribe(xSensitivity = 100, ySensitivity = 10, withBackup = false, stateLimit = 0, cacheLimit = 0): Promise<void> {
 		await this.subLock.waitAndLock()
 		if (this.eventEmitter) {
 			return
 		}
-		await this.zammMargin.subscribe()
+		await this.zammMargin.subscribe(withBackup, stateLimit, cacheLimit)
 		await this.zammMargin.state.subscribeToEventQueue(this.marketSymbol)
 		this.eventEmitter = new EventEmitter()
-		const anchorEventEmitter = await this._subscribe(
-			"zamm",
-			this.zammProgram,
-		)
+		const anchorEventEmitter = await this._subscribe("zamm", withBackup, this.zammProgram)
 		const that = this
 		await this.zammMargin.eventEmitter?.addListener(
 			UpdateEvents.marginModified,
@@ -112,13 +107,13 @@ export default class Zamm extends BaseAccount<Schema> {
 				const { X, Y, price } = await this.getXY()
 				if (
 					!X.mul(xSensitivity).round().eq(oldX) ||
-					!Y.mul(ySensitivity).round().eq(oldY)
+          !Y.mul(ySensitivity).round().eq(oldY)
 				)
-					this.eventEmitter!.emit(UpdateEvents.zammModified, {
-						X,
-						Y,
-						price,
-					})
+          this.eventEmitter!.emit(UpdateEvents.zammModified, {
+          	X,
+          	Y,
+          	price,
+          })
 			},
 		)
 		await this.zammMargin.state
@@ -128,11 +123,11 @@ export default class Zamm extends BaseAccount<Schema> {
 				const oldY = this.Y
 				const { X, Y, price } = await this.getXY()
 				if (!X.eq(oldX) || !Y.eq(oldY))
-					this.eventEmitter!.emit(UpdateEvents.zammModified, {
-						X,
-						Y,
-						price,
-					})
+          this.eventEmitter!.emit(UpdateEvents.zammModified, {
+          	X,
+          	Y,
+          	price,
+          })
 			})
 		anchorEventEmitter.addListener("change", async (account) => {
 			that.data = account as Schema
@@ -140,11 +135,11 @@ export default class Zamm extends BaseAccount<Schema> {
 			const oldY = this.Y
 			const { X, Y, price } = await this.getXY()
 			if (!X.eq(oldX) || !Y.eq(oldY))
-				this.eventEmitter!.emit(UpdateEvents.zammModified, {
-					X,
-					Y,
-					price,
-				})
+        this.eventEmitter!.emit(UpdateEvents.zammModified, {
+        	X,
+        	Y,
+        	price,
+        })
 		})
 	}
 
@@ -156,8 +151,8 @@ export default class Zamm extends BaseAccount<Schema> {
 			await this.zammMargin.state.unsubscribeFromEventQueue(
 				this.marketSymbol,
 			)
-			this.eventEmitter!.removeAllListeners()
-			this.eventEmitter = null
+      this.eventEmitter!.removeAllListeners()
+      this.eventEmitter = null
 		} catch (_) {
 			//
 		}
@@ -218,7 +213,7 @@ export default class Zamm extends BaseAccount<Schema> {
 
 		const X = new Num(
 			XN,
-			this.zammMargin.state.markets[this.marketSymbol]!.assetDecimals,
+      this.zammMargin.state.markets[this.marketSymbol]!.assetDecimals,
 		).decimal
 		const Y = new Num(YN, USDC_DECIMALS).decimal
 		this.X = X
@@ -237,13 +232,13 @@ export default class Zamm extends BaseAccount<Schema> {
 	async marketArb(arberMargin: Margin, x: number) {
 		const X = new Num(
 			x,
-			this.zammMargin.state.markets[this.marketSymbol]!.assetDecimals,
+      this.zammMargin.state.markets[this.marketSymbol]!.assetDecimals,
 		).n
 		const y =
-			x *
-			this.zammMargin.state.markets[this.marketSymbol]!.indexPrice
-				.number *
-			10
+      x *
+      this.zammMargin.state.markets[this.marketSymbol]!.indexPrice
+      	.number *
+      10
 		const Y = new Num(y, USDC_DECIMALS).n
 		return await this.arbRaw(arberMargin, X, Y)
 	}
@@ -251,7 +246,7 @@ export default class Zamm extends BaseAccount<Schema> {
 	async limitArb(arberMargin: Margin, x: number, price: number) {
 		const X = new Num(
 			x,
-			this.zammMargin.state.markets[this.marketSymbol]!.assetDecimals,
+      this.zammMargin.state.markets[this.marketSymbol]!.assetDecimals,
 		).n
 		const y = x * price
 		const Y = new Num(y, USDC_DECIMALS).n

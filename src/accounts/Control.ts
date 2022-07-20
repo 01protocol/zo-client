@@ -2,6 +2,7 @@ import { AccountInfo, Commitment, PublicKey } from "@solana/web3.js"
 import { Program } from "@project-serum/anchor"
 import BaseAccount from "./BaseAccount"
 import {
+	ChangeEvent,
 	ControlSchema,
 	ControlSchema as Schema,
 	UpdateEvents,
@@ -69,17 +70,17 @@ export default class Control extends BaseAccount<Schema> {
 		}
 	}
 
-	eventEmitter: EventEmitter<UpdateEvents> | null = null
+	eventEmitter: EventEmitter<UpdateEvents, ChangeEvent<any>> | null = null
 
-	async subscribe(): Promise<void> {
+	async subscribe(withBackup = false,): Promise<void> {
 		await this.subLock.waitAndLock()
 		if (this.eventEmitter) return
 		this.eventEmitter = new EventEmitter()
-		const anchorEventEmitter = await this._subscribe("control")
+		const anchorEventEmitter = await this._subscribe("control",withBackup)
 		const that = this
 		anchorEventEmitter.addListener("change", (account) => {
 			that.data = account
-			this.eventEmitter!.emit(UpdateEvents.controlModified)
+			this.eventEmitter!.emit(UpdateEvents.controlModified, [])
 		})
 		this.subLock.unlock()
 	}

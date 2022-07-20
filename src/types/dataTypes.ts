@@ -130,6 +130,8 @@ export type AssetInfo = {
   indexPrice: Num;
   supply: Decimal;
   borrows: Decimal;
+  rawSupply: Decimal;
+  rawBorrows: Decimal;
   supplyApy: number;
   borrowsApy: number;
   mint: PublicKey;

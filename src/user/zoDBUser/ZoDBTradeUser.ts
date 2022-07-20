@@ -4,26 +4,22 @@
 
 import { ZoDBPnlUser } from "./ZoDBPnlUser"
 import { checkIfNewAndPush } from "./utils/checkIfNewAndPush"
-import {
-	ALL_MARKETS,
-	FUNDING_HISTORY,
-	HISTORY_ENTRIES_PER_PAGE,
-} from "../../config"
+import { ALL_MARKETS, FUNDING_HISTORY, HISTORY_ENTRIES_PER_PAGE } from "../../config"
 import { PositionInfo } from "../../types/dataTypes"
 
 export enum TradeHistoryEntryType {
-	Trade,
-	Funding,
+  Trade,
+  Funding,
 }
 
 export interface TradeHistoryEntry {
-	price: number
-	size: number
-	isLong: boolean
-	isMaker: boolean
-	marketKey: string
-	tradeHistoryEntryType: TradeHistoryEntryType
-	date: Date
+  price: number
+  size: number
+  isLong: boolean
+  isMaker: boolean
+  marketKey: string
+  tradeHistoryEntryType: TradeHistoryEntryType
+  date: Date
 }
 
 export class ZoDBTradeUser extends ZoDBPnlUser {
@@ -47,12 +43,12 @@ export class ZoDBTradeUser extends ZoDBPnlUser {
 
 	async _insertTrades(marketKey: string) {
 		while (
-			this.tradesPagesParsed[marketKey]! <=
-			this.tradesCurrentPage[marketKey]!
+      this.tradesPagesParsed[marketKey]! <=
+      this.tradesCurrentPage[marketKey]!
 		) {
 			const trades = await this._getTrades(
-				this.tradesPagesParsed[marketKey]!,
-				marketKey,
+        this.tradesPagesParsed[marketKey]!,
+        marketKey,
 			)
 			if (trades.length == 0) {
 				this.tradesParsed[marketKey] = true
@@ -107,10 +103,10 @@ export class ZoDBTradeUser extends ZoDBPnlUser {
 			)
 			let tradesNotFinishedFetching = !this.tradesParsed[marketKey]
 			let enoughFundingsWereNotGenerated =
-				fundings.length < HISTORY_ENTRIES_PER_PAGE
+        fundings.length < HISTORY_ENTRIES_PER_PAGE
 			while (
 				tradesNotFinishedFetching &&
-				enoughFundingsWereNotGenerated
+        enoughFundingsWereNotGenerated
 			) {
 				this.tradesCurrentPage[marketKey]++
 				await this._insertTrades(marketKey)
@@ -123,13 +119,13 @@ export class ZoDBTradeUser extends ZoDBPnlUser {
 				)
 				tradesNotFinishedFetching = !this.tradesParsed[marketKey]
 				enoughFundingsWereNotGenerated =
-					fundings.length < HISTORY_ENTRIES_PER_PAGE
+          fundings.length < HISTORY_ENTRIES_PER_PAGE
 			}
 			return fundings
 		} else {
 			if (
-				this.tradesPagesParsed[marketKey]! <= page &&
-				!this.tradesParsed[marketKey]
+        this.tradesPagesParsed[marketKey]! <= page &&
+        !this.tradesParsed[marketKey]
 			) {
 				await this._insertTrades(marketKey)
 			}
@@ -160,15 +156,14 @@ export class ZoDBTradeUser extends ZoDBPnlUser {
 							tradeAndFundingHistory.push(
 								...(fundingOnly
 									? await this._combineTradesAndFunding(
-											positions,
-											position.marketKey,
-											allTrades,
-									  )
-									: this.balanceHistory[ALL_MARKETS]!.filter(
-											(balance) =>
-												balance.marketKey ==
-												position.marketKey,
-									  ))!,
+										position.marketKey,
+										allTrades,) :
+              this.balanceHistory[ALL_MARKETS]!.filter(
+              	(balance) =>
+              		balance.marketKey ==
+                  position.marketKey,
+              )
+            )!,
 							)
 							res(true)
 						}),
@@ -177,10 +172,9 @@ export class ZoDBTradeUser extends ZoDBPnlUser {
 		} else {
 			tradeAndFundingHistory = fundingOnly
 				? await this._combineTradesAndFunding(
-						positions,
-						marketKey,
-						allTrades,
-				  )
+					marketKey,
+					allTrades,
+				)
 				: this.balanceHistory[marketKey]!
 		}
 		tradeAndFundingHistory = tradeAndFundingHistory.sort(
@@ -191,8 +185,8 @@ export class ZoDBTradeUser extends ZoDBPnlUser {
 			.filter(
 				(entry) =>
 					fundingOnly ==
-					(entry.tradeHistoryEntryType ==
-						TradeHistoryEntryType.Funding),
+          (entry.tradeHistoryEntryType ==
+            TradeHistoryEntryType.Funding),
 			)
 		return filteredHistory.slice(
 			Math.min(filteredHistory.length, page * HISTORY_ENTRIES_PER_PAGE),
@@ -204,26 +198,24 @@ export class ZoDBTradeUser extends ZoDBPnlUser {
 	}
 
 	private async _combineTradesAndFunding(
-		positions: PositionInfo[],
 		marketKey: string,
 		allTrades: boolean,
 	): Promise<TradeHistoryEntry[]> {
-		const position = positions.find((pos) => pos.marketKey == marketKey)!
 		const tradeHistoryEntries = allTrades
 			? this.balanceHistory[ALL_MARKETS]!.filter(
-					(balance) => balance.marketKey == position.marketKey,
-			  )!
+				(balance) => balance.marketKey == marketKey,
+			)!
 			: this.balanceHistory[marketKey]!
 		if (tradeHistoryEntries.length == 1) {
 			return tradeHistoryEntries
 		}
-		const currentSize = (position.isLong ? 1 : -1) * position.coins.number
+		const currentSize = (this.isLong[marketKey]! ? 1 : -1) * this.sizes[marketKey]!
 		let fundingHistory: any = this.fundingHistory[marketKey]
 			? this.fundingHistory[marketKey]
 			: []
 		let fundingIndex = 0
 		let rollingSize =
-			Math.abs(currentSize) > 1 / 1_000_000_000 ? currentSize : 0
+      Math.abs(currentSize) > 1 / 1_000_000_000 ? currentSize : 0
 		const tradeHistory: Array<TradeHistoryEntry> = []
 		const that = this
 
@@ -236,7 +228,7 @@ export class ZoDBTradeUser extends ZoDBPnlUser {
 				isMaker: false,
 				price: fundingHistory[fundingIndex].fundingCollected,
 				size:
-					Math.abs(rollingSize) > 1 / 1_000_000_000 ? rollingSize : 0,
+          Math.abs(rollingSize) > 1 / 1_000_000_000 ? rollingSize : 0,
 				isLong: rollingSize > 0,
 				tradeHistoryEntryType: TradeHistoryEntryType.Funding,
 				marketKey: marketKey,
@@ -251,11 +243,11 @@ export class ZoDBTradeUser extends ZoDBPnlUser {
 		for (let i = 1; i < tradeHistoryEntries.length; i++) {
 			while (
 				fundingHistory[fundingIndex].date.getTime() >
-					tradeHistoryEntries[i]!.date.getTime() &&
-				!(
-					this.fundingParsed[marketKey] &&
-					fundingIndex == fundingHistory.length
-				)
+        tradeHistoryEntries[i]!.date.getTime() &&
+        !(
+        	this.fundingParsed[marketKey] &&
+          fundingIndex == fundingHistory.length
+        )
 			) {
 				await pushNewFunding()
 			}
@@ -270,15 +262,20 @@ export class ZoDBTradeUser extends ZoDBPnlUser {
 		return tradeHistory
 	}
 
+	private sizes: { [key: string]: number } = {}
+	private isLong: { [key: string]: boolean } = {}
+
 	private _initTradeHistory(positions: PositionInfo[]) {
 		for (const position of positions) {
+			this.sizes[position.marketKey] = position.coins.number
+			this.isLong[position.marketKey] = position.isLong
 			const marketKey = position.marketKey
 			const currentSize =
-				(position.isLong ? 1 : -1) * position.coins.number
+        (position.isLong ? 1 : -1) * position.coins.number
 			if (
 				this.balanceHistory[marketKey] == null ||
-				this.balanceHistory[marketKey]!.length == 0 ||
-				currentSize != this.balanceHistory[marketKey]![0]!.size
+        this.balanceHistory[marketKey]!.length == 0 ||
+        currentSize != this.balanceHistory[marketKey]![0]!.size
 			) {
 				this.tradesPagesParsed[marketKey] = 0
 				this.tradesCurrentPage[marketKey] = 0
@@ -286,10 +283,10 @@ export class ZoDBTradeUser extends ZoDBPnlUser {
 				this.balanceHistory[marketKey] = [
 					{
 						price:
-							currentSize < 1 / 1_000_000_000
-								? 0
-								: position.pCoins.number /
-								  position.coins.number,
+              currentSize < 1 / 1_000_000_000
+              	? 0
+              	: position.pCoins.number /
+                position.coins.number,
 						size: currentSize > 1 / 1_000_000_000 ? currentSize : 0,
 						isLong: position.isLong,
 						isMaker: false,
@@ -328,44 +325,44 @@ export class ZoDBTradeUser extends ZoDBPnlUser {
 			market: marketKey,
 			page: this.fundingPagesParsed[marketKey]!,
 		})
-		this.fundingPagesParsed[marketKey]!++
-		if (rawFunding.length == 0) {
-			this.fundingParsed[marketKey] = true
-			return this.fundingHistory[marketKey]
-		}
-		const processedFunding = rawFunding.map((fundingHistoryEntry) => {
-			return {
-				date: new Date(fundingHistoryEntry.time * 1000),
-				fundingIndex: fundingHistoryEntry.fundingIndex / 1_000_000,
-				fundingCollected: 0,
-				hourlyFunding:
-					fundingHistoryEntry.hourly &&
-					fundingHistoryEntry.hourly * 100,
-				unixTs: fundingHistoryEntry.time,
-			}
-		})
-		if (this.fundingHistory[marketKey]) {
-			const lastFundingTime =
-				this.fundingHistory[marketKey]![
-					this.fundingHistory[marketKey]!.length - 1
-				].date.getTime()
-			for (const newEntry of processedFunding) {
-				if (newEntry.date.getTime() < lastFundingTime) {
-					this.fundingHistory[marketKey]!.push(newEntry)
-				}
-			}
-		} else {
-			this.fundingHistory[marketKey] = processedFunding
-		}
-		let rollingFundingIndex = 1
-		for (let i = this.fundingHistory[marketKey]!.length - 1; i >= 0; i--) {
-			this.fundingHistory[marketKey]![i].fundingCollected =
-				this.fundingHistory[marketKey]![i].fundingIndex -
-				rollingFundingIndex
-			rollingFundingIndex =
-				this.fundingHistory[marketKey]![i].fundingIndex
-		}
-		return this.fundingHistory[marketKey]
+    this.fundingPagesParsed[marketKey]!++
+    if (rawFunding.length == 0) {
+    	this.fundingParsed[marketKey] = true
+    	return this.fundingHistory[marketKey]
+    }
+    const processedFunding = rawFunding.map((fundingHistoryEntry) => {
+    	return {
+    		date: new Date(fundingHistoryEntry.time * 1000),
+    		fundingIndex: fundingHistoryEntry.fundingIndex / 1_000_000,
+    		fundingCollected: 0,
+    		hourlyFunding:
+          fundingHistoryEntry.hourly &&
+          fundingHistoryEntry.hourly * 100,
+    		unixTs: fundingHistoryEntry.time,
+    	}
+    })
+    if (this.fundingHistory[marketKey]) {
+    	const lastFundingTime =
+        this.fundingHistory[marketKey]![
+        this.fundingHistory[marketKey]!.length - 1
+        ].date.getTime()
+    	for (const newEntry of processedFunding) {
+    		if (newEntry.date.getTime() < lastFundingTime) {
+          this.fundingHistory[marketKey]!.push(newEntry)
+    		}
+    	}
+    } else {
+    	this.fundingHistory[marketKey] = processedFunding
+    }
+    let rollingFundingIndex = 1
+    for (let i = this.fundingHistory[marketKey]!.length - 1; i >= 0; i--) {
+      this.fundingHistory[marketKey]![i].fundingCollected =
+        this.fundingHistory[marketKey]![i].fundingIndex -
+        rollingFundingIndex
+      rollingFundingIndex =
+        this.fundingHistory[marketKey]![i].fundingIndex
+    }
+    return this.fundingHistory[marketKey]
 	}
 
 	async getFundingByPage(marketKey: string, page: number) {
@@ -387,7 +384,7 @@ export class ZoDBTradeUser extends ZoDBPnlUser {
 		let rollingFundingIndex = 1
 		for (let i = processedFunding.length - 1; i >= 0; i--) {
 			processedFunding.fundingCollected =
-				processedFunding.fundingIndex - rollingFundingIndex
+        processedFunding.fundingIndex - rollingFundingIndex
 			rollingFundingIndex = processedFunding.fundingIndex
 		}
 		processedFunding.splice(-1, 1)

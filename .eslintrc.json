@@ -17,6 +17,7 @@
     "@typescript-eslint"
   ],
   "rules": {
+    "indent": ["error", "tab"],
     "no-async-promise-executor": "off",
     "@typescript-eslint/ban-ts-comment": "off",
     "@typescript-eslint/no-this-alias": "off",

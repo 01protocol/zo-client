@@ -32,6 +32,7 @@ import {
 	ZERO_ONE_MAINNET_PROGRAM_ID,
 } from "../config"
 import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes"
+import { OrderInfo, PositionInfo } from "../types/dataTypes"
 
 export * from "../types/dataTypes"
 
@@ -45,8 +46,8 @@ export function sleep(ms: number): Promise<void> {
 }
 
 export enum Cluster {
-	Devnet = "Devnet",
-	Mainnet = "Mainnet",
+  Devnet = "Devnet",
+  Mainnet = "Mainnet",
 }
 
 export function createProvider(
@@ -56,6 +57,72 @@ export function createProvider(
 ): Provider {
 	return new Provider(conn, wallet, opts)
 }
+
+
+export function arePositionsEqual(a: PositionInfo, b: PositionInfo) {
+	if (!a.coins.decimal.eq(b.coins.decimal)) {
+		return false
+	}
+	if (!a.pCoins.decimal.eq(b.pCoins.decimal)) {
+		return false
+	}
+	if (!a.realizedPnL.decimal.eq(b.realizedPnL.decimal)) {
+		return false
+	}
+	if (!a.fundingIndex.eq(b.fundingIndex)) {
+		return false
+	}
+	if (a.isLong != b.isLong) {
+		return false
+	}
+	if (a.marketKey != b.marketKey) {
+		return false
+	}
+	return true
+}
+
+export enum OrderChangeStatus{
+	Changed,
+	Missing,
+	Present
+}
+
+export function getOrderStatus(a: OrderInfo, arr: OrderInfo[]):OrderChangeStatus {
+	for (const b of arr) {
+		if (a.orderId.toString() == b.orderId.toString()) {
+			if (!areOrdersEqual(a, b)) {
+				return OrderChangeStatus.Changed
+			} else {
+				return OrderChangeStatus.Present
+			}
+		}
+	}
+	return OrderChangeStatus.Missing
+}
+
+
+export function areOrdersEqual(a: OrderInfo, b: OrderInfo) {
+	if (!a.coins.decimal.eq(b.coins.decimal)) {
+		return false
+	}
+	if (!a.pCoins.decimal.eq(b.pCoins.decimal)) {
+		return false
+	}
+	if (!a.price.decimal.eq(b.price.decimal)) {
+		return false
+	}
+	if (!a.orderId.eq(b.orderId)) {
+		return false
+	}
+	if (a.long != b.long) {
+		return false
+	}
+	if (a.symbol != b.marketKey) {
+		return false
+	}
+	return true
+}
+
 
 export async function getConfirmedTransaction(
 	connection: Connection,
@@ -366,11 +433,11 @@ export async function getWrappedSolInstructionsAndKey(
 	initialSmollAmount,
 	provider,
 ): Promise<{
-	createTokenAccountIx: TransactionInstruction
-	initTokenAccountIx: TransactionInstruction
-	closeTokenAccountIx: TransactionInstruction
-	intermediary: PublicKey
-	intermediaryKeypair: Keypair
+  createTokenAccountIx: TransactionInstruction
+  initTokenAccountIx: TransactionInstruction
+  closeTokenAccountIx: TransactionInstruction
+  intermediary: PublicKey
+  intermediaryKeypair: Keypair
 }> {
 	// sol wrapping code taken from jet: https://github.com/jet-lab/jet-v1/blob/30c56d5c14b68685466164fc45c96080f1d9348a/app/src/scripts/jet.ts
 	const intermediaryKeypair = Keypair.generate()
