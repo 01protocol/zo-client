@@ -8,6 +8,18 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+
+## [0.9.6]
+- Improved subscriptions by adding `stateLimit` and `cacheLimit` to limit the update frequency, add optional `withBackup` parameter
+- Added change log to emitted events to help build a websocket
+
+## [0.9.5]
+
+- Zamm: created zamm class which allows to arb zamm and listen to its changes
+- EventEmitters: improved EventEmitters and started to clean up old listeners
+- ZoUser: made more methods directly accessible through zoUser removing the complexity of calling state or margin, and added ZoUser.load
+- Linting: added universal linting config for 01 repositories
+
 ## [0.9.1]
 
 - ZoUser: added a user class which allows interacting with 01 database, and provides a convenient wrapper
