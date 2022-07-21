@@ -174,13 +174,13 @@ export class ZoUser extends ZoDBUser {
 	subLock = new AsyncLock()
 	eventEmitter: EventEmitter<UpdateEvents, ChangeEvent<any>> | null = null
 
-	async subscribe(withBackup = false) {
+	async subscribe(withBackup = false, stateLimit = 1000, cacheLimit = 5000) {
 		await this.subLock.waitAndLock()
 		if (this.eventEmitter) {
 			return
 		}
 		this.eventEmitter = new EventEmitter()
-		await this.margin.subscribe(withBackup)
+		await this.margin.subscribe(withBackup, stateLimit, cacheLimit)
     this.margin.eventEmitter!.addListener(
     	UpdateEvents.marginModified,
     	(data) => {
