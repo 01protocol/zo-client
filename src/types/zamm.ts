@@ -1,15 +1,7 @@
 export type ZammIdlType = {
   "version": "0.1.0",
   "name": "zamm",
-  "constants": [
-    {
-      "name": "CRANK_FEE",
-      "type": "u64",
-      "value": "10_000"
-    },
-  ],
-  "instructions":
-		[
+  "instructions": [
     {
       "name": "initState",
       "accounts": [
@@ -615,11 +607,6 @@ export type ZammIdlType = {
       "name": "arbZamm",
       "accounts": [
         {
-          "name": "state",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
           "name": "authority",
           "isMut": false,
           "isSigner": true
@@ -636,7 +623,7 @@ export type ZammIdlType = {
         },
         {
           "name": "zoState",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -705,11 +692,6 @@ export type ZammIdlType = {
           "isSigner": false
         },
         {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -731,7 +713,7 @@ export type ZammIdlType = {
           "type": "i64"
         },
         {
-          "name": "maxDy",
+          "name": "limitDy",
           "type": "u64"
         }
       ]
@@ -1124,16 +1106,9 @@ export type ZammIdlType = {
   ]
 }
 
-export const ZAMM_IDL: ZammIdlType = {
+export const ZAMM_IDL: ZammIdlType ={
 	"version": "0.1.0",
 	"name": "zamm",
-	"constants": [
-		{
-			"name": "CRANK_FEE",
-			"type": "u64",
-			"value": "10_000"
-		},
-	],
 	"instructions": [
 		{
 			"name": "initState",
@@ -1141,25 +1116,25 @@ export const ZAMM_IDL: ZammIdlType = {
 				{
 					"name": "admin",
 					"isMut": true,
-					"isSigner": true,
+					"isSigner": true
 				},
 				{
 					"name": "state",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "systemProgram",
 					"isMut": false,
-					"isSigner": false,
-				},
+					"isSigner": false
+				}
 			],
 			"args": [
 				{
 					"name": "stateNonce",
-					"type": "u8",
-				},
-			],
+					"type": "u8"
+				}
+			]
 		},
 		{
 			"name": "initZamm",
@@ -1167,88 +1142,88 @@ export const ZAMM_IDL: ZammIdlType = {
 				{
 					"name": "state",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "admin",
 					"isMut": true,
-					"isSigner": true,
+					"isSigner": true
 				},
 				{
 					"name": "zamm",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "marketKey",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "rewardVault",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoState",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoStateSigner",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoMargin",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoControl",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoOo",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "systemProgram",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "rent",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoProgram",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoDexProgram",
 					"isMut": false,
-					"isSigner": false,
-				},
+					"isSigner": false
+				}
 			],
 			"args": [
 				{
 					"name": "zammNonce",
-					"type": "u8",
+					"type": "u8"
 				},
 				{
 					"name": "zoMarginNonce",
-					"type": "u8",
+					"type": "u8"
 				},
 				{
 					"name": "rate",
-					"type": "u64",
-				},
-			],
+					"type": "u64"
+				}
+			]
 		},
 		{
 			"name": "pauseUnpause",
@@ -1256,20 +1231,20 @@ export const ZAMM_IDL: ZammIdlType = {
 				{
 					"name": "state",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "admin",
 					"isMut": false,
-					"isSigner": true,
+					"isSigner": true
 				},
 				{
 					"name": "zamm",
 					"isMut": true,
-					"isSigner": false,
-				},
+					"isSigner": false
+				}
 			],
-			"args": [],
+			"args": []
 		},
 		{
 			"name": "updateZamm",
@@ -1277,25 +1252,25 @@ export const ZAMM_IDL: ZammIdlType = {
 				{
 					"name": "state",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "admin",
 					"isMut": false,
-					"isSigner": true,
+					"isSigner": true
 				},
 				{
 					"name": "zamm",
 					"isMut": true,
-					"isSigner": false,
-				},
+					"isSigner": false
+				}
 			],
 			"args": [
 				{
 					"name": "newRate",
-					"type": "u64",
-				},
-			],
+					"type": "u64"
+				}
+			]
 		},
 		{
 			"name": "initStakerInfo",
@@ -1303,40 +1278,40 @@ export const ZAMM_IDL: ZammIdlType = {
 				{
 					"name": "state",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "authority",
 					"isMut": true,
-					"isSigner": true,
+					"isSigner": true
 				},
 				{
 					"name": "stakerInfo",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zamm",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "margin",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "dexMarket",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "systemProgram",
 					"isMut": false,
-					"isSigner": false,
-				},
+					"isSigner": false
+				}
 			],
-			"args": [],
+			"args": []
 		},
 		{
 			"name": "stake",
@@ -1344,110 +1319,110 @@ export const ZAMM_IDL: ZammIdlType = {
 				{
 					"name": "authority",
 					"isMut": false,
-					"isSigner": true,
+					"isSigner": true
 				},
 				{
 					"name": "authXTokenAcc",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "authYTokenAcc",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "stakerInfo",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zamm",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoState",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoStateSigner",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoCache",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoXVault",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoYVault",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zammMargin",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zammControl",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "dexMarket",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "eventQ",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "tokenProgram",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "systemProgram",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoProgram",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoDexProgram",
 					"isMut": false,
-					"isSigner": false,
-				},
+					"isSigner": false
+				}
 			],
 			"args": [
 				{
 					"name": "limit",
-					"type": "u16",
+					"type": "u16"
 				},
 				{
 					"name": "p",
-					"type": "u64",
+					"type": "u64"
 				},
 				{
 					"name": "startY",
 					"type": {
-						"option": "u64",
-					},
-				},
-			],
+						"option": "u64"
+					}
+				}
+			]
 		},
 		{
 			"name": "unstake",
@@ -1455,124 +1430,124 @@ export const ZAMM_IDL: ZammIdlType = {
 				{
 					"name": "authority",
 					"isMut": false,
-					"isSigner": true,
+					"isSigner": true
 				},
 				{
 					"name": "stakerInfo",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zamm",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "xMint",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoState",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoStateSigner",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoCache",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zammMargin",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zammControl",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zammOo",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "authMargin",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "authControl",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "authOo",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "dexMarket",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "reqQ",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "eventQ",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "marketBids",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "marketAsks",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "tokenProgram",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "systemProgram",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoProgram",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoDexProgram",
 					"isMut": false,
-					"isSigner": false,
-				},
+					"isSigner": false
+				}
 			],
 			"args": [
 				{
 					"name": "limit",
-					"type": "u16",
+					"type": "u16"
 				},
 				{
 					"name": "p",
-					"type": "u64",
-				},
-			],
+					"type": "u64"
+				}
+			]
 		},
 		{
 			"name": "rebalance",
@@ -1580,95 +1555,95 @@ export const ZAMM_IDL: ZammIdlType = {
 				{
 					"name": "payer",
 					"isMut": false,
-					"isSigner": true,
+					"isSigner": true
 				},
 				{
 					"name": "zamm",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoState",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoStateSigner",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoCache",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zammMargin",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zammControl",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zammOo",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "dexMarket",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "reqQ",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "eventQ",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "marketBids",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "marketAsks",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "tokenProgram",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "systemProgram",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoProgram",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoDexProgram",
 					"isMut": false,
-					"isSigner": false,
-				},
+					"isSigner": false
+				}
 			],
 			"args": [
 				{
 					"name": "limit",
-					"type": "u16",
-				},
-			],
+					"type": "u16"
+				}
+			]
 		},
 		{
 			"name": "redeemRewards",
@@ -1676,190 +1651,180 @@ export const ZAMM_IDL: ZammIdlType = {
 				{
 					"name": "state",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "authority",
 					"isMut": false,
-					"isSigner": true,
+					"isSigner": true
 				},
 				{
 					"name": "margin",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "stakerInfo",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "rewardVault",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zamm",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "tokenProgram",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoState",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoStateSigner",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoVault",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoCache",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoProgram",
 					"isMut": false,
-					"isSigner": false,
-				},
+					"isSigner": false
+				}
 			],
-			"args": [],
+			"args": []
 		},
 		{
 			"name": "arbZamm",
 			"accounts": [
 				{
-					"name": "state",
-					"isMut": true,
-					"isSigner": false,
-				},
-				{
 					"name": "authority",
 					"isMut": false,
-					"isSigner": true,
+					"isSigner": true
 				},
 				{
 					"name": "zamm",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "xMint",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoState",
-					"isMut": false,
-					"isSigner": false,
+					"isMut": true,
+					"isSigner": false
 				},
 				{
 					"name": "zoStateSigner",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoCache",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zammMargin",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zammControl",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zammOo",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "authMargin",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "authControl",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "authOo",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "dexMarket",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "reqQ",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "eventQ",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "marketBids",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "marketAsks",
 					"isMut": true,
-					"isSigner": false,
-				},
-				{
-					"name": "tokenProgram",
-					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "systemProgram",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoProgram",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoDexProgram",
 					"isMut": false,
-					"isSigner": false,
-				},
+					"isSigner": false
+				}
 			],
 			"args": [
 				{
 					"name": "dx",
-					"type": "i64",
+					"type": "i64"
 				},
 				{
-					"name": "maxDy",
-					"type": "u64",
-				},
-			],
+					"name": "limitDy",
+					"type": "u64"
+				}
+			]
 		},
 		{
 			"name": "cancelAllOrders",
@@ -1867,90 +1832,90 @@ export const ZAMM_IDL: ZammIdlType = {
 				{
 					"name": "payer",
 					"isMut": false,
-					"isSigner": true,
+					"isSigner": true
 				},
 				{
 					"name": "zamm",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoState",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoStateSigner",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoCache",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zammMargin",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zammControl",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zammOo",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "marketKey",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "reqQ",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "eventQ",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "marketBids",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "marketAsks",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoProgram",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoDexProgram",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "systemProgram",
 					"isMut": false,
-					"isSigner": false,
-				},
+					"isSigner": false
+				}
 			],
 			"args": [
 				{
 					"name": "limit",
-					"type": "u16",
-				},
-			],
+					"type": "u16"
+				}
+			]
 		},
 		{
 			"name": "placeOrders",
@@ -1958,91 +1923,91 @@ export const ZAMM_IDL: ZammIdlType = {
 				{
 					"name": "payer",
 					"isMut": false,
-					"isSigner": true,
+					"isSigner": true
 				},
 				{
 					"name": "zamm",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoState",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoStateSigner",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoCache",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zammMargin",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zammControl",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zammOo",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "marketKey",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "reqQ",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "eventQ",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "marketBids",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "marketAsks",
 					"isMut": true,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoProgram",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "zoDexProgram",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "systemProgram",
 					"isMut": false,
-					"isSigner": false,
+					"isSigner": false
 				},
 				{
 					"name": "rent",
 					"isMut": false,
-					"isSigner": false,
-				},
+					"isSigner": false
+				}
 			],
-			"args": [],
-		},
+			"args": []
+		}
 	],
 	"accounts": [
 		{
@@ -2052,46 +2017,46 @@ export const ZAMM_IDL: ZammIdlType = {
 				"fields": [
 					{
 						"name": "nonce",
-						"type": "u8",
+						"type": "u8"
 					},
 					{
 						"name": "authority",
-						"type": "publicKey",
+						"type": "publicKey"
 					},
 					{
 						"name": "margin",
-						"type": "publicKey",
+						"type": "publicKey"
 					},
 					{
 						"name": "dexMarket",
-						"type": "publicKey",
+						"type": "publicKey"
 					},
 					{
 						"name": "lp",
-						"type": "u64",
+						"type": "u64"
 					},
 					{
 						"name": "xDeposit",
-						"type": "u64",
+						"type": "u64"
 					},
 					{
 						"name": "rewardEntryTime",
-						"type": "u64",
+						"type": "u64"
 					},
 					{
 						"name": "lastRewardIndex",
 						"type": {
-							"defined": "ZammI80F48",
-						},
+							"defined": "ZammI80F48"
+						}
 					},
 					{
 						"name": "readyToWithdraw",
 						"type": {
-							"defined": "ZammI80F48",
-						},
-					},
-				],
-			},
+							"defined": "ZammI80F48"
+						}
+					}
+				]
+			}
 		},
 		{
 			"name": "State",
@@ -2100,14 +2065,14 @@ export const ZAMM_IDL: ZammIdlType = {
 				"fields": [
 					{
 						"name": "nonce",
-						"type": "u8",
+						"type": "u8"
 					},
 					{
 						"name": "admin",
-						"type": "publicKey",
-					},
-				],
-			},
+						"type": "publicKey"
+					}
+				]
+			}
 		},
 		{
 			"name": "zamm",
@@ -2116,51 +2081,51 @@ export const ZAMM_IDL: ZammIdlType = {
 				"fields": [
 					{
 						"name": "nonce",
-						"type": "u8",
+						"type": "u8"
 					},
 					{
 						"name": "marketKey",
-						"type": "publicKey",
+						"type": "publicKey"
 					},
 					{
 						"name": "x",
-						"type": "u64",
+						"type": "u64"
 					},
 					{
 						"name": "totalLp",
-						"type": "u64",
+						"type": "u64"
 					},
 					{
 						"name": "marginKey",
-						"type": "publicKey",
+						"type": "publicKey"
 					},
 					{
 						"name": "status",
 						"type": {
-							"defined": "ZammStatus",
-						},
+							"defined": "ZammStatus"
+						}
 					},
 					{
 						"name": "rewardRate",
-						"type": "u64",
+						"type": "u64"
 					},
 					{
 						"name": "rateLastUpdated",
-						"type": "u64",
+						"type": "u64"
 					},
 					{
 						"name": "rewardIndex",
 						"type": {
-							"defined": "ZammI80F48",
-						},
+							"defined": "ZammI80F48"
+						}
 					},
 					{
 						"name": "rewardVault",
-						"type": "publicKey",
-					},
-				],
-			},
-		},
+						"type": "publicKey"
+					}
+				]
+			}
+		}
 	],
 	"types": [
 		{
@@ -2170,10 +2135,10 @@ export const ZAMM_IDL: ZammIdlType = {
 				"fields": [
 					{
 						"name": "data",
-						"type": "i128",
-					},
-				],
-			},
+						"type": "i128"
+					}
+				]
+			}
 		},
 		{
 			"name": "ZammStatus",
@@ -2181,70 +2146,70 @@ export const ZAMM_IDL: ZammIdlType = {
 				"kind": "enum",
 				"variants": [
 					{
-						"name": "OrdersCancelled",
+						"name": "OrdersCancelled"
 					},
 					{
-						"name": "IOrdersPlaced",
+						"name": "IOrdersPlaced"
 					},
 					{
-						"name": "IIOrdersPlaced",
+						"name": "IIOrdersPlaced"
 					},
 					{
-						"name": "IIIOrdersPlaced",
+						"name": "IIIOrdersPlaced"
 					},
 					{
-						"name": "IVOrdersPlaced",
+						"name": "IVOrdersPlaced"
 					},
 					{
-						"name": "VOrdersPlaced",
+						"name": "VOrdersPlaced"
 					},
 					{
-						"name": "Paused",
-					},
-				],
-			},
-		},
+						"name": "Paused"
+					}
+				]
+			}
+		}
 	],
 	"errors": [
 		{
 			"code": 6000,
 			"name": "InvalidArgument",
-			"msg": "At",
+			"msg": "At"
 		},
 		{
 			"code": 6001,
 			"name": "InvalidZammStatus",
-			"msg": "Zamm",
+			"msg": "Zamm"
 		},
 		{
 			"code": 6002,
 			"name": "UncancelledOrders",
-			"msg": "Some",
+			"msg": "Some"
 		},
 		{
 			"code": 6003,
 			"name": "InvalidZoState",
-			"msg": "Invalid",
+			"msg": "Invalid"
 		},
 		{
 			"code": 6004,
 			"name": "InvalidTokenAccount",
-			"msg": "Invalid",
+			"msg": "Invalid"
 		},
 		{
 			"code": 6005,
 			"name": "SlippageExceeded",
-			"msg": "Slippage",
+			"msg": "Slippage"
 		},
 		{
 			"code": 6006,
 			"name": "InvalidEventQueue",
-			"msg": "Event",
+			"msg": "Event"
 		},
 		{
 			"code": 6007,
 			"name": "EventQueueNotCleared",
-			"msg": "Zamm",
-		},
-	],
+			"msg": "Zamm"
+		}
+	]
 }

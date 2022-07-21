@@ -8,39 +8,43 @@ import { CacheSchema, ChangeEvent, UpdateEvents, Zo } from "../types"
 import { loadSymbol, loadWI80F48 } from "../utils"
 import EventEmitter from "eventemitter3"
 
-type OracleCache = Omit<CacheSchema["oracles"][0],
-  "symbol" | "price" | "twap"> & {
-  symbol: string
-  price: Num
-  twap: Num
+type OracleCache = Omit<
+	CacheSchema["oracles"][0],
+	"symbol" | "price" | "twap"
+> & {
+	symbol: string
+	price: Num
+	twap: Num
 }
 
 type MarkCache = Omit<CacheSchema["marks"][0], "price" | "twap"> & {
-  price: Num
-  twap: {
-    cumulAvg: Num
-    open: Num
-    low: Num
-    high: Num
-    close: Num
-    lastSampleStartTime: Date
-  }
+	price: Num
+	twap: {
+		cumulAvg: Num
+		open: Num
+		low: Num
+		high: Num
+		close: Num
+		lastSampleStartTime: Date
+	}
 }
 
-type BorrowCache = Omit<CacheSchema["borrowCache"][0],
-  "supply" | "borrows" | "supplyMultiplier" | "borrowMultiplier"> & {
-  rawSupply: Decimal
-  rawBorrows: Decimal
-  actualSupply: Num
-  actualBorrows: Num
-  supplyMultiplier: Decimal
-  borrowMultiplier: Decimal
+type BorrowCache = Omit<
+	CacheSchema["borrowCache"][0],
+	"supply" | "borrows" | "supplyMultiplier" | "borrowMultiplier"
+> & {
+	rawSupply: Decimal
+	rawBorrows: Decimal
+	actualSupply: Num
+	actualBorrows: Num
+	supplyMultiplier: Decimal
+	borrowMultiplier: Decimal
 }
 
 type Schema = Omit<CacheSchema, "oracles" | "marks" | "borrowCache"> & {
-  oracles: OracleCache[]
-  marks: MarkCache[]
-  borrowCache: BorrowCache[]
+	oracles: OracleCache[]
+	marks: MarkCache[]
+	borrowCache: BorrowCache[]
 }
 
 /**
@@ -53,19 +57,19 @@ export default class Cache extends BaseAccount<Schema> {
 		program: Program<Zo>,
 		k: PublicKey,
 		data: Schema,
-    private _st: StateSchema,
-    commitment?: Commitment,
+		private _st: StateSchema,
+		commitment?: Commitment,
 	) {
 		super(program, k, data, commitment)
 	}
 
 	/**
-   * Loads a new Cache object from its public key.
-   * @param program
-   * @param k The cache account's public key.
-   * @param st
-   * @param commitment
-   */
+	 * Loads a new Cache object from its public key.
+	 * @param program
+	 * @param k The cache account's public key.
+	 * @param st
+	 * @param commitment
+	 */
 	static async load(
 		program: Program<Zo>,
 		k: PublicKey,
@@ -97,16 +101,17 @@ export default class Cache extends BaseAccount<Schema> {
 	async updateState(st: StateSchema): Promise<void> {
 		this._st = st
 		this.data = Cache.processRawCacheData(
-      // @ts-ignore
-      this.data as CacheSchema,
-      this._st,
+			// @ts-ignore
+			this.data as CacheSchema,
+			this._st,
 		)
 	}
 
 	/**
-   * @param withBackup
-   * @param subscribeLimit - minimum time difference between cache updates, to prevent constant reloads
-   */
+	 *
+	 * @param withBackup - use a backup `confirmed` listener
+	 * @param subscribeLimit - minimum time difference between cache updates, to prevent constant reloads
+	 */
 	async subscribe(withBackup = false, subscribeLimit = 5000): Promise<void> {
 		await this.subLock.waitAndLock()
 		if (this.eventEmitter) return
@@ -117,10 +122,13 @@ export default class Cache extends BaseAccount<Schema> {
 
 		function processUpdate(account) {
 			that.data = Cache.processRawCacheData(account, that._st)
-      that.eventEmitter!.emit(UpdateEvents._cacheModified, [])
+			that.eventEmitter!.emit(UpdateEvents._cacheModified, [])
 		}
 
-		anchorEventEmitter.addListener("change", this.updateAccountOnChange(processUpdate, this))
+		anchorEventEmitter.addListener(
+			"change",
+			this.updateAccountOnChange(processUpdate, this),
+		)
 		this.subLock.unlock()
 	}
 
@@ -128,8 +136,8 @@ export default class Cache extends BaseAccount<Schema> {
 		await this.subLock.waitAndLock()
 		try {
 			await this.program.account["cache"].unsubscribe(this.pubkey)
-      this.eventEmitter!.removeAllListeners()
-      this.eventEmitter = null
+			this.eventEmitter!.removeAllListeners()
+			this.eventEmitter = null
 		} catch (_) {
 			//
 		}
@@ -143,7 +151,7 @@ export default class Cache extends BaseAccount<Schema> {
 		return {
 			...data,
 			oracles: data.oracles
-			//@ts-ignore
+				//@ts-ignore
 				.filter((c) => !c.symbol.data.every((x) => x === 0))
 				.map((c) => {
 					const decimals = c.quoteDecimals - c.baseDecimals
@@ -223,9 +231,9 @@ export default class Cache extends BaseAccount<Schema> {
 	}
 
 	/**
-   * @param sym The collateral symbol. Ex: ("BTC")
-   * @returns The oracle cache for the given collateral.
-   */
+	 * @param sym The collateral symbol. Ex: ("BTC")
+	 * @returns The oracle cache for the given collateral.
+	 */
 	getOracleBySymbol(sym: string): OracleCache {
 		const i = this.data.oracles.findIndex((x) => x.symbol === sym)
 		if (i < 0) {

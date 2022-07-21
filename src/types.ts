@@ -14,8 +14,7 @@ export interface Wallet {
 
 export type TransactionId = string
 
-export *  from "./types/changeLog"
-
+export * from "./types/changeLog"
 
 // NOTE: These intersection types are a temporary workaround,
 // as anchor's type inference isn't complete yet.
@@ -60,18 +59,18 @@ export enum OrderTypeName {
 export function parseOrderType(orderType: OrderType | OrderTypeName) {
 	if (typeof orderType == "string") {
 		switch (orderType) {
-		case OrderTypeName.Limit:
-			return { limit: {} }
-		case OrderTypeName.ImmediateOrCancel:
-			return { immediateOrCancel: {} }
-		case OrderTypeName.PostOnly:
-			return { postOnly: {} }
-		case OrderTypeName.ReduceOnlyIoc:
-			return { reduceOnlyIoc: {} }
-		case OrderTypeName.ReduceOnlyLimit:
-			return { reduceOnlyLimit: {} }
-		case OrderTypeName.FillOrKill:
-			return { fillOrKill: {} }
+			case OrderTypeName.Limit:
+				return { limit: {} }
+			case OrderTypeName.ImmediateOrCancel:
+				return { immediateOrCancel: {} }
+			case OrderTypeName.PostOnly:
+				return { postOnly: {} }
+			case OrderTypeName.ReduceOnlyIoc:
+				return { reduceOnlyIoc: {} }
+			case OrderTypeName.ReduceOnlyLimit:
+				return { reduceOnlyLimit: {} }
+			case OrderTypeName.FillOrKill:
+				return { fillOrKill: {} }
 		}
 	}
 	return orderType as OrderType
@@ -143,6 +142,12 @@ export type ControlSchema = IdlAccounts<Zo>["control"] & {
 }
 
 export type ZammSchema = IdlAccounts<ZammIdlType>["zamm"]
+
+export enum MarginsClusterEvents {
+	MarginModified = "One Margin Reloaded",
+	ControlModified = "One Control Reloaded",
+	MarginsReloaded = "Margins Reloaded",
+}
 
 export enum UpdateEvents {
 	stateModified = "stateModified",

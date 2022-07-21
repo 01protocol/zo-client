@@ -46,8 +46,8 @@ export function sleep(ms: number): Promise<void> {
 }
 
 export enum Cluster {
-  Devnet = "Devnet",
-  Mainnet = "Mainnet",
+	Devnet = "Devnet",
+	Mainnet = "Mainnet",
 }
 
 export function createProvider(
@@ -57,7 +57,6 @@ export function createProvider(
 ): Provider {
 	return new Provider(conn, wallet, opts)
 }
-
 
 export function arePositionsEqual(a: PositionInfo, b: PositionInfo) {
 	if (!a.coins.decimal.eq(b.coins.decimal)) {
@@ -81,13 +80,16 @@ export function arePositionsEqual(a: PositionInfo, b: PositionInfo) {
 	return true
 }
 
-export enum OrderChangeStatus{
+export enum OrderChangeStatus {
 	Changed,
 	Missing,
-	Present
+	Present,
 }
 
-export function getOrderStatus(a: OrderInfo, arr: OrderInfo[]):OrderChangeStatus {
+export function getOrderStatus(
+	a: OrderInfo,
+	arr: OrderInfo[],
+): OrderChangeStatus {
 	for (const b of arr) {
 		if (a.orderId.toString() == b.orderId.toString()) {
 			if (!areOrdersEqual(a, b)) {
@@ -99,7 +101,6 @@ export function getOrderStatus(a: OrderInfo, arr: OrderInfo[]):OrderChangeStatus
 	}
 	return OrderChangeStatus.Missing
 }
-
 
 export function areOrdersEqual(a: OrderInfo, b: OrderInfo) {
 	if (!a.coins.decimal.eq(b.coins.decimal)) {
@@ -122,7 +123,6 @@ export function areOrdersEqual(a: OrderInfo, b: OrderInfo) {
 	}
 	return true
 }
-
 
 export async function getConfirmedTransaction(
 	connection: Connection,
@@ -433,11 +433,11 @@ export async function getWrappedSolInstructionsAndKey(
 	initialSmollAmount,
 	provider,
 ): Promise<{
-  createTokenAccountIx: TransactionInstruction
-  initTokenAccountIx: TransactionInstruction
-  closeTokenAccountIx: TransactionInstruction
-  intermediary: PublicKey
-  intermediaryKeypair: Keypair
+	createTokenAccountIx: TransactionInstruction
+	initTokenAccountIx: TransactionInstruction
+	closeTokenAccountIx: TransactionInstruction
+	intermediary: PublicKey
+	intermediaryKeypair: Keypair
 }> {
 	// sol wrapping code taken from jet: https://github.com/jet-lab/jet-v1/blob/30c56d5c14b68685466164fc45c96080f1d9348a/app/src/scripts/jet.ts
 	const intermediaryKeypair = Keypair.generate()

@@ -78,6 +78,10 @@ export class ZoMarket {
 	}
 	private _layoutOverride?: any
 
+	getEventQueueAddress() {
+		return this._decoded.eventQueue
+	}
+
 	private readonly _feeDiscountKeysCache: {
 		[publicKey: string]: {
 			accounts: Array<{

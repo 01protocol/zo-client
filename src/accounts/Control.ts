@@ -72,11 +72,15 @@ export default class Control extends BaseAccount<Schema> {
 
 	eventEmitter: EventEmitter<UpdateEvents, ChangeEvent<any>> | null = null
 
-	async subscribe(withBackup = false,): Promise<void> {
+	/**
+	 *
+	 * @param withBackup - use a backup `confirmed` listener
+	 */
+	async subscribe(withBackup = false): Promise<void> {
 		await this.subLock.waitAndLock()
 		if (this.eventEmitter) return
 		this.eventEmitter = new EventEmitter()
-		const anchorEventEmitter = await this._subscribe("control",withBackup)
+		const anchorEventEmitter = await this._subscribe("control", withBackup)
 		const that = this
 		anchorEventEmitter.addListener("change", (account) => {
 			that.data = account

@@ -1,16 +1,23 @@
-import { Commitment, PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js"
-import { Program, utils } from "@project-serum/anchor"
+import {
+	Commitment,
+	PublicKey,
+	SystemProgram,
+	SYSVAR_RENT_PUBKEY,
+	TransactionInstruction,
+} from "@solana/web3.js"
+import { Program } from "@project-serum/anchor"
 import BaseAccount from "./BaseAccount"
 import State from "./State"
 import { UpdateEvents, ZammSchema, Zo } from "../types"
 import EventEmitter from "eventemitter3"
-import { TOKEN_PROGRAM_ID, USDC_DECIMALS, WRAPPED_SOL_MINT, ZAMM_PROGRAM_ID } from "../config"
+import { USDC_DECIMALS, WRAPPED_SOL_MINT, ZAMM_PROGRAM_ID } from "../config"
 import { ZAMM_IDL, ZammIdlType } from "../types/zamm"
 import Margin from "./margin/Margin"
 import BN from "bn.js"
 import Num from "../Num"
 import { USDC_SYMBOL } from "../utils"
 import Decimal from "decimal.js"
+import { decodeEventQueue, Event } from "../zoDex/queue"
 
 type Schema = Omit<ZammSchema, "rewardIndex" | "status">
 
@@ -24,23 +31,23 @@ export default class Zamm extends BaseAccount<Schema> {
 	Y = new Decimal(0)
 
 	private constructor(
-    public zammProgram: Program<ZammIdlType>,
-    k: PublicKey,
-    data: Schema,
-    public zammMargin: Margin,
-    public zoProgram: Program<Zo>,
-    commitment?: Commitment,
+		public zammProgram: Program<ZammIdlType>,
+		k: PublicKey,
+		data: Schema,
+		public zammMargin: Margin,
+		public zoProgram: Program<Zo>,
+		commitment?: Commitment,
 	) {
 		super(zoProgram, k, data, commitment)
 	}
 
 	/**
-   * Loads a new Zamm object from its public key.
-   * @param zoProgram
-   * @param k The zamm account's public key.
-   * @param state
-   * @param commitment
-   */
+	 * Loads a new Zamm object from its public key.
+	 * @param zoProgram
+	 * @param k The zamm account's public key.
+	 * @param state
+	 * @param commitment
+	 */
 	static async load(
 		zoProgram: Program<Zo>,
 		k: PublicKey,
@@ -50,6 +57,32 @@ export default class Zamm extends BaseAccount<Schema> {
 		const zammProgram = this.getZammProgram(zoProgram)
 		const zammSchema = await Zamm.fetch(zammProgram, k, commitment)
 		const margin = await Margin.load(zoProgram, state, null, k)
+		return new this(
+			zammProgram,
+			k,
+			zammSchema,
+			margin,
+			zoProgram,
+			commitment,
+		)
+	}
+
+	/**
+	 * Loads a new Zamm object from its public key. from prefetched data
+	 * @param zoProgram
+	 * @param k The zamm account's public key.
+	 * @param margin
+	 * @param zammSchema
+	 * @param commitment
+	 */
+	static loadPrefetched(
+		zoProgram: Program<Zo>,
+		k: PublicKey,
+		margin: Margin,
+		zammSchema: Schema,
+		commitment = "processed" as Commitment,
+	) {
+		const zammProgram = this.getZammProgram(zoProgram)
 		return new this(
 			zammProgram,
 			k,
@@ -82,14 +115,20 @@ export default class Zamm extends BaseAccount<Schema> {
 	}
 
 	/**
-   *
-   * @param xSensitivity - sensitivity to x changes
-   * @param ySensitivity - sensitivity to y changes
-   * @param withBackup - have a backup 'confirmed' channel to listen to
-   * @param stateLimit - state limit frequency update
-   * @param cacheLimit - cache limit frequency update
-   */
-	async subscribe(xSensitivity = 100, ySensitivity = 10, withBackup = false, stateLimit = 0, cacheLimit = 0): Promise<void> {
+	 *
+	 * @param xSensitivity - sensitivity to x changes
+	 * @param ySensitivity - sensitivity to y changes
+	 * @param withBackup - have a backup 'confirmed' channel to listen to
+	 * @param stateLimit - state limit frequency update
+	 * @param cacheLimit - cache limit frequency update
+	 */
+	async subscribe(
+		xSensitivity = 100,
+		ySensitivity = 10,
+		withBackup = false,
+		stateLimit = 0,
+		cacheLimit = 0,
+	): Promise<void> {
 		await this.subLock.waitAndLock()
 		if (this.eventEmitter) {
 			return
@@ -97,49 +136,71 @@ export default class Zamm extends BaseAccount<Schema> {
 		await this.zammMargin.subscribe(withBackup, stateLimit, cacheLimit)
 		await this.zammMargin.state.subscribeToEventQueue(this.marketSymbol)
 		this.eventEmitter = new EventEmitter()
-		const anchorEventEmitter = await this._subscribe("zamm", withBackup, this.zammProgram)
+		const anchorEventEmitter = await this._subscribe(
+			"zamm",
+			withBackup,
+			this.zammProgram,
+		)
 		const that = this
 		await this.zammMargin.eventEmitter?.addListener(
 			UpdateEvents.marginModified,
 			async () => {
+				const { X, Y, price } = await this.getXY()
 				const oldX = this.X.mul(xSensitivity).round()
 				const oldY = this.Y.mul(ySensitivity).round()
-				const { X, Y, price } = await this.getXY()
+				this.X = X
+				this.Y = Y
 				if (
 					!X.mul(xSensitivity).round().eq(oldX) ||
-          !Y.mul(ySensitivity).round().eq(oldY)
-				)
-          this.eventEmitter!.emit(UpdateEvents.zammModified, {
-          	X,
-          	Y,
-          	price,
-          })
+					!Y.mul(ySensitivity).round().eq(oldY)
+				) {
+					this.eventEmitter!.emit(UpdateEvents.zammModified, {
+						X,
+						Y,
+						price,
+					})
+				}
 			},
 		)
 		await this.zammMargin.state
 			.eqEmitter(this.marketSymbol)!
-			.addListener(UpdateEvents.eventQueueModified, async () => {
-				const oldX = this.X
-				const oldY = this.Y
-				const { X, Y, price } = await this.getXY()
-				if (!X.eq(oldX) || !Y.eq(oldY))
-          this.eventEmitter!.emit(UpdateEvents.zammModified, {
-          	X,
-          	Y,
-          	price,
-          })
-			})
+			.addListener(
+				State.getEventQueueUpdateEventName(this.marketSymbol),
+				async () => {
+					const { X, Y, price } = await this.getXY()
+					const oldX = this.X.mul(xSensitivity).round()
+					const oldY = this.Y.mul(ySensitivity).round()
+					this.X = X
+					this.Y = Y
+					if (
+						!X.mul(xSensitivity).round().eq(oldX) ||
+						!Y.mul(ySensitivity).round().eq(oldY)
+					) {
+						this.eventEmitter!.emit(UpdateEvents.zammModified, {
+							X,
+							Y,
+							price,
+						})
+					}
+				},
+			)
 		anchorEventEmitter.addListener("change", async (account) => {
 			that.data = account as Schema
-			const oldX = this.X
-			const oldY = this.Y
 			const { X, Y, price } = await this.getXY()
-			if (!X.eq(oldX) || !Y.eq(oldY))
-        this.eventEmitter!.emit(UpdateEvents.zammModified, {
-        	X,
-        	Y,
-        	price,
-        })
+			const oldX = this.X.mul(xSensitivity).round()
+			const oldY = this.Y.mul(ySensitivity).round()
+			this.X = X
+			this.Y = Y
+			if (
+				!X.mul(xSensitivity).round().eq(oldX) ||
+				!Y.mul(ySensitivity).round().eq(oldY)
+			) {
+				this.eventEmitter!.emit(UpdateEvents.zammModified, {
+					X,
+					Y,
+					price,
+				})
+			}
 		})
 	}
 
@@ -151,8 +212,8 @@ export default class Zamm extends BaseAccount<Schema> {
 			await this.zammMargin.state.unsubscribeFromEventQueue(
 				this.marketSymbol,
 			)
-      this.eventEmitter!.removeAllListeners()
-      this.eventEmitter = null
+			this.eventEmitter!.removeAllListeners()
+			this.eventEmitter = null
 		} catch (_) {
 			//
 		}
@@ -160,6 +221,61 @@ export default class Zamm extends BaseAccount<Schema> {
 	}
 
 	async getXY() {
+		const eqKey = (
+			await this.zammMargin.state.getMarketBySymbol(this.marketSymbol)
+		).getEventQueueAddress()
+		const [marginData, controlData, eventQueueData, zammData] = (
+			await this.connection.getMultipleAccountsInfo([
+				this.zammMargin.pubkey,
+				this.zammMargin.control.pubkey,
+				eqKey,
+				this.pubkey,
+			])
+		).map((acc) => acc!.data! as Buffer)
+
+		const marginSchema = this.zoProgram.coder.accounts.decode(
+			"margin",
+			marginData!,
+		)
+
+		const controlSchema = this.zoProgram.coder.accounts.decode(
+			"control",
+			controlData!,
+		)
+
+		const zammSchema = this.zammProgram.coder.accounts.decode(
+			"zamm",
+			zammData!,
+		)
+
+		const eventQueue = decodeEventQueue(eventQueueData!)
+		const margin = await Margin.loadPrefetched(
+			this.program,
+			this.zammMargin.state,
+			null,
+			{
+				publicKey: this.zammMargin.pubkey,
+				account: marginSchema,
+			},
+			{
+				publicKey: this.zammMargin.control.pubkey,
+				account: controlSchema,
+			},
+			false,
+		)
+
+		const zamm = Zamm.loadPrefetched(
+			this.zoProgram,
+			this.pubkey,
+			margin,
+			zammSchema,
+			this.commitment,
+		)
+
+		return Zamm.computeXY(zamm, eventQueue)
+	}
+
+	async getXYFast() {
 		const eventQueue = (
 			await this.zammMargin.state.getZoMarketAccounts({
 				market: this.zammMargin.state.markets[this.marketSymbol]!,
@@ -168,7 +284,12 @@ export default class Zamm extends BaseAccount<Schema> {
 			})
 		).eventQueue
 
-		const control = this.zammMargin.control.pubkey.toString()
+		return Zamm.computeXY(this, eventQueue)
+	}
+
+	static computeXY(zamm: Zamm, eventQueue: Event[]) {
+		const margin = zamm.zammMargin
+		const control = zamm.zammMargin.control.toString()
 
 		const { eqY, eqX } = eventQueue.reduce(
 			(accum, event) => {
@@ -195,10 +316,9 @@ export default class Zamm extends BaseAccount<Schema> {
 			},
 			{ eqY: new BN(0), eqX: new BN(0) },
 		)
+		const position = margin.position(zamm.marketSymbol)
 
-		const position = this.zammMargin.position(this.marketSymbol)
-
-		const zammX = this.data.x
+		const zammX = zamm.data.x
 		const signedCoins = position.coins.n.mul(
 			new BN(position.isLong ? 1 : -1),
 		)
@@ -207,17 +327,14 @@ export default class Zamm extends BaseAccount<Schema> {
 		const signedPcoins = position.pCoins.n.mul(
 			new BN(position.isLong ? -1 : 1),
 		)
-		const YN = eqY
-			.add(this.zammMargin.balances[USDC_SYMBOL]!.n)
-			.add(signedPcoins)
+		const YN = eqY.add(margin.balances[USDC_SYMBOL]!.n).add(signedPcoins)
 
 		const X = new Num(
 			XN,
-      this.zammMargin.state.markets[this.marketSymbol]!.assetDecimals,
+			margin.state.markets[zamm.marketSymbol]!.assetDecimals,
 		).decimal
+
 		const Y = new Num(YN, USDC_DECIMALS).decimal
-		this.X = X
-		this.Y = Y
 		return { X, Y, price: Y.div(X) }
 	}
 
@@ -229,26 +346,31 @@ export default class Zamm extends BaseAccount<Schema> {
 		)
 	}
 
-	async marketArb(arberMargin: Margin, x: number) {
+	async marketArb(arberMargin: Margin, x: number, isLong: boolean) {
 		const X = new Num(
-			x,
-      this.zammMargin.state.markets[this.marketSymbol]!.assetDecimals,
+			Math.abs(x) * (isLong ? 1 : -1),
+			this.zammMargin.state.markets[this.marketSymbol]!.assetDecimals,
 		).n
 		const y =
-      x *
-      this.zammMargin.state.markets[this.marketSymbol]!.indexPrice
-      	.number *
-      10
+			x > 0
+				? x *
+				  this.zammMargin.state.markets[this.marketSymbol]!.indexPrice
+						.number *
+				  10
+				: -x *
+				  this.zammMargin.state.markets[this.marketSymbol]!.indexPrice
+						.number *
+				  0.1
 		const Y = new Num(y, USDC_DECIMALS).n
 		return await this.arbRaw(arberMargin, X, Y)
 	}
 
-	async limitArb(arberMargin: Margin, x: number, price: number) {
+	async limitArb(arberMargin: Margin, x: number, price: number, isLong) {
 		const X = new Num(
-			x,
-      this.zammMargin.state.markets[this.marketSymbol]!.assetDecimals,
+			Math.abs(x) * (isLong ? 1 : -1),
+			this.zammMargin.state.markets[this.marketSymbol]!.assetDecimals,
 		).n
-		const y = x * price
+		const y = Math.abs(x * price)
 		const Y = new Num(y, USDC_DECIMALS).n
 		return await this.arbRaw(arberMargin, X, Y)
 	}
@@ -261,12 +383,6 @@ export default class Zamm extends BaseAccount<Schema> {
 			await this.zammMargin.getOpenOrdersKeyBySymbol(this.marketSymbol)
 		)[0]
 
-		const zammStateKey = (
-			await PublicKey.findProgramAddress(
-				[utils.bytes.utf8.encode("statev1")],
-				this.zammProgram.programId,
-			)
-		)[0]
 		const placeOrdersIx = await this.zammProgram.instruction.placeOrders({
 			accounts: {
 				payer: arberMargin.owner!,
@@ -288,10 +404,16 @@ export default class Zamm extends BaseAccount<Schema> {
 				rent: SYSVAR_RENT_PUBKEY,
 			},
 		})
+		const data = Buffer.from(
+			Uint8Array.of(
+				0,
+				...new BN(1200000).toArray("le", 4),
+				...new BN(5000).toArray("le", 4),
+			),
+		)
 
 		return await this.zammProgram.rpc.arbZamm(dx, maxDy, {
 			accounts: {
-				state: zammStateKey,
 				authority: arberMargin.owner!,
 				zamm: this.pubkey,
 				xMint: WRAPPED_SOL_MINT,
@@ -313,12 +435,26 @@ export default class Zamm extends BaseAccount<Schema> {
 				eventQ: market.eventQueueAddress,
 				marketBids: market.bidsAddress,
 				marketAsks: market.asksAddress,
-				tokenProgram: TOKEN_PROGRAM_ID,
 				systemProgram: SystemProgram.programId,
 				zoProgram: arberMargin.program.programId,
 				zoDexProgram: this.zammMargin.getDexProgram(),
 			},
-			postInstructions: [placeOrdersIx, placeOrdersIx, placeOrdersIx],
+			preInstructions: [
+				new TransactionInstruction({
+					keys: [],
+					programId: new PublicKey(
+						"ComputeBudget111111111111111111111111111111",
+					),
+					data,
+				}),
+			],
+			postInstructions: [
+				placeOrdersIx,
+				placeOrdersIx,
+				placeOrdersIx,
+				placeOrdersIx,
+				placeOrdersIx,
+			],
 		})
 	}
 }

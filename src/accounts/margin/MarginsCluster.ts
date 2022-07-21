@@ -3,7 +3,7 @@ import Margin from "./Margin"
 import EventEmitter from "eventemitter3"
 import { Program } from "@project-serum/anchor"
 import { Zo } from "../../types/zo"
-import { UpdateEvents } from "../../types"
+import { MarginsClusterEvents } from "../../types"
 import { KeyedAccountInfo } from "@solana/web3.js"
 import {
 	DEFAULT_MARGINS_CLUSTER_CONFIG,
@@ -19,21 +19,20 @@ export default class MarginsCluster {
 	private marginListener = 0
 	private controlListener = 0
 	// @ts-ignore
-	eventEmitter: EventEmitter<UpdateEvents, any> | null
+	eventEmitter: EventEmitter<MarginsClusterEvents, any> | null
 	// @ts-ignore
 	state: State
 
 	constructor(
-    public readonly program: Program<Zo>,
-    public readonly cluster: Cluster,
-    readonly config: MarginsClusterConfig = DEFAULT_MARGINS_CLUSTER_CONFIG,
-	) {
-	}
+		public readonly program: Program<Zo>,
+		public readonly cluster: Cluster,
+		readonly config: MarginsClusterConfig = DEFAULT_MARGINS_CLUSTER_CONFIG,
+	) {}
 
 	hardRefreshIntervalId: any
 
 	async launch() {
-		this.eventEmitter = new EventEmitter<UpdateEvents, any>()
+		this.eventEmitter = new EventEmitter<MarginsClusterEvents, any>()
 		this.state = await State.load(
 			this.program,
 			this.cluster == Cluster.Devnet
@@ -41,7 +40,7 @@ export default class MarginsCluster {
 				: ZO_MAINNET_STATE_KEY,
 			this.config.commitment,
 		)
-		await this.state.subscribe()
+		await this.state.subscribe(true, 0, 0)
 		const that = this
 		this.log("State loaded")
 		await this.loadAccounts()
@@ -53,8 +52,8 @@ export default class MarginsCluster {
 			this.config.hardRefreshInterval,
 		)
 		this.log("MarginsCluster listeners launched")
-    this.eventEmitter!.emit(UpdateEvents.marginModified, null)
-    this.log("MarginsCluster running")
+		this.eventEmitter!.emit(MarginsClusterEvents.MarginsReloaded, null)
+		this.log("MarginsCluster running")
 	}
 
 	async hardRefreshAccounts() {
@@ -69,8 +68,8 @@ export default class MarginsCluster {
 		await this.loadAccounts()
 		this.startMarginsListener()
 		this.startControlsListener()
-    this.eventEmitter!.emit(UpdateEvents.marginModified, null)
-    this.log("Hard refresh complete")
+		this.eventEmitter!.emit(MarginsClusterEvents.MarginsReloaded, null)
+		this.log("Hard refresh complete")
 	}
 
 	private async loadAccounts() {
@@ -96,79 +95,79 @@ export default class MarginsCluster {
 	private startMarginsListener() {
 		const that = this
 		this.marginListener =
-      this.program.provider.connection.onProgramAccountChange(
-      	that.program.programId,
-      	async (account: KeyedAccountInfo) => {
-      		try {
-      			const accountInfo = account.accountInfo
-      			const pubkey = account.accountId
-      			if (that.margins[pubkey.toString()]) {
-      				await that.margins[
-      					pubkey.toString()
-      				]!.updateWithAccountInfo(accountInfo)
-      			} else {
-      				that.margins[pubkey.toString()] =
-                await Margin.loadFromAccountInfo(
-                	that.program,
-                	that.state,
-                	accountInfo,
-                	this.config.loadWithOrders,
-                	this.config.commitment,
-                )
-      				that.controlToMarginKey.set(
-                that.margins[
-                	pubkey.toString()
-                ]!.control.pubkey.toString(),
-                that.margins[
-                	pubkey.toString()
-                ]!.pubkey.toString(),
-      				)
-      			}
-            that.eventEmitter!.emit(
-            	UpdateEvents.marginModified,
-            	pubkey.toString(),
-            )
-      		} catch (_) {
-      			console.warn(
-      				"Failed to load an updated margin account!",
-      			)
-      		}
-      	},
-      	"confirmed",
-      	[{ dataSize: that.program.account["margin"].size }],
-      )
+			this.program.provider.connection.onProgramAccountChange(
+				that.program.programId,
+				async (account: KeyedAccountInfo) => {
+					try {
+						const accountInfo = account.accountInfo
+						const pubkey = account.accountId
+						if (that.margins[pubkey.toString()]) {
+							await that.margins[
+								pubkey.toString()
+							]!.updateWithAccountInfo(accountInfo)
+						} else {
+							that.margins[pubkey.toString()] =
+								await Margin.loadFromAccountInfo(
+									that.program,
+									that.state,
+									accountInfo,
+									this.config.loadWithOrders,
+									this.config.commitment,
+								)
+							that.controlToMarginKey.set(
+								that.margins[
+									pubkey.toString()
+								]!.control.pubkey.toString(),
+								that.margins[
+									pubkey.toString()
+								]!.pubkey.toString(),
+							)
+						}
+						that.eventEmitter!.emit(
+							MarginsClusterEvents.MarginModified,
+							pubkey.toString(),
+						)
+					} catch (_) {
+						console.warn(
+							"Failed to load an updated margin account!",
+						)
+					}
+				},
+				"confirmed",
+				[{ dataSize: that.program.account["margin"].size }],
+			)
 	}
 
 	private startControlsListener() {
 		const that = this
 		this.controlListener =
-      this.program.provider.connection.onProgramAccountChange(
-      	that.program.programId,
-      	async (account: KeyedAccountInfo) => {
-      		try {
-      			const accountInfo = account.accountInfo
-      			const pubkey = account.accountId
-      			const marginKey = that.controlToMarginKey.get(
-      				pubkey.toString(),
-      			)
-      			if (marginKey) {
-      				await that.margins[
-      					marginKey
-      				]!.updateControlFromAccountInfo(accountInfo)
-              that.eventEmitter!.emit(
-              	UpdateEvents.controlModified,
-              	marginKey,
-              )
-      			}
-      		} catch (_) {
-      			console.warn(
-      				"Failed to load an updated control account!",
-      			)
-      		}
-      	},
-      	"confirmed",
-      	[{ dataSize: that.program.account["control"].size }],
-      )
+			this.program.provider.connection.onProgramAccountChange(
+				that.program.programId,
+				async (account: KeyedAccountInfo) => {
+					try {
+						const accountInfo = account.accountInfo
+						const pubkey = account.accountId
+						const marginKey = that.controlToMarginKey.get(
+							pubkey.toString(),
+						)
+						if (marginKey) {
+							await that.margins[
+								marginKey
+							]!.updateControlFromAccountInfo(accountInfo)
+							that.eventEmitter!.emit(
+								MarginsClusterEvents.ControlModified,
+								marginKey,
+							)
+						}
+					} catch (_) {
+						console.warn(
+							"Failed to load an updated control account!",
+						)
+					}
+				},
+				"confirmed",
+				[{ dataSize: that.program.account["control"].size }],
+			)
 	}
 
 	async kill() {
@@ -186,10 +185,10 @@ export default class MarginsCluster {
 	}
 
 	/**
-   * Log a message to the console if verbose is enabled
-   * @param msg
-   * @private
-   */
+	 * Log a message to the console if verbose is enabled
+	 * @param msg
+	 * @private
+	 */
 	private log(...msg) {
 		if (this.config.verbose) {
 			console.log(...msg)

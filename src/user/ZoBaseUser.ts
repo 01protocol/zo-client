@@ -1,15 +1,9 @@
-import { Commitment, Connection, Keypair, PublicKey } from "@solana/web3.js"
+import { PublicKey } from "@solana/web3.js"
 import { MarketInfo, PositionInfo } from "../types/dataTypes"
 import Num from "../Num"
-import {
-	USD_DECIMALS,
-	ZO_DEVNET_STATE_KEY,
-	ZO_MAINNET_STATE_KEY,
-} from "../config"
+import { USD_DECIMALS } from "../config"
 import Decimal from "decimal.js"
-import { Cluster, createProgram, Margin, State, Wallet, ZoUser } from "../index"
-import { Provider } from "@project-serum/anchor"
-import * as Realm from "realm-web"
+import { Margin } from "../index"
 
 export abstract class ZoBaseUser {
 	/**

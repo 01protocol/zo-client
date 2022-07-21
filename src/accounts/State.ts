@@ -4,7 +4,12 @@ import Cache from "./Cache"
 import { Orderbook, ZoMarket } from "../zoDex/zoMarket"
 import { ChangeEvent, StateSchema, UpdateEvents, Zo } from "../types"
 import { BASE_IMF_DIVIDER, MMF_MULTIPLIER, USD_DECIMALS } from "../config"
-import { AssetInfo, FundingInfo, MarketInfo, MarketType } from "../types/dataTypes"
+import {
+	AssetInfo,
+	FundingInfo,
+	MarketInfo,
+	MarketType,
+} from "../types/dataTypes"
 import Decimal from "decimal.js"
 import _ from "lodash"
 import Num from "../Num"
@@ -12,22 +17,29 @@ import { AsyncLock, loadSymbol } from "../utils"
 import BaseAccount from "./BaseAccount"
 import EventEmitter from "eventemitter3"
 import { decodeEventQueue, Event } from "../zoDex/queue"
-import { ChangeType, MarketFundingChange, MarketPriceChange, StateBalanceChange } from "../types/changeLog"
+import {
+	ChangeType,
+	MarketFundingChange,
+	MarketPriceChange,
+	StateBalanceChange,
+} from "../types/changeLog"
 
 type CollateralInfo = Omit<StateSchema["collaterals"][0], "oracleSymbol"> & {
-  oracleSymbol: string
+	oracleSymbol: string
 }
 
-type PerpMarket = Omit<StateSchema["perpMarkets"][0],
-  "symbol" | "oracleSymbol"> & {
-  symbol: string
-  oracleSymbol: string
+type PerpMarket = Omit<
+	StateSchema["perpMarkets"][0],
+	"symbol" | "oracleSymbol"
+> & {
+	symbol: string
+	oracleSymbol: string
 }
 
 export interface Schema
-  extends Omit<StateSchema, "perpMarkets" | "collaterals"> {
-  perpMarkets: PerpMarket[]
-  collaterals: CollateralInfo[]
+	extends Omit<StateSchema, "perpMarkets" | "collaterals"> {
+	perpMarkets: PerpMarket[]
+	collaterals: CollateralInfo[]
 }
 
 /**
@@ -35,16 +47,16 @@ export interface Schema
  */
 export default class State extends BaseAccount<Schema> {
 	/**
-   * zo market infos
-   */
+	 * zo market infos
+	 */
 	zoMarketAccounts: {
-    [key: string]: {
-      dexMarket: ZoMarket
-      bids: Orderbook
-      asks: Orderbook
-      eventQueue: Event[]
-    }
-  } = {}
+		[key: string]: {
+			dexMarket: ZoMarket
+			bids: Orderbook
+			asks: Orderbook
+			eventQueue: Event[]
+		}
+	} = {}
 	assets: { [key: string]: AssetInfo } = {}
 	markets: { [key: string]: MarketInfo } = {}
 
@@ -52,16 +64,16 @@ export default class State extends BaseAccount<Schema> {
 		program: Program<Zo>,
 		pubkey: PublicKey,
 		data: Readonly<Schema>,
-    public readonly signer: PublicKey,
-    public readonly cache: Cache,
-    commitment?: Commitment,
+		public readonly signer: PublicKey,
+		public readonly cache: Cache,
+		commitment?: Commitment,
 	) {
 		super(program, pubkey, data, commitment)
 	}
 
 	/**
-   * map asset index to asset key
-   */
+	 * map asset index to asset key
+	 */
 	get indexToAssetKey() {
 		const index: string[] = []
 		for (const collateral of this.data.collaterals) {
@@ -71,8 +83,8 @@ export default class State extends BaseAccount<Schema> {
 	}
 
 	/**
-   * map market index to market key
-   */
+	 * map market index to market key
+	 */
 	get indexToMarketKey() {
 		const index: string[] = []
 		for (const perpMarket of this.data.perpMarkets) {
@@ -82,9 +94,9 @@ export default class State extends BaseAccount<Schema> {
 	}
 
 	/**
-   * Gets the state signer's pda account and bump.
-   * @returns An array consisting of the state signer pda and bump.
-   */
+	 * Gets the state signer's pda account and bump.
+	 * @returns An array consisting of the state signer pda and bump.
+	 */
 	static async getSigner(
 		stateKey: PublicKey,
 		programId: PublicKey,
@@ -96,10 +108,10 @@ export default class State extends BaseAccount<Schema> {
 	}
 
 	/**
-   * @param program
-   * @param k The state's public key.
-   * @param commitment
-   */
+	 * @param program
+	 * @param k The state's public key.
+	 * @param commitment
+	 */
 	static async load(
 		program: Program<Zo>,
 		k: PublicKey,
@@ -125,7 +137,7 @@ export default class State extends BaseAccount<Schema> {
 	): Promise<Schema> {
 		const data = (await program.account["state"]!.fetch(
 			k,
-      commitment as Commitment,
+			commitment as Commitment,
 		)) as StateSchema
 
 		// Convert StateSchema to Schema.
@@ -160,13 +172,13 @@ export default class State extends BaseAccount<Schema> {
 	}
 
 	/**
-   * computes supply and borrow apys
-   * @param utilization
-   * @param optimalUtility
-   * @param maxRate
-   * @param optimalRate
-   * @private
-   */
+	 * computes supply and borrow apys
+	 * @param utilization
+	 * @param optimalUtility
+	 * @param maxRate
+	 * @param optimalRate
+	 * @private
+	 */
 	private static computeSupplyAndBorrowApys(
 		utilization: Decimal,
 		optimalUtility: Decimal,
@@ -199,9 +211,9 @@ export default class State extends BaseAccount<Schema> {
 	}
 
 	/**
-   * Get the index of the collateral in the State's collaterals list using the mint public key.
-   * @param mint The mint's public key.
-   */
+	 * Get the index of the collateral in the State's collaterals list using the mint public key.
+	 * @param mint The mint's public key.
+	 */
 	getCollateralIndex(mint: PublicKey): number {
 		const i = this.data.collaterals.findIndex((x) => x.mint.equals(mint))
 		if (i < 0) {
@@ -225,24 +237,24 @@ export default class State extends BaseAccount<Schema> {
 	}
 
 	/**
-   * Get the vault public key and the CollateralInfo object for a collateral using the mint public key.
-   * @param mint The mint's public key.
-   * @returns The vault public key and the CollateralInfo object.
-   */
+	 * Get the vault public key and the CollateralInfo object for a collateral using the mint public key.
+	 * @param mint The mint's public key.
+	 * @returns The vault public key and the CollateralInfo object.
+	 */
 	getVaultCollateralByMint(
 		mint: PublicKey,
 	): [PublicKey, Schema["collaterals"][0]] {
 		const i = this.getCollateralIndex(mint)
 		return [
-      this.data.vaults[i] as PublicKey,
-      this.data.collaterals[i] as Schema["collaterals"][0],
+			this.data.vaults[i] as PublicKey,
+			this.data.collaterals[i] as Schema["collaterals"][0],
 		]
 	}
 
 	/**
-   * Get the index of a market in the State's PerpMarkets list using the market symbol.
-   * @param sym The market symbol. Ex:("BTC-PERP")
-   */
+	 * Get the index of a market in the State's PerpMarkets list using the market symbol.
+	 * @param sym The market symbol. Ex:("BTC-PERP")
+	 */
 	getMarketIndexBySymbol(sym: string): number {
 		const i = this.data.perpMarkets.findIndex((x) => x.symbol === sym)
 		if (i < 0) {
@@ -281,9 +293,9 @@ export default class State extends BaseAccount<Schema> {
 	/* -------------------------------------------------------------------------- */
 
 	/**
-   * Called by the keepers every hour to update the funding on each market.
-   * @param symbol The market symbol. Ex:("BTC-PERP")
-   */
+	 * Called by the keepers every hour to update the funding on each market.
+	 * @param symbol The market symbol. Ex:("BTC-PERP")
+	 */
 	async updatePerpFunding(symbol: string) {
 		const market = await this.getMarketBySymbol(symbol)
 		return await this.program.rpc.updatePerpFunding({
@@ -300,9 +312,9 @@ export default class State extends BaseAccount<Schema> {
 	}
 
 	/**
-   * Called by the keepers regularly to cache the oracle prices.
-   * @param mockPrices Only used for testing purposes. An array of user-set prices.
-   */
+	 * Called by the keepers regularly to cache the oracle prices.
+	 * @param mockPrices Only used for testing purposes. An array of user-set prices.
+	 */
 	async cacheOracle(mockPrices?: BN[]) {
 		const oracles = this.cache.data.oracles
 		return await this.program.rpc.cacheOracle(
@@ -334,10 +346,10 @@ export default class State extends BaseAccount<Schema> {
 	}
 
 	/**
-   * Called by the keepers to update the borrow and supply multipliers.
-   * @param start The inclusive start index of the collateral array.
-   * @param end The exclusive end index of the collateral array.
-   */
+	 * Called by the keepers to update the borrow and supply multipliers.
+	 * @param start The inclusive start index of the collateral array.
+	 * @param end The exclusive end index of the collateral array.
+	 */
 	async cacheInterestRates(start: number, end: number) {
 		return await this.program.rpc.cacheInterestRates(start, end, {
 			accounts: {
@@ -349,31 +361,31 @@ export default class State extends BaseAccount<Schema> {
 	}
 
 	/**
-   * Get the ZoMarket DEX accounts for a market using the market object (  { dexMarket: ZoMarket; bids: Orderbook; asks: Orderbook } )
-   * @param market
-   * @param withOrderbooks parameter to fetch asks and bids, default = true due to previous versions
-   * @param withEventQueues to fetch eventqueue or no
-   */
+	 * Get the ZoMarket DEX accounts for a market using the market object (  { dexMarket: ZoMarket; bids: Orderbook; asks: Orderbook } )
+	 * @param market
+	 * @param withOrderbooks parameter to fetch asks and bids, default = true due to previous versions
+	 * @param withEventQueues to fetch eventqueue or no
+	 */
 	async getZoMarketAccounts({
 		market,
 		withOrderbooks = true,
 		withEventQueues,
 	}: {
-    market: MarketInfo
-    withOrderbooks?: boolean
-    withEventQueues?: boolean
-  }) {
+		market: MarketInfo
+		withOrderbooks?: boolean
+		withEventQueues?: boolean
+	}) {
 		if (this.zoMarketAccounts[market.symbol]) {
 			let fetchedAlready = true
 			if (
 				withOrderbooks &&
-        this.zoMarketAccounts[market.symbol]!.asks == null
+				this.zoMarketAccounts[market.symbol]!.asks == null
 			) {
 				fetchedAlready = false
 			}
 			if (
 				withEventQueues &&
-        this.zoMarketAccounts[market.symbol]!.eventQueue == null
+				this.zoMarketAccounts[market.symbol]!.eventQueue == null
 			) {
 				fetchedAlready = false
 			}
@@ -431,8 +443,8 @@ export default class State extends BaseAccount<Schema> {
 	}
 
 	/**
-   * Load all ZoMarket DEX Accounts
-   */
+	 * Load all ZoMarket DEX Accounts
+	 */
 	async loadZoMarkets(withOrderbooks?: boolean, withEventQueues?: boolean) {
 		const promises: Array<Promise<boolean>> = []
 		for (const marketInfo of Object.values(this.markets)) {
@@ -451,8 +463,8 @@ export default class State extends BaseAccount<Schema> {
 	}
 
 	/**
-   * Load all assets
-   */
+	 * Load all assets
+	 */
 	loadAssets(): Array<StateBalanceChange> {
 		const changeLog: Array<StateBalanceChange> = []
 		const assets: { [key: string]: AssetInfo } = {}
@@ -460,9 +472,9 @@ export default class State extends BaseAccount<Schema> {
 
 		for (const collateral of this.data.collaterals) {
 			const supply =
-        this.cache.data.borrowCache[index]!.actualSupply.decimal
+				this.cache.data.borrowCache[index]!.actualSupply.decimal
 			const borrows =
-        this.cache.data.borrowCache[index]!.actualBorrows.decimal
+				this.cache.data.borrowCache[index]!.actualBorrows.decimal
 			const utilization = supply.greaterThan(new Decimal(0))
 				? borrows.div(supply)
 				: new Decimal(0)
@@ -478,9 +490,7 @@ export default class State extends BaseAccount<Schema> {
 				optimalRate,
 			)
 			const symbol = collateral.oracleSymbol
-			const price = this.cache.getOracleBySymbol(
-				symbol,
-			).price
+			const price = this.cache.getOracleBySymbol(symbol).price
 
 			// @ts-ignore
 			assets[symbol] = {
@@ -491,7 +501,7 @@ export default class State extends BaseAccount<Schema> {
 				supply: this.cache.data.borrowCache[index]!.actualSupply
 					.decimal,
 				borrows:
-        this.cache.data.borrowCache[index]!.actualBorrows.decimal,
+					this.cache.data.borrowCache[index]!.actualBorrows.decimal,
 				supplyApy: supplyApy.toNumber(),
 				borrowsApy: borrowApy.toNumber(),
 				rawSupply: this.cache.data.borrowCache[index]!.rawSupply,
@@ -511,11 +521,18 @@ export default class State extends BaseAccount<Schema> {
 		return changeLog
 	}
 
-	private processAssetChangeLog(symbol: string, assets: { [p: string]: AssetInfo }, changeLog: Array<StateBalanceChange>) {
+	private processAssetChangeLog(
+		symbol: string,
+		assets: { [p: string]: AssetInfo },
+		changeLog: Array<StateBalanceChange>,
+	) {
 		if (this.assets[symbol]) {
 			const prev = this.assets[symbol]!
 			const curr = assets[symbol]!
-			if (!prev.rawSupply.eq(curr.rawSupply) || !prev.rawBorrows.eq(curr.rawBorrows)) {
+			if (
+				!prev.rawSupply.eq(curr.rawSupply) ||
+				!prev.rawBorrows.eq(curr.rawBorrows)
+			) {
 				const change: StateBalanceChange = {
 					prev: {
 						supply: prev.supply,
@@ -536,9 +553,9 @@ export default class State extends BaseAccount<Schema> {
 	}
 
 	/**
-   * gets market type
-   * @param perpType
-   */
+	 * gets market type
+	 * @param perpType
+	 */
 	_getMarketType(perpType) {
 		if (_.isEqual(perpType, { future: {} })) {
 			return MarketType.Perp
@@ -553,8 +570,8 @@ export default class State extends BaseAccount<Schema> {
 	}
 
 	/**
-   * Load all market infos
-   */
+	 * Load all market infos
+	 */
 	loadMarkets(): Array<MarketPriceChange | MarketFundingChange> {
 		const changeLog: Array<MarketPriceChange | MarketFundingChange> = []
 		const markets: { [key: string]: MarketInfo } = {}
@@ -602,18 +619,18 @@ export default class State extends BaseAccount<Schema> {
 					perpMarket.baseImf / BASE_IMF_DIVIDER / MMF_MULTIPLIER,
 				),
 				fundingIndex: new Num(
-          this.cache.data.fundingCache[index]!,
-          USD_DECIMALS,
+					this.cache.data.fundingCache[index]!,
+					USD_DECIMALS,
 				).decimal,
 				marketType: marketType,
 				assetDecimals: perpMarket.assetDecimals,
 				assetLotSize: Math.round(
 					Math.log(new Num(perpMarket.assetLotSize, 0).number) /
-          Math.log(10),
+						Math.log(10),
 				),
 				quoteLotSize: Math.round(
 					Math.log(new Num(perpMarket.quoteLotSize, 0).number) /
-          Math.log(10),
+						Math.log(10),
 				),
 				strike: new Num(perpMarket.strike, USD_DECIMALS).number,
 			}
@@ -624,11 +641,18 @@ export default class State extends BaseAccount<Schema> {
 		return changeLog
 	}
 
-	private processMarketChangeLog(symbol: string, markets: { [p: string]: MarketInfo }, changeLog: Array<MarketPriceChange | MarketFundingChange>) {
+	private processMarketChangeLog(
+		symbol: string,
+		markets: { [p: string]: MarketInfo },
+		changeLog: Array<MarketPriceChange | MarketFundingChange>,
+	) {
 		if (this.markets[symbol]) {
 			const prev = this.markets[symbol]!
 			const curr = markets[symbol]!
-			if (!prev.indexPrice.decimal.eq(curr.indexPrice.decimal) || !prev.markPrice.decimal.eq(curr.markPrice.decimal)) {
+			if (
+				!prev.indexPrice.decimal.eq(curr.indexPrice.decimal) ||
+				!prev.markPrice.decimal.eq(curr.markPrice.decimal)
+			) {
 				const change: MarketPriceChange = {
 					prev: {
 						indexPrice: prev.indexPrice.decimal,
@@ -664,30 +688,30 @@ export default class State extends BaseAccount<Schema> {
 	}
 
 	/**
-   * Gets the funding info object for a given market.
-   * Funding will be undefined in the first minute of the hour.
-   * Make sure to handle that case!
-   */
+	 * Gets the funding info object for a given market.
+	 * Funding will be undefined in the first minute of the hour.
+	 * Make sure to handle that case!
+	 */
 	getFundingInfo(symbol: string): FundingInfo {
 		const marketIndex = this.getMarketIndexBySymbol(symbol)
 		const lastSampleStartTime =
-      this.cache.data.marks[marketIndex]!.twap.lastSampleStartTime
+			this.cache.data.marks[marketIndex]!.twap.lastSampleStartTime
 		const cumulAvg =
-      this.cache.data.marks[marketIndex]!.twap.cumulAvg.decimal
+			this.cache.data.marks[marketIndex]!.twap.cumulAvg.decimal
 		const hasData =
-      cumulAvg.abs().gt(0) && lastSampleStartTime.getMinutes() > 0
+			cumulAvg.abs().gt(0) && lastSampleStartTime.getMinutes() > 0
 		return {
 			data: hasData
 				? {
-					hourly: cumulAvg.div(
-						lastSampleStartTime.getMinutes() * 24,
-					),
-					daily: cumulAvg.div(lastSampleStartTime.getMinutes()),
-					apr: cumulAvg
-						.div(lastSampleStartTime.getMinutes())
-						.times(100)
-						.times(365),
-				}
+						hourly: cumulAvg.div(
+							lastSampleStartTime.getMinutes() * 24,
+						),
+						daily: cumulAvg.div(lastSampleStartTime.getMinutes()),
+						apr: cumulAvg
+							.div(lastSampleStartTime.getMinutes())
+							.times(100)
+							.times(365),
+				  }
 				: null,
 			lastSampleUpdate: lastSampleStartTime,
 		}
@@ -718,20 +742,25 @@ export default class State extends BaseAccount<Schema> {
 	}
 
 	/**
-   * Subscriptions
-   */
+	 * Subscriptions
+	 */
 
 	eventEmitter: EventEmitter<UpdateEvents, ChangeEvent<any>> | null = null
 
-	subscribeLastUpdate = (new Date()).getTime()
+	subscribeLastUpdate = new Date().getTime()
 	subscribeTimeLimit = 0
 
 	/**
-   * @param withBackup
-   * @param subscribeLimit - minimum time difference between cache updates, to prevent constant reloads
-   * @param cacheLimit
-   */
-	async subscribe(withBackup = false, subscribeLimit = 1000, cacheLimit = 5000) {
+	 *
+	 * @param withBackup - use a backup `confirmed` listener
+	 * @param subscribeLimit - minimum time difference between state updates, to prevent constant reloads
+	 * @param cacheLimit - minimum time difference between cache updates, to prevent constant reloads
+	 */
+	async subscribe(
+		withBackup = false,
+		subscribeLimit = 1000,
+		cacheLimit = 5000,
+	) {
 		await this.subLock.waitAndLock()
 		if (this.eventEmitter) return
 		this.subscribeTimeLimit = subscribeLimit
@@ -743,29 +772,36 @@ export default class State extends BaseAccount<Schema> {
 			that.data = State.processRawStateData(account)
 			const changeLog = [...that.loadAssets(), ...that.loadMarkets()]
 			if (changeLog.length > 0) {
-        that.eventEmitter!.emit(UpdateEvents.stateModified, changeLog)
+				that.eventEmitter!.emit(UpdateEvents.stateModified, changeLog)
 			}
 		}
 
-		anchorEventEmitter.addListener("change", this.updateAccountOnChange(processUpdate, this))
+		anchorEventEmitter.addListener(
+			"change",
+			this.updateAccountOnChange(processUpdate, this),
+		)
 		await this.cache.subscribe(withBackup, cacheLimit)
-    this.cache.eventEmitter!.addListener(
-    	UpdateEvents._cacheModified,
-    	(data) => {
-    		const changeLog = [...data, ...that.loadAssets(), ...that.loadMarkets()]
-        this.eventEmitter!.emit(UpdateEvents._cacheModified, changeLog)
-    	},
-    )
-    this.subLock.unlock()
+		this.cache.eventEmitter!.addListener(
+			UpdateEvents._cacheModified,
+			(data) => {
+				const changeLog = [
+					...data,
+					...that.loadAssets(),
+					...that.loadMarkets(),
+				]
+				this.eventEmitter!.emit(UpdateEvents._cacheModified, changeLog)
+			},
+		)
+		this.subLock.unlock()
 	}
 
 	async unsubscribe() {
 		await this.subLock.waitAndLock()
 		try {
 			await this.program.account["state"]!.unsubscribe(this.pubkey)
-      this.eventEmitter!.removeAllListeners()
-      await this.cache.unsubscribe()
-      this.eventEmitter = null
+			this.eventEmitter!.removeAllListeners()
+			await this.cache.unsubscribe()
+			this.eventEmitter = null
 		} catch (_) {
 			//
 		}
@@ -773,8 +809,8 @@ export default class State extends BaseAccount<Schema> {
 	}
 
 	/**
-   * OB listeners
-   */
+	 * OB listeners
+	 */
 
 	_obEmitters: { [key: string]: EventEmitter<string, any> } = {}
 	_obEmittersKeys: { [key: string]: number } = {}
@@ -830,21 +866,21 @@ export default class State extends BaseAccount<Schema> {
 					}),
 				)
 				await Promise.all(promises)
-        this.zoMarketAccounts[symbol]!.bids = bidsOrderbook
-        this.zoMarketAccounts[symbol]!.asks = asksOrderbook
-        if (this._obEmitters[symbol]) {
-          this._obEmitters[symbol]!.emit(
-          	State.getOrderbookUpdateEventName(symbol),
-          	{
-          		bidsOrderbook: bidsOrderbook,
-          		asksOrderbook: asksOrderbook,
-          	},
-          )
-        }
+				this.zoMarketAccounts[symbol]!.bids = bidsOrderbook
+				this.zoMarketAccounts[symbol]!.asks = asksOrderbook
+				if (this._obEmitters[symbol]) {
+					this._obEmitters[symbol]!.emit(
+						State.getOrderbookUpdateEventName(symbol),
+						{
+							bidsOrderbook: bidsOrderbook,
+							asksOrderbook: asksOrderbook,
+						},
+					)
+				}
 			},
 			this.commitment,
 		)
-    this._obEmittersLocks[symbol]!.unlock()
+		this._obEmittersLocks[symbol]!.unlock()
 	}
 
 	async unsubscribeFromOrderbook(symbol: string) {
@@ -860,14 +896,14 @@ export default class State extends BaseAccount<Schema> {
 					.removeAccountChangeListener(this._obEmittersKeys[symbol]!)
 					.then()
 
-        this.eventEmitter!.removeAllListeners()
-        delete this._obEmittersKeys[symbol]
-        delete this._obEmitters[symbol]
+				this.eventEmitter!.removeAllListeners()
+				delete this._obEmittersKeys[symbol]
+				delete this._obEmitters[symbol]
 			}
 		} catch (_) {
 			//
 		}
-    this._obEmittersLocks[symbol]!.unlock()
+		this._obEmittersLocks[symbol]!.unlock()
 	}
 
 	async subscribeToAllOrderbooks() {
@@ -897,8 +933,8 @@ export default class State extends BaseAccount<Schema> {
 	}
 
 	/**
-   * Event Queue listeners
-   */
+	 * Event Queue listeners
+	 */
 
 	_eqEmitters: { [key: string]: EventEmitter<string, any> } = {}
 	_eqEmittersKeys: { [key: string]: number } = {}
@@ -927,19 +963,19 @@ export default class State extends BaseAccount<Schema> {
 			eventQueueAddress,
 			async (eventQueueBuffer) => {
 				const eventQueue = decodeEventQueue(eventQueueBuffer.data)
-        this.zoMarketAccounts[symbol]!.eventQueue = eventQueue
-        if (this._eqEmitters[symbol]) {
-          this._eqEmitters[symbol]!.emit(
-          	State.getEventQueueUpdateEventName(symbol),
-          	{
-          		eventQueue: eventQueue,
-          	},
-          )
-        }
+				this.zoMarketAccounts[symbol]!.eventQueue = eventQueue
+				if (this._eqEmitters[symbol]) {
+					this._eqEmitters[symbol]!.emit(
+						State.getEventQueueUpdateEventName(symbol),
+						{
+							eventQueue: eventQueue,
+						},
+					)
+				}
 			},
 			this.commitment,
 		)
-    this._eqEmittersLocks[symbol]!.unlock()
+		this._eqEmittersLocks[symbol]!.unlock()
 	}
 
 	async unsubscribeFromEventQueue(symbol: string) {
@@ -955,13 +991,13 @@ export default class State extends BaseAccount<Schema> {
 					.removeAccountChangeListener(this._eqEmittersKeys[symbol]!)
 					.then()
 
-        this.eventEmitter!.removeAllListeners()
-        delete this._eqEmittersKeys[symbol]
-        delete this._eqEmitters[symbol]
+				this.eventEmitter!.removeAllListeners()
+				delete this._eqEmittersKeys[symbol]
+				delete this._eqEmitters[symbol]
 			}
 		} catch (_) {
 			//
 		}
-    this._eqEmittersLocks[symbol]!.unlock()
+		this._eqEmittersLocks[symbol]!.unlock()
 	}
 }
