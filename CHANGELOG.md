@@ -8,8 +8,12 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.9.7]
+
+- OrderTypeInfo: Add `StopMarket`, `StopLimit`, `TakeProfitMarket`, `TakeProfitLimit`
 
 ## [0.9.6]
+
 - Improved subscriptions by adding `stateLimit` and `cacheLimit` to limit the update frequency, add optional `withBackup` parameter
 - Added change log to emitted events to help build a websocket
 

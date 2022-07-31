@@ -161,6 +161,10 @@ export interface OrderInfo {
 export enum OrderTypeInfo {
   Market,
   Limit,
+  StopMarket,
+  StopLimit,
+  TakeProfitMarket,
+  TakeProfitLimit
 }
 
 /**
