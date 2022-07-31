@@ -8,7 +8,7 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [0.9.7]
+## [0.9.8]
 
 - OrderTypeInfo: Add `StopMarket`, `StopLimit`, `TakeProfitMarket`, `TakeProfitLimit`
 
