@@ -19,7 +19,7 @@ import {
 	TOKEN_PROGRAM_ID,
 	u64,
 } from "@solana/spl-token"
-import { Program, Provider } from "@project-serum/anchor"
+import { AnchorProvider, Program } from "@project-serum/anchor"
 import BN from "bn.js"
 import Decimal from "decimal.js"
 import { blob, struct, u8 } from "buffer-layout"
@@ -46,16 +46,16 @@ export function sleep(ms: number): Promise<void> {
 }
 
 export enum Cluster {
-	Devnet = "Devnet",
-	Mainnet = "Mainnet",
+  Devnet = "Devnet",
+  Mainnet = "Mainnet",
 }
 
 export function createProvider(
 	conn: Connection,
 	wallet: Wallet,
 	opts: ConfirmOptions = {},
-): Provider {
-	return new Provider(conn, wallet, opts)
+): AnchorProvider {
+	return new AnchorProvider(conn, wallet, opts)
 }
 
 export function arePositionsEqual(a: PositionInfo, b: PositionInfo) {
@@ -81,9 +81,9 @@ export function arePositionsEqual(a: PositionInfo, b: PositionInfo) {
 }
 
 export enum OrderChangeStatus {
-	Changed,
-	Missing,
-	Present,
+  Changed,
+  Missing,
+  Present,
 }
 
 export function getOrderStatus(
@@ -148,7 +148,7 @@ export function getKeypairFromSecretKey(SECRET_KEY) {
 }
 
 export function createProgram(
-	provider: Provider,
+	provider: AnchorProvider,
 	cluster: Cluster,
 ): Program<Zo> {
 	if (cluster === Cluster.Devnet) {
@@ -207,7 +207,7 @@ export function findLastIndexOf<T>(l: readonly T[], p: (T) => boolean) {
 }
 
 export async function getMintInfo(
-	provider: Provider,
+	provider: AnchorProvider,
 	pubkey: PublicKey,
 ): Promise<MintInfo> {
 	const data = (await provider.connection.getAccountInfo(pubkey))?.data
@@ -224,14 +224,14 @@ export async function getMintInfo(
 
 export async function createMintIxs(
 	mint: Keypair,
-	provider: Provider,
+	provider: AnchorProvider,
 	authority: PublicKey,
 	decimals: number,
 	freezeAuthority?: PublicKey,
 ): Promise<TransactionInstruction[]> {
 	return [
 		SystemProgram.createAccount({
-			fromPubkey: provider.wallet.publicKey,
+			fromPubkey: provider.publicKey!,
 			newAccountPubkey: mint.publicKey,
 			space: MintLayout.span,
 			lamports: await Token.getMinBalanceRentForExemptMint(
@@ -251,13 +251,13 @@ export async function createMintIxs(
 
 export async function createTokenAccountIxs(
 	vault: Keypair,
-	provider: Provider,
+	provider: AnchorProvider,
 	mint: PublicKey,
 	owner: PublicKey,
 ): Promise<TransactionInstruction[]> {
 	return [
 		SystemProgram.createAccount({
-			fromPubkey: provider.wallet.publicKey,
+			fromPubkey: provider.publicKey!,
 			newAccountPubkey: vault.publicKey,
 			space: AccountLayout.span,
 			lamports: await Token.getMinBalanceRentForExemptAccount(
@@ -293,7 +293,7 @@ export function createMintToIxs(
 }
 
 export async function createMint(
-	provider: Provider,
+	provider: AnchorProvider,
 	authority: PublicKey,
 	decimals: number,
 	freezeAuthority?: PublicKey,
@@ -309,19 +309,19 @@ export async function createMint(
 			freezeAuthority,
 		)),
 	)
-	await provider.send(tx, [mint])
+	await provider.sendAll([{ tx, signers: [mint] }])
 	return mint.publicKey
 }
 
 export async function createTokenAccount(
-	provider: Provider,
+	provider: AnchorProvider,
 	mint: PublicKey,
 	owner: PublicKey,
 ): Promise<PublicKey> {
 	const vault = Keypair.generate()
 	const tx = new Transaction()
 	tx.add(...(await createTokenAccountIxs(vault, provider, mint, owner)))
-	await provider.send(tx, [vault])
+	await provider.sendAll([{ tx, signers:[vault] }])
 	return vault.publicKey
 }
 
@@ -392,14 +392,14 @@ export function getAssociatedTokenTransactionWithPayer(
 }
 
 export async function mintTo(
-	provider: Provider,
+	provider: AnchorProvider,
 	mint: PublicKey,
 	dest: PublicKey,
 	amount: number,
 ): Promise<void> {
 	const tx = new Transaction()
-	tx.add(...createMintToIxs(mint, dest, provider.wallet.publicKey, amount))
-	await provider.send(tx, [])
+	tx.add(...createMintToIxs(mint, dest, provider.publicKey, amount))
+	await provider.sendAll([{ tx,signers: [] }])
 }
 
 export function throwIfNull<T>(
@@ -433,11 +433,11 @@ export async function getWrappedSolInstructionsAndKey(
 	initialSmollAmount,
 	provider,
 ): Promise<{
-	createTokenAccountIx: TransactionInstruction
-	initTokenAccountIx: TransactionInstruction
-	closeTokenAccountIx: TransactionInstruction
-	intermediary: PublicKey
-	intermediaryKeypair: Keypair
+  createTokenAccountIx: TransactionInstruction
+  initTokenAccountIx: TransactionInstruction
+  closeTokenAccountIx: TransactionInstruction
+  intermediary: PublicKey
+  intermediaryKeypair: Keypair
 }> {
 	// sol wrapping code taken from jet: https://github.com/jet-lab/jet-v1/blob/30c56d5c14b68685466164fc45c96080f1d9348a/app/src/scripts/jet.ts
 	const intermediaryKeypair = Keypair.generate()
@@ -447,7 +447,7 @@ export async function getWrappedSolInstructionsAndKey(
 		TokenAccountLayout.span,
 	)
 	const createTokenAccountIx = SystemProgram.createAccount({
-		fromPubkey: provider.wallet.publicKey,
+		fromPubkey: provider.publicKey,
 		newAccountPubkey: intermediary,
 		programId: TOKEN_PROGRAM_ID,
 		space: TokenAccountLayout.span,
@@ -458,14 +458,14 @@ export async function getWrappedSolInstructionsAndKey(
 		TOKEN_PROGRAM_ID,
 		WRAPPED_SOL_MINT,
 		intermediary,
-		provider.wallet.publicKey,
+		provider.publicKey,
 	)
 
 	const closeTokenAccountIx = Token.createCloseAccountInstruction(
 		TOKEN_PROGRAM_ID,
 		intermediary,
-		provider.wallet.publicKey,
-		provider.wallet.publicKey,
+		provider.publicKey,
+		provider.publicKey,
 		[],
 	)
 

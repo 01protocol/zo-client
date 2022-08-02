@@ -3,12 +3,7 @@ import { Program, ProgramAccount } from "@project-serum/anchor"
 import State from "../State"
 import Num from "../../Num"
 import Decimal from "decimal.js"
-import {
-	OOInfo,
-	OrderInfo,
-	PositionInfo,
-	TradeInfo,
-} from "../../types/dataTypes"
+import { OOInfo, OrderInfo, PositionInfo, TradeInfo } from "../../types/dataTypes"
 import MarginWeb3 from "./MarginWeb3"
 import { Zo } from "../../types/zo"
 import Cache from "../Cache"
@@ -44,7 +39,7 @@ export default abstract class Margin extends MarginWeb3 {
 		st: State,
 		owner?: PublicKey,
 	): Promise<boolean> {
-		const marginOwner = owner || program.provider.wallet.publicKey
+		const marginOwner = owner || program.provider.publicKey!
 		const [key] = await this.getMarginKey(st, marginOwner, program)
 		return null != (await program.provider.connection.getAccountInfo(key))
 	}
@@ -592,12 +587,13 @@ export default abstract class Margin extends MarginWeb3 {
 		ch?: Cache | null,
 		owner?: PublicKey,
 		commitment = "processed" as Commitment,
+		simulate = false,
 	): Promise<Margin> {
 		if (ch)
 			console.warn(
 				"[DEPRECATED SOON: Cache param will soon be removed from here; cache is taken from state directly.]",
 			)
-		return (await super.loadWeb3(program, st, owner, commitment)) as Margin
+		return (await super.loadWeb3(program, st, owner, commitment, simulate)) as Margin
 	}
 
 	static async loadPrefetched(
@@ -1008,7 +1004,7 @@ Margin: ${this.pubkey.toString()},
 Wallet: ${this.owner && this.owner.toString()},
 Control: ${this.control.pubkey.toString()},
 Balances: [${
-			"\n" +
+	"\n" +
 			Object.keys(this.balances)
 				.filter((symbol) => this.balances[symbol]!.number != 0)
 				.map(
@@ -1020,10 +1016,10 @@ Balances: [${
 						"\n}",
 				)
 				.reduce((res, el) => res + ",\n" + el, "")
-		}
+}
 ],
 Positions:[ ${
-			"\n" +
+	"\n" +
 			this.positions
 				.filter(
 					(position) =>
@@ -1032,7 +1028,7 @@ Positions:[ ${
 				)
 				.map((position) => this.positionToString(position))
 				.reduce((res, el) => res + ",\n" + el, "")
-		}
+}
 ],
    `
 	}

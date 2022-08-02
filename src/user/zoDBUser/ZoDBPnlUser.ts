@@ -1,11 +1,6 @@
 import { checkIfNewAndPush } from "./utils/checkIfNewAndPush"
 import { ZoBaseUser } from "../ZoBaseUser"
-import {
-	ALL_HISTORY,
-	ALL_MARKETS,
-	HISTORY_ENTRIES_PER_PAGE,
-	USD_DECIMALS,
-} from "../../config"
+import { ALL_HISTORY, ALL_MARKETS, HISTORY_ENTRIES_PER_PAGE, USD_DECIMALS } from "../../config"
 
 export interface PnlHistoryEntry {
 	tx: string

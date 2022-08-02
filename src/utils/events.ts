@@ -1,4 +1,4 @@
-import { Coder, Idl } from "@project-serum/anchor"
+import { BorshCoder, Coder, Idl } from "@project-serum/anchor"
 import { DEX_IDL } from "../types/dex"
 import { IDL } from "../types/zo"
 
@@ -12,7 +12,7 @@ function decodeMsg(coder: Coder<string>, msg: string) {
 
 export function decodeDexEvent(msg: string) {
 	try {
-		const coder = new Coder(DEX_IDL as Idl)
+		const coder = new BorshCoder(DEX_IDL as Idl)
 		return decodeMsg(coder, msg)
 	} catch (_) {
 		return null
@@ -21,7 +21,7 @@ export function decodeDexEvent(msg: string) {
 
 export function decodeZoEvent(msg: string) {
 	try {
-		const coder = new Coder(IDL as Idl)
+		const coder = new BorshCoder(IDL as Idl)
 		return decodeMsg(coder, msg)
 	} catch (_) {
 		return null
