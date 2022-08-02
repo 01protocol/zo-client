@@ -4,11 +4,7 @@
 
 import { ZoDBPnlUser } from "./ZoDBPnlUser"
 import { checkIfNewAndPush } from "./utils/checkIfNewAndPush"
-import {
-	ALL_MARKETS,
-	FUNDING_HISTORY,
-	HISTORY_ENTRIES_PER_PAGE,
-} from "../../config"
+import { ALL_MARKETS, FUNDING_HISTORY, HISTORY_ENTRIES_PER_PAGE } from "../../config"
 import { PositionInfo } from "../../types/dataTypes"
 
 export enum TradeHistoryEntryType {
@@ -160,12 +156,12 @@ export class ZoDBTradeUser extends ZoDBPnlUser {
 							tradeAndFundingHistory.push(
 								...(fundingOnly
 									? await this._combineTradesAndFunding(
-											position.marketKey,
-											allTrades,
+										position.marketKey,
+										allTrades,
 									  )
 									: this.balanceHistory[ALL_MARKETS]!.filter(
-											(balance) =>
-												balance.marketKey ==
+										(balance) =>
+											balance.marketKey ==
 												position.marketKey,
 									  ))!,
 							)
@@ -204,7 +200,7 @@ export class ZoDBTradeUser extends ZoDBPnlUser {
 	): Promise<TradeHistoryEntry[]> {
 		const tradeHistoryEntries = allTrades
 			? this.balanceHistory[ALL_MARKETS]!.filter(
-					(balance) => balance.marketKey == marketKey,
+				(balance) => balance.marketKey == marketKey,
 			  )!
 			: this.balanceHistory[marketKey]!
 		if (tradeHistoryEntries.length == 1) {

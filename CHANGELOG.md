@@ -8,6 +8,11 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.9.9]
+
+- General: updated anchor to 0.25.0
+- MarginWeb3: Added support for simulation (not working due to some anchor bug)
+
 ## [0.9.8]
 
 - OrderTypeInfo: Add `StopMarket`, `StopLimit`, `TakeProfitMarket`, `TakeProfitLimit`

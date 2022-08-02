@@ -1,6 +1,6 @@
 {
   "name": "@zero_one/client",
-  "version": "0.9.8",
+  "version": "0.9.9",
   "license": "Apache-2.0",
   "description": "TypeScript Client API",
   "main": "dist/cjs/index.js",
@@ -16,7 +16,7 @@
     "tsc": "tsc"
   },
   "dependencies": {
-    "@project-serum/anchor": "^0.20.1",
+    "@project-serum/anchor": "^0.25.0",
     "@solana/spl-token": "^0.1.8",
     "@zero_one/lite-serum": "^0.1.1",
     "bn.js": "^5.2.0",
@@ -25,7 +25,7 @@
     "realm-web": "^1.7.1"
   },
   "peerDependencies": {
-    "@solana/web3.js": "^1.31.0"
+    "@solana/web3.js": "^1.50.1"
   },
   "devDependencies": {
     "@types/node": "^17.0.1",

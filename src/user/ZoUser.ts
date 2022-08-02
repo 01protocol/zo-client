@@ -1,14 +1,8 @@
 import { ZoDBUser } from "./zoDBUser/ZoDBUser"
 import { ChangeEvent, UpdateEvents, Wallet } from "../types"
 import { Commitment, Connection, Keypair } from "@solana/web3.js"
-import {
-	AsyncLock,
-	Cluster,
-	createProgram,
-	OrderInfo,
-	PositionInfo,
-} from "../utils"
-import { Provider } from "@project-serum/anchor"
+import { AsyncLock, Cluster, createProgram, OrderInfo, PositionInfo } from "../utils"
+import { AnchorProvider } from "@project-serum/anchor"
 import { ZO_DEVNET_STATE_KEY, ZO_MAINNET_STATE_KEY } from "../config"
 import { Margin, State } from "../index"
 import Decimal from "decimal.js"
@@ -271,7 +265,7 @@ export class ZoUser extends ZoDBUser {
 		}
 
 		const connection = new Connection(opts.rpcUrl, opts.commitment)
-		const provider = new Provider(connection, wallet, {
+		const provider = new AnchorProvider(connection, wallet, {
 			commitment: opts.commitment,
 			skipPreflight: opts.skipPreflight,
 		})

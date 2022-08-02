@@ -1,21 +1,8 @@
 import { blob, seq, struct } from "buffer-layout"
-import {
-	accountFlagsLayout,
-	i128,
-	i64,
-	publicKeyLayout,
-	u128,
-	u64,
-} from "./layout"
+import { accountFlagsLayout, i128, i64, publicKeyLayout, u128, u64 } from "./layout"
 import { Slab, SLAB_LAYOUT } from "./slab"
 import BN from "bn.js"
-import {
-	AccountInfo,
-	AccountMeta,
-	Commitment,
-	Connection,
-	PublicKey,
-} from "@solana/web3.js"
+import { AccountInfo, AccountMeta, Commitment, Connection, PublicKey } from "@solana/web3.js"
 import { decodeEventQueue, decodeRequestQueue } from "./queue"
 import { Buffer } from "buffer"
 import { throwIfNull } from "../utils"

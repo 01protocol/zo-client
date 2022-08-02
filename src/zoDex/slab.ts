@@ -83,6 +83,7 @@ export class Slab {
 			searchKey = new BN(searchKey)
 		}
 		let index = this.header.root
+		// eslint-disable-next-line no-constant-condition
 		while (true) {
 			const { leafNode, innerNode } = this.nodes[index]
 			if (leafNode) {
