@@ -10,6 +10,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2.3.1
       - run: |
-          npm install
+          npm install --legacy-peer-deps
           npm run build
           npm run lint-format
