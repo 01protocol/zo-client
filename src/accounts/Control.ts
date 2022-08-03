@@ -1,7 +1,13 @@
 import { AccountInfo, Commitment, PublicKey } from "@solana/web3.js"
 import { Program } from "@project-serum/anchor"
 import BaseAccount from "./BaseAccount"
-import { ChangeEvent, ControlSchema, ControlSchema as Schema, UpdateEvents, Zo } from "../types"
+import {
+	ChangeEvent,
+	ControlSchema,
+	ControlSchema as Schema,
+	UpdateEvents,
+	Zo,
+} from "../types"
 import EventEmitter from "eventemitter3"
 
 /**

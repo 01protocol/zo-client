@@ -59,18 +59,18 @@ export enum OrderTypeName {
 export function parseOrderType(orderType: OrderType | OrderTypeName) {
 	if (typeof orderType == "string") {
 		switch (orderType) {
-		case OrderTypeName.Limit:
-			return { limit: {} }
-		case OrderTypeName.ImmediateOrCancel:
-			return { immediateOrCancel: {} }
-		case OrderTypeName.PostOnly:
-			return { postOnly: {} }
-		case OrderTypeName.ReduceOnlyIoc:
-			return { reduceOnlyIoc: {} }
-		case OrderTypeName.ReduceOnlyLimit:
-			return { reduceOnlyLimit: {} }
-		case OrderTypeName.FillOrKill:
-			return { fillOrKill: {} }
+			case OrderTypeName.Limit:
+				return { limit: {} }
+			case OrderTypeName.ImmediateOrCancel:
+				return { immediateOrCancel: {} }
+			case OrderTypeName.PostOnly:
+				return { postOnly: {} }
+			case OrderTypeName.ReduceOnlyIoc:
+				return { reduceOnlyIoc: {} }
+			case OrderTypeName.ReduceOnlyLimit:
+				return { reduceOnlyLimit: {} }
+			case OrderTypeName.FillOrKill:
+				return { fillOrKill: {} }
 		}
 	}
 	return orderType as OrderType

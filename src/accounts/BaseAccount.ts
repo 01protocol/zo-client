@@ -2,7 +2,11 @@ import { Commitment, PublicKey } from "@solana/web3.js"
 import { Program } from "@project-serum/anchor"
 import { Zo } from "../types"
 import EventEmitter from "eventemitter3"
-import { ZERO_ONE_DEVNET_PROGRAM_ID, ZO_DEX_DEVNET_PROGRAM_ID, ZO_DEX_MAINNET_PROGRAM_ID } from "../config"
+import {
+	ZERO_ONE_DEVNET_PROGRAM_ID,
+	ZO_DEX_DEVNET_PROGRAM_ID,
+	ZO_DEX_MAINNET_PROGRAM_ID,
+} from "../config"
 import { AsyncLock } from "../utils/AsyncLock"
 
 /**

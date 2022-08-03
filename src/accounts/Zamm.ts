@@ -1,4 +1,10 @@
-import { Commitment, PublicKey, SystemProgram, SYSVAR_RENT_PUBKEY, TransactionInstruction } from "@solana/web3.js"
+import {
+	Commitment,
+	PublicKey,
+	SystemProgram,
+	SYSVAR_RENT_PUBKEY,
+	TransactionInstruction,
+} from "@solana/web3.js"
 import { Program } from "@project-serum/anchor"
 import BaseAccount from "./BaseAccount"
 import State from "./State"
@@ -349,11 +355,11 @@ export default class Zamm extends BaseAccount<Schema> {
 			x > 0
 				? x *
 				  this.zammMargin.state.markets[this.marketSymbol]!.indexPrice
-				  	.number *
+						.number *
 				  10
 				: -x *
 				  this.zammMargin.state.markets[this.marketSymbol]!.indexPrice
-				  	.number *
+						.number *
 				  0.1
 		const Y = new Num(y, USDC_DECIMALS).n
 		return await this.arbRaw(arberMargin, X, Y)

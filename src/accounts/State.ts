@@ -4,7 +4,12 @@ import Cache from "./Cache"
 import { Orderbook, ZoMarket } from "../zoDex/zoMarket"
 import { ChangeEvent, StateSchema, UpdateEvents, Zo } from "../types"
 import { BASE_IMF_DIVIDER, MMF_MULTIPLIER, USD_DECIMALS } from "../config"
-import { AssetInfo, FundingInfo, MarketInfo, MarketType } from "../types/dataTypes"
+import {
+	AssetInfo,
+	FundingInfo,
+	MarketInfo,
+	MarketType,
+} from "../types/dataTypes"
 import Decimal from "decimal.js"
 import _ from "lodash"
 import Num from "../Num"
@@ -12,7 +17,12 @@ import { AsyncLock, loadSymbol } from "../utils"
 import BaseAccount from "./BaseAccount"
 import EventEmitter from "eventemitter3"
 import { decodeEventQueue, Event } from "../zoDex/queue"
-import { ChangeType, MarketFundingChange, MarketPriceChange, StateBalanceChange } from "../types/changeLog"
+import {
+	ChangeType,
+	MarketFundingChange,
+	MarketPriceChange,
+	StateBalanceChange,
+} from "../types/changeLog"
 
 type CollateralInfo = Omit<StateSchema["collaterals"][0], "oracleSymbol"> & {
 	oracleSymbol: string
@@ -693,14 +703,14 @@ export default class State extends BaseAccount<Schema> {
 		return {
 			data: hasData
 				? {
-					hourly: cumulAvg.div(
-						lastSampleStartTime.getMinutes() * 24,
-					),
-					daily: cumulAvg.div(lastSampleStartTime.getMinutes()),
-					apr: cumulAvg
-						.div(lastSampleStartTime.getMinutes())
-						.times(100)
-						.times(365),
+						hourly: cumulAvg.div(
+							lastSampleStartTime.getMinutes() * 24,
+						),
+						daily: cumulAvg.div(lastSampleStartTime.getMinutes()),
+						apr: cumulAvg
+							.div(lastSampleStartTime.getMinutes())
+							.times(100)
+							.times(365),
 				  }
 				: null,
 			lastSampleUpdate: lastSampleStartTime,

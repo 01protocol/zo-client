@@ -46,8 +46,8 @@ export function sleep(ms: number): Promise<void> {
 }
 
 export enum Cluster {
-  Devnet = "Devnet",
-  Mainnet = "Mainnet",
+	Devnet = "Devnet",
+	Mainnet = "Mainnet",
 }
 
 export function createProvider(
@@ -81,9 +81,9 @@ export function arePositionsEqual(a: PositionInfo, b: PositionInfo) {
 }
 
 export enum OrderChangeStatus {
-  Changed,
-  Missing,
-  Present,
+	Changed,
+	Missing,
+	Present,
 }
 
 export function getOrderStatus(
@@ -321,7 +321,7 @@ export async function createTokenAccount(
 	const vault = Keypair.generate()
 	const tx = new Transaction()
 	tx.add(...(await createTokenAccountIxs(vault, provider, mint, owner)))
-	await provider.sendAll([{ tx, signers:[vault] }])
+	await provider.sendAll([{ tx, signers: [vault] }])
 	return vault.publicKey
 }
 
@@ -399,7 +399,7 @@ export async function mintTo(
 ): Promise<void> {
 	const tx = new Transaction()
 	tx.add(...createMintToIxs(mint, dest, provider.publicKey, amount))
-	await provider.sendAll([{ tx,signers: [] }])
+	await provider.sendAll([{ tx, signers: [] }])
 }
 
 export function throwIfNull<T>(
@@ -433,11 +433,11 @@ export async function getWrappedSolInstructionsAndKey(
 	initialSmollAmount,
 	provider,
 ): Promise<{
-  createTokenAccountIx: TransactionInstruction
-  initTokenAccountIx: TransactionInstruction
-  closeTokenAccountIx: TransactionInstruction
-  intermediary: PublicKey
-  intermediaryKeypair: Keypair
+	createTokenAccountIx: TransactionInstruction
+	initTokenAccountIx: TransactionInstruction
+	closeTokenAccountIx: TransactionInstruction
+	intermediary: PublicKey
+	intermediaryKeypair: Keypair
 }> {
 	// sol wrapping code taken from jet: https://github.com/jet-lab/jet-v1/blob/30c56d5c14b68685466164fc45c96080f1d9348a/app/src/scripts/jet.ts
 	const intermediaryKeypair = Keypair.generate()
