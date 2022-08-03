@@ -12,7 +12,7 @@ jobs:
 
       - name: Build
         run: |
-          npm i
+          npm i --legacy-peer-deps
           npm run build-docs
 
       - name: Deploy
