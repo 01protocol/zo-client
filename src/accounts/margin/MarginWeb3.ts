@@ -1782,8 +1782,8 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 			limitPrice !== undefined
 				? new BN(Math.round(limitPrice * 1e6))
 				: isLong
-				? new BN(1)
-				: new BN(1).shln(50)
+				? new BN(1).shln(50)
+				: new BN(1)
 		const orderSize = market.baseSizeNumberToLots(size)
 
 		return await this.program.rpc.placeSpecialOrder(
