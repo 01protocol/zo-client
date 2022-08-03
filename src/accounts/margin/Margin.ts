@@ -3,7 +3,12 @@ import { Program, ProgramAccount } from "@project-serum/anchor"
 import State from "../State"
 import Num from "../../Num"
 import Decimal from "decimal.js"
-import { OOInfo, OrderInfo, PositionInfo, TradeInfo } from "../../types/dataTypes"
+import {
+	OOInfo,
+	OrderInfo,
+	PositionInfo,
+	TradeInfo,
+} from "../../types/dataTypes"
 import MarginWeb3 from "./MarginWeb3"
 import { Zo } from "../../types/zo"
 import Cache from "../Cache"
@@ -593,7 +598,13 @@ export default abstract class Margin extends MarginWeb3 {
 			console.warn(
 				"[DEPRECATED SOON: Cache param will soon be removed from here; cache is taken from state directly.]",
 			)
-		return (await super.loadWeb3(program, st, owner, commitment, simulate)) as Margin
+		return (await super.loadWeb3(
+			program,
+			st,
+			owner,
+			commitment,
+			simulate,
+		)) as Margin
 	}
 
 	static async loadPrefetched(
@@ -1004,7 +1015,7 @@ Margin: ${this.pubkey.toString()},
 Wallet: ${this.owner && this.owner.toString()},
 Control: ${this.control.pubkey.toString()},
 Balances: [${
-	"\n" +
+			"\n" +
 			Object.keys(this.balances)
 				.filter((symbol) => this.balances[symbol]!.number != 0)
 				.map(
@@ -1016,10 +1027,10 @@ Balances: [${
 						"\n}",
 				)
 				.reduce((res, el) => res + ",\n" + el, "")
-}
+		}
 ],
 Positions:[ ${
-	"\n" +
+			"\n" +
 			this.positions
 				.filter(
 					(position) =>
@@ -1028,7 +1039,7 @@ Positions:[ ${
 				)
 				.map((position) => this.positionToString(position))
 				.reduce((res, el) => res + ",\n" + el, "")
-}
+		}
 ],
    `
 	}

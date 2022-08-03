@@ -130,6 +130,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		public readonly control: Control,
 		public specialOrdersAccount: SpecialOrders | null,
 		public state: State,
+		private readonly heimdallKey: PublicKey,
 		public readonly owner?: PublicKey,
 		commitment?: Commitment,
 		public readonly simulate = false,
@@ -148,9 +149,10 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		simulate = false,
 	): Promise<MarginWeb3> {
 		const marginOwner = owner || program.provider.publicKey!
-		const [[key, _nonce], soKey] = await Promise.all([
+		const [[key, _nonce], soKey, heimdallKey] = await Promise.all([
 			this.getPda(st, marginOwner, program.programId),
 			SpecialOrders.getPda(st, marginOwner, program.programId),
+			this.getHeimdallPda(program.programId),
 		])
 		const data = await this.fetch(program, key, st, commitment)
 		const [control, specialOrders] = await Promise.all([
@@ -164,6 +166,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 			control,
 			specialOrders,
 			st,
+			heimdallKey,
 			marginOwner,
 			commitment,
 			simulate,
@@ -187,6 +190,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		commitment?: Commitment,
 		simulate = false,
 		prefetchedSpecialOrdersData?: ProgramAccount<SpecialOrdersSchema>,
+		prefetchedHeimdallKey?: PublicKey,
 	): Promise<MarginWeb3> {
 		const data = this.transformFetchedData(st, prefetchedMarginData.account)
 		const control = await Control.loadPrefetched(
@@ -202,6 +206,14 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 						prefetchedSpecialOrdersData.publicKey,
 						prefetchedSpecialOrdersData.account,
 				  )
+		const heimdallKey =
+			prefetchedHeimdallKey ??
+			(
+				await PublicKey.findProgramAddress(
+					[Buffer.from("heimdallv1")],
+					program.programId,
+				)
+			)[0]
 		const margin = new this(
 			program,
 			prefetchedMarginData.publicKey,
@@ -209,6 +221,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 			control,
 			specialOrders,
 			st,
+			heimdallKey,
 			undefined,
 			commitment,
 			simulate,
@@ -235,11 +248,15 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 			accountInfo.data,
 		)
 		const data = this.transformFetchedData(st, account)
-		const soKey = await SpecialOrders.getPda(
-			st,
-			data.authority,
-			program.programId,
-		)
+		const [soKey, heimdallKey] = await Promise.all([
+			SpecialOrders.getPda(st, data.authority, program.programId),
+			(
+				await PublicKey.findProgramAddress(
+					[Buffer.from("heimdallv1")],
+					program.programId,
+				)
+			)[0],
+		])
 		const [control, specialOrders] = await Promise.all([
 			Control.load(program, data.control),
 			SpecialOrders.loadNullable(program, soKey),
@@ -251,6 +268,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 			control,
 			specialOrders,
 			st,
+			heimdallKey,
 			undefined,
 			commitment,
 			simulate,
@@ -355,6 +373,17 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 			],
 			programId,
 		)
+	}
+
+	protected static async getHeimdallPda(
+		programId: PublicKey,
+	): Promise<PublicKey> {
+		return (
+			await PublicKey.findProgramAddress(
+				[Buffer.from("heimdallv1")],
+				programId,
+			)
+		)[0]
 	}
 
 	protected static async loadAllMarginAndControlSchemas(
@@ -907,6 +936,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 				tokenAccount: intermediary,
 				vault,
 				tokenProgram: TOKEN_PROGRAM_ID,
+				heimdall: this.heimdallKey,
 			},
 			preInstructions: [createTokenAccountIx, initTokenAccountIx],
 			postInstructions: [closeTokenAccountIx],
@@ -980,6 +1010,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 				tokenAccount,
 				vault,
 				tokenProgram: TOKEN_PROGRAM_ID,
+				heimdall: this.heimdallKey,
 			},
 			preInstructions: preInstructions,
 		})
