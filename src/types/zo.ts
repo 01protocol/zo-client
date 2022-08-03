@@ -1428,6 +1428,53 @@ export type Zo = {
       }
     },
     {
+      "name": "heimdall",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "nonce",
+            "type": "u8"
+          },
+          {
+            "name": "dailyWdLimit",
+            "type": "u64"
+          },
+          {
+            "name": "dailyWdStartTs",
+            "type": "u64"
+          },
+          {
+            "name": "dailyWithdrawn",
+            "type": {
+              "array": [
+                "u64",
+                25
+              ]
+            }
+          },
+          {
+            "name": "constantPrices",
+            "type": {
+              "array": [
+                "u64",
+                25
+              ]
+            }
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                1024
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "margin",
       "type": {
         "kind": "struct",
@@ -2835,6 +2882,11 @@ export type Zo = {
       "code": 6074,
       "name": "CollateralDisabled",
       "msg": "This collateral is disabled"
+    },
+    {
+      "code": 6078,
+      "name": "ExceededSecurityWithdrawLimit",
+      "msg": "The withdraw amount exceeded the global daily withdraw limit"
     }
   ]
 };
@@ -4271,6 +4323,53 @@ export const IDL: Zo = {
 				]
 			}
 		},
+    {
+      "name": "heimdall",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "nonce",
+            "type": "u8"
+          },
+          {
+            "name": "dailyWdLimit",
+            "type": "u64"
+          },
+          {
+            "name": "dailyWdStartTs",
+            "type": "u64"
+          },
+          {
+            "name": "dailyWithdrawn",
+            "type": {
+              "array": [
+                "u64",
+                25
+              ]
+            }
+          },
+          {
+            "name": "constantPrices",
+            "type": {
+              "array": [
+                "u64",
+                25
+              ]
+            }
+          },
+          {
+            "name": "padding",
+            "type": {
+              "array": [
+                "u8",
+                1024
+              ]
+            }
+          }
+        ]
+      }
+    },
 		{
 			"name": "margin",
 			"type": {
@@ -5679,6 +5778,11 @@ export const IDL: Zo = {
 			"code": 6074,
 			"name": "CollateralDisabled",
 			"msg": "This collateral is disabled"
-		}
+		},
+    {
+      "code": 6078,
+      "name": "ExceededSecurityWithdrawLimit",
+      "msg": "The withdraw amount exceeded the global daily withdraw limit"
+    }
 	]
 }
