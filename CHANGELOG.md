@@ -8,6 +8,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.10.0] - 2022-08-03
+
+- BREAKING: Margin's `withdraw` methods now take and additional `heimdall` account. Previous build's withdraw methods will fail.
+
 ## [0.9.9]
 
 - General: updated anchor to 0.25.0

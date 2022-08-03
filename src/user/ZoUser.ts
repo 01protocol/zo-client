@@ -1,7 +1,13 @@
 import { ZoDBUser } from "./zoDBUser/ZoDBUser"
 import { ChangeEvent, UpdateEvents, Wallet } from "../types"
 import { Commitment, Connection, Keypair } from "@solana/web3.js"
-import { AsyncLock, Cluster, createProgram, OrderInfo, PositionInfo } from "../utils"
+import {
+	AsyncLock,
+	Cluster,
+	createProgram,
+	OrderInfo,
+	PositionInfo,
+} from "../utils"
 import { AnchorProvider } from "@project-serum/anchor"
 import { ZO_DEVNET_STATE_KEY, ZO_MAINNET_STATE_KEY } from "../config"
 import { Margin, State } from "../index"

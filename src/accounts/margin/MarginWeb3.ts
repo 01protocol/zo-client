@@ -15,7 +15,6 @@ import { Buffer } from "buffer"
 import BaseAccount from "../BaseAccount"
 import State from "../State"
 import Control from "../Control"
-import SpecialOrders from "../SpecialOrders"
 import Num from "../../Num"
 import {
 	arePositionsEqual,
@@ -32,8 +31,6 @@ import {
 	ChangeType,
 	ControlSchema,
 	MarginSchema,
-	SpecialOrdersSchema,
-	SpecialOrderType,
 	OrderChangeType,
 	OrderType,
 	OrderTypeName,
@@ -58,11 +55,7 @@ import {
 } from "../../config"
 import Decimal from "decimal.js"
 import { getMintDecimals } from "@zero_one/lite-serum/lib/market"
-import {
-	OrderInfo,
-	PositionInfo,
-	SpecialOrderInfo,
-} from "../../types/dataTypes"
+import { OrderInfo, PositionInfo } from "../../types/dataTypes"
 import EventEmitter from "eventemitter3"
 import {
 	ChangeEvent,
@@ -86,7 +79,6 @@ export interface MarginClassSchema extends Omit<MarginSchema, "collateral"> {
 export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	positions: PositionInfo[] = []
 	orders: OrderInfo[] = []
-	specialOrders: SpecialOrderInfo[] = []
 	_balances: { [key: string]: Num } = {}
 
 	private get rpc(): any {
@@ -128,8 +120,8 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		pubkey: PublicKey,
 		data: MarginClassSchema,
 		public readonly control: Control,
-		public specialOrdersAccount: SpecialOrders | null,
 		public state: State,
+		private readonly heimdallKey: PublicKey,
 		public readonly owner?: PublicKey,
 		commitment?: Commitment,
 		public readonly simulate = false,
@@ -148,22 +140,19 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		simulate = false,
 	): Promise<MarginWeb3> {
 		const marginOwner = owner || program.provider.publicKey!
-		const [[key, _nonce], soKey] = await Promise.all([
+		const [[key, _nonce], heimdallKey] = await Promise.all([
 			this.getPda(st, marginOwner, program.programId),
-			SpecialOrders.getPda(st, marginOwner, program.programId),
+			this.getHeimdallPda(program.programId),
 		])
 		const data = await this.fetch(program, key, st, commitment)
-		const [control, specialOrders] = await Promise.all([
-			Control.load(program, data.control, commitment),
-			SpecialOrders.loadNullable(program, soKey),
-		])
+		const control = await Control.load(program, data.control, commitment)
 		const margin = new this(
 			program,
 			key,
 			data,
 			control,
-			specialOrders,
 			st,
+			heimdallKey,
 			marginOwner,
 			commitment,
 			simulate,
@@ -171,7 +160,6 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		margin.loadBalances()
 		margin.loadPositions()
 		await margin.loadOrders()
-		await margin.loadSpecialOrders()
 		return margin
 	}
 
@@ -186,7 +174,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		withOrders: boolean,
 		commitment?: Commitment,
 		simulate = false,
-		prefetchedSpecialOrdersData?: ProgramAccount<SpecialOrdersSchema>,
+		prefetchedHeimdallKey?: PublicKey,
 	): Promise<MarginWeb3> {
 		const data = this.transformFetchedData(st, prefetchedMarginData.account)
 		const control = await Control.loadPrefetched(
@@ -194,21 +182,21 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 			prefetchedControlData.publicKey,
 			prefetchedControlData.account,
 		)
-		const specialOrders =
-			prefetchedSpecialOrdersData === undefined
-				? null
-				: await SpecialOrders.loadPrefetched(
-						program,
-						prefetchedSpecialOrdersData.publicKey,
-						prefetchedSpecialOrdersData.account,
-				  )
+		const heimdallKey =
+			prefetchedHeimdallKey ??
+			(
+				await PublicKey.findProgramAddress(
+					[Buffer.from("heimdallv1")],
+					program.programId,
+				)
+			)[0]
 		const margin = new this(
 			program,
 			prefetchedMarginData.publicKey,
 			data,
 			control,
-			specialOrders,
 			st,
+			heimdallKey,
 			undefined,
 			commitment,
 			simulate,
@@ -217,7 +205,6 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		margin.loadPositions()
 		if (withOrders) {
 			await margin.loadOrders()
-			await margin.loadSpecialOrders()
 		}
 		return margin
 	}
@@ -235,22 +222,22 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 			accountInfo.data,
 		)
 		const data = this.transformFetchedData(st, account)
-		const soKey = await SpecialOrders.getPda(
-			st,
-			data.authority,
-			program.programId,
-		)
-		const [control, specialOrders] = await Promise.all([
-			Control.load(program, data.control),
-			SpecialOrders.loadNullable(program, soKey),
+		const [heimdallKey] = await Promise.all([
+			(
+				await PublicKey.findProgramAddress(
+					[Buffer.from("heimdallv1")],
+					program.programId,
+				)
+			)[0],
 		])
+		const control = await Control.load(program, data.control)
 		const margin = new this(
 			program,
 			account.publicKey,
 			data,
 			control,
-			specialOrders,
 			st,
+			heimdallKey,
 			undefined,
 			commitment,
 			simulate,
@@ -259,7 +246,6 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		margin.loadPositions()
 		if (withOrders) {
 			await margin.loadOrders()
-			await margin.loadSpecialOrders()
 		}
 		return margin
 	}
@@ -277,7 +263,6 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		this.loadPositions()
 		if (withOrders) {
 			await this.loadOrders()
-			await this.loadSpecialOrders()
 		}
 	}
 
@@ -290,7 +275,6 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		this.loadPositions()
 		if (withOrders) {
 			await this.loadOrders()
-			await this.loadSpecialOrders()
 		}
 	}
 
@@ -355,6 +339,17 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 			],
 			programId,
 		)
+	}
+
+	protected static async getHeimdallPda(
+		programId: PublicKey,
+	): Promise<PublicKey> {
+		return (
+			await PublicKey.findProgramAddress(
+				[Buffer.from("heimdallv1")],
+				programId,
+			)
+		)[0]
 	}
 
 	protected static async loadAllMarginAndControlSchemas(
@@ -607,41 +602,6 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		return changeLog
 	}
 
-	async loadSpecialOrders() {
-		if (this.specialOrdersAccount === null) {
-			this.specialOrders = []
-			return
-		}
-
-		const keyToMarket = Object.fromEntries(
-			this.state.data.perpMarkets.map((m) => [m.dexMarket.toString(), m]),
-		)
-
-		this.specialOrders = await Promise.all(
-			this.specialOrdersAccount.data.entries.map(async (x) => {
-				let perpMarket = keyToMarket[x.market.toString()]!
-				let market = await this.state.getMarketBySymbol(
-					perpMarket.symbol,
-				)
-
-				return {
-					id: x.id,
-					marketSymbol: perpMarket.symbol,
-					marketKey: perpMarket.dexMarket,
-					isLong: x.isLong,
-					fee: x.fee,
-					type: x.ty,
-					triggerPrice: new Num(x.triggerPrice, USD_DECIMALS),
-					limitPrice: new Num(x.limitPrice, USD_DECIMALS),
-					size: new Num(
-						market.baseSizeLotsToNumber(x.size),
-						perpMarket.assetDecimals,
-					),
-				}
-			}),
-		)
-	}
-
 	/**
 	 * Refreshes the data on the Margin, state, cache and control accounts.
 	 */
@@ -651,20 +611,12 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	): Promise<void> {
 		if (refreshMarginData) {
 			if (refreshState) {
-				;[this.data, this.specialOrdersAccount] = await Promise.all([
+				;[this.data] = await Promise.all([
 					MarginWeb3.fetch(
 						this.program,
 						this.pubkey,
 						this.state,
 						this.commitment,
-					),
-					SpecialOrders.loadNullable(
-						this.program,
-						await SpecialOrders.getPda(
-							this.state,
-							this.data.authority,
-							this.program.programId,
-						),
 					),
 					this.control.refresh(),
 					this.state.refresh(),
@@ -681,7 +633,6 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		this.loadBalances()
 		this.loadPositions()
 		await this.loadOrders()
-		await this.loadSpecialOrders()
 	}
 
 	eventEmitter: EventEmitter<UpdateEvents, ChangeEvent<any>> | null = null
@@ -907,6 +858,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 				tokenAccount: intermediary,
 				vault,
 				tokenProgram: TOKEN_PROGRAM_ID,
+				heimdall: this.heimdallKey,
 			},
 			preInstructions: [createTokenAccountIx, initTokenAccountIx],
 			postInstructions: [closeTokenAccountIx],
@@ -980,6 +932,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 				tokenAccount,
 				vault,
 				tokenProgram: TOKEN_PROGRAM_ID,
+				heimdall: this.heimdallKey,
 			},
 			preInstructions: preInstructions,
 		})
@@ -1707,94 +1660,6 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 				)
 					? ZO_DEX_DEVNET_PROGRAM_ID
 					: ZO_DEX_MAINNET_PROGRAM_ID,
-			},
-		})
-	}
-
-	private async createSpecialOrdersAccountIx(): Promise<
-		[TransactionInstruction, PublicKey]
-	> {
-		const soKey = await SpecialOrders.getPda(
-			this.state,
-			this.data.authority,
-			this.program.programId,
-		)
-		const ix = this.program.instruction.createSpecialOrdersAccount({
-			accounts: {
-				state: this.state.pubkey,
-				authority: this.data.authority,
-				payer: this.data.authority,
-				specialOrders: soKey,
-				rent: SYSVAR_RENT_PUBKEY,
-				systemProgram: SystemProgram.programId,
-			},
-		})
-		return [ix, soKey]
-	}
-
-	async placeSpecialOrder({
-		symbol,
-		isLong,
-		specialOrderType,
-		size,
-		triggerPrice,
-		limitPrice,
-	}: Readonly<{
-		symbol: string
-		isLong: boolean
-		specialOrderType: SpecialOrderType
-		size: number
-		triggerPrice: number
-		limitPrice?: number
-	}>) {
-		const market = await this.state.getMarketBySymbol(symbol)
-		const baseDecimals = this.state.markets[symbol]!.assetDecimals
-		const dexMarket = this.state.getMarketKeyBySymbol(symbol)
-		let [createSoIx, soKey] =
-			this.specialOrdersAccount !== null
-				? [undefined, this.specialOrdersAccount.pubkey]
-				: await this.createSpecialOrdersAccountIx()
-
-		// big / big -> small / big
-		const orderTriggerPrice = new BN(Math.round(triggerPrice * 1e6))
-		const orderLimitPrice =
-			limitPrice !== undefined
-				? new BN(Math.round(limitPrice * 1e6))
-				: isLong
-				? new BN(1)
-				: new BN(1).shln(50)
-		const orderSize = market.baseSizeNumberToLots(size)
-
-		return await this.program.rpc.placeSpecialOrder(
-			isLong,
-			specialOrderType,
-			orderTriggerPrice,
-			orderLimitPrice,
-			orderSize,
-			{
-				accounts: {
-					state: this.state.pubkey,
-					authority: this.data.authority,
-					specialOrders: soKey,
-					dexMarket,
-					systemProgram: SystemProgram.programId,
-				},
-				preInstructions: createSoIx && [createSoIx],
-			},
-		)
-	}
-
-	async cancelSpecialOrder(id: number) {
-		let o = this.specialOrders.find((o) => o.id == id)
-		if (o === undefined) {
-			throw new Error(`Special order ${id} not found`)
-		}
-		return await this.program.rpc.cancelSpecialOrder(id, {
-			accounts: {
-				state: this.state.pubkey,
-				authority: this.data.authority,
-				specialOrders: this.specialOrdersAccount!.pubkey,
-				dexMarket: o.marketKey,
 			},
 		})
 	}

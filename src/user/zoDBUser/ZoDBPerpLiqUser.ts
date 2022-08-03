@@ -1,6 +1,10 @@
 import { ZoDBTradeUser } from "./ZoDBTradeUser"
 import { checkIfNewAndPush } from "./utils/checkIfNewAndPush"
-import { ALL_MARKETS, HISTORY_ENTRIES_PER_PAGE, USD_DECIMALS } from "../../config"
+import {
+	ALL_MARKETS,
+	HISTORY_ENTRIES_PER_PAGE,
+	USD_DECIMALS,
+} from "../../config"
 import { MarketInfo } from "../../types/dataTypes"
 
 export interface PerpLiqHistoryEntry {

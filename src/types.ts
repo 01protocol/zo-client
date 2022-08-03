@@ -47,12 +47,6 @@ export type OrderType =
 	// eslint-disable-next-line @typescript-eslint/ban-types
 	| { fillOrKill: {} }
 
-export type SpecialOrderType =
-	// eslint-disable-next-line @typescript-eslint/ban-types
-	| { takeProfit: {} }
-	// eslint-disable-next-line @typescript-eslint/ban-types
-	| { stopLoss: {} }
-
 export enum OrderTypeName {
 	Limit = "Limit",
 	ImmediateOrCancel = "ImmediateOrCancel",
@@ -65,18 +59,18 @@ export enum OrderTypeName {
 export function parseOrderType(orderType: OrderType | OrderTypeName) {
 	if (typeof orderType == "string") {
 		switch (orderType) {
-		case OrderTypeName.Limit:
-			return { limit: {} }
-		case OrderTypeName.ImmediateOrCancel:
-			return { immediateOrCancel: {} }
-		case OrderTypeName.PostOnly:
-			return { postOnly: {} }
-		case OrderTypeName.ReduceOnlyIoc:
-			return { reduceOnlyIoc: {} }
-		case OrderTypeName.ReduceOnlyLimit:
-			return { reduceOnlyLimit: {} }
-		case OrderTypeName.FillOrKill:
-			return { fillOrKill: {} }
+			case OrderTypeName.Limit:
+				return { limit: {} }
+			case OrderTypeName.ImmediateOrCancel:
+				return { immediateOrCancel: {} }
+			case OrderTypeName.PostOnly:
+				return { postOnly: {} }
+			case OrderTypeName.ReduceOnlyIoc:
+				return { reduceOnlyIoc: {} }
+			case OrderTypeName.ReduceOnlyLimit:
+				return { reduceOnlyLimit: {} }
+			case OrderTypeName.FillOrKill:
+				return { fillOrKill: {} }
 		}
 	}
 	return orderType as OrderType
@@ -109,9 +103,6 @@ type TwapInfo = Omit<
 	low: WrappedI80F48
 	close: WrappedI80F48
 	lastSampleStartTime: BN
-}
-type SpecialOrdersInfo = Omit<IdlTypes<Zo>["SpecialOrdersInfo"], "ty"> & {
-	ty: SpecialOrderType
 }
 
 type OracleCache = Omit<IdlTypes<Zo>["OracleCache"], "symbol"> & {
@@ -148,13 +139,6 @@ export type CacheSchema = IdlAccounts<Zo>["cache"] & {
 }
 export type ControlSchema = IdlAccounts<Zo>["control"] & {
 	openOrdersAgg: OpenOrdersInfo[]
-}
-
-export type SpecialOrdersSchema = Omit<
-	IdlAccounts<Zo>["specialOrders"],
-	"entries"
-> & {
-	entries: SpecialOrdersInfo[]
 }
 
 export type ZammSchema = IdlAccounts<ZammIdlType>["zamm"]
