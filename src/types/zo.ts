@@ -225,6 +225,11 @@ export type Zo = {
           "name": "tokenProgram",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "heimdall",
+          "isMut": true,
+          "isSigner": false
         }
       ],
       "args": [
@@ -3061,7 +3066,12 @@ export const IDL: Zo = {
 					"name": "tokenProgram",
 					"isMut": false,
 					"isSigner": false
-				}
+				},
+        {
+          "name": "heimdall",
+          "isMut": true,
+          "isSigner": false
+        }
 			],
 			"args": [
 				{
