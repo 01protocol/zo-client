@@ -49,9 +49,13 @@ export type OrderType =
 
 export type SpecialOrderType =
 	// eslint-disable-next-line @typescript-eslint/ban-types
-	| { takeProfit: {} }
+	| { takeProfitMarket: {} }
 	// eslint-disable-next-line @typescript-eslint/ban-types
-	| { stopLoss: {} }
+	| { takeProfitLimit: {} }
+	// eslint-disable-next-line @typescript-eslint/ban-types
+	| { stopLossMarket: {} }
+	// eslint-disable-next-line @typescript-eslint/ban-types
+	| { stopLossLimit: {} }
 
 export enum OrderTypeName {
 	Limit = "Limit",

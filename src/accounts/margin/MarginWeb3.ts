@@ -69,6 +69,8 @@ import {
 	UserBalanceChange,
 	UserPositionChange,
 } from "../../types/changeLog"
+import assert from "assert"
+import _ from "lodash"
 
 export interface MarginClassSchema extends Omit<MarginSchema, "collateral"> {
 	/** The deposit amount divided by the entry supply or borrow multiplier */
@@ -1768,6 +1770,21 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		triggerPrice: number
 		limitPrice?: number
 	}>) {
+		if (
+			_.isEqual(specialOrderType, { takeProfitLimit: {} }) ||
+			_.isEqual(specialOrderType, { stopLossLimit: {} })
+		) {
+			assert.ok(
+				limitPrice,
+				"ERROR: Limit orders must include a limit price...",
+			)
+		} else {
+			if (limitPrice) {
+				console.log(
+					"WARNING: Limit price will be ignored because this is a market order...",
+				)
+			}
+		}
 		const market = await this.state.getMarketBySymbol(symbol)
 		const baseDecimals = this.state.markets[symbol]!.assetDecimals
 		const dexMarket = this.state.getMarketKeyBySymbol(symbol)
@@ -1779,6 +1796,8 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		// big / big -> small / big
 		const orderTriggerPrice = new BN(Math.round(triggerPrice * 1e6))
 		const orderLimitPrice =
+			(_.isEqual(specialOrderType, { takeProfitLimit: {} }) ||
+				_.isEqual(specialOrderType, { stopLossLimit: {} })) &&
 			limitPrice !== undefined
 				? new BN(Math.round(limitPrice * 1e6))
 				: isLong

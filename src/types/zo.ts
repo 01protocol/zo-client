@@ -2440,10 +2440,16 @@ export type Zo = {
         "kind": "enum",
         "variants": [
           {
-            "name": "TakeProfit"
+            "name": "TakeProfitMarket"
           },
           {
-            "name": "StopLoss"
+            "name": "TakeProfitLimit"
+          },
+          {
+            "name": "StopLossMarket"
+          },
+          {
+            "name": "StopLossLimit"
           }
         ]
       }
@@ -5641,10 +5647,16 @@ export const IDL: Zo = {
         "kind": "enum",
         "variants": [
           {
-            "name": "TakeProfit"
+            "name": "TakeProfitMarket"
           },
           {
-            "name": "StopLoss"
+            "name": "TakeProfitLimit"
+          },
+          {
+            "name": "StopLossMarket"
+          },
+          {
+            "name": "StopLossLimit"
           }
         ]
       }
