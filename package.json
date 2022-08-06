@@ -7,12 +7,13 @@
   "module": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
   "scripts": {
+    "prepare": "husky install",
+    "prepublishOnly": "npm run build",
     "build": "tsc  && tsc -p tsconfig.cjs.json",
     "dev": "tsc --watch && tsc -p tsconfig.cjs.json",
     "build-docs": "typedoc --out docs src/index.ts",
     "lint-format": "prettier --check ./src",
     "lint": "prettier --write ./src",
-    "prepare": "husky install",
     "tsc": "tsc"
   },
   "dependencies": {
