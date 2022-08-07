@@ -1,6 +1,6 @@
 import { ZoDBPerpLiqUser } from "./ZoDBPerpLiqUser"
 import { AssetInfo } from "../../types/dataTypes"
-import { HISTORY_ENTRIES_PER_PAGE } from "../../config"
+import { DEFAULT_HISTORY_ENTRIES_PER_PAGE } from "../../config"
 
 export interface SpotLiqHistoryEntry {
 	assetLiquidatedSymbol: string
@@ -67,8 +67,8 @@ export class ZoDBSpotLiqUser extends ZoDBPerpLiqUser {
 		}
 
 		return spotLiqHistory.slice(
-			page * HISTORY_ENTRIES_PER_PAGE,
-			(page + 1) * HISTORY_ENTRIES_PER_PAGE,
+			page * DEFAULT_HISTORY_ENTRIES_PER_PAGE,
+			(page + 1) * DEFAULT_HISTORY_ENTRIES_PER_PAGE,
 		)
 	}
 }

@@ -3,7 +3,7 @@ import { ZoBaseUser } from "../ZoBaseUser"
 import {
 	ALL_HISTORY,
 	ALL_MARKETS,
-	HISTORY_ENTRIES_PER_PAGE,
+	DEFAULT_HISTORY_ENTRIES_PER_PAGE,
 	USD_DECIMALS,
 } from "../../config"
 
@@ -124,8 +124,8 @@ export class ZoDBPnlUser extends ZoBaseUser {
 		return pnlHistory
 			.filter((entry) => entry.size != 0)
 			.slice(
-				page * HISTORY_ENTRIES_PER_PAGE,
-				(page + 1) * HISTORY_ENTRIES_PER_PAGE,
+				page * DEFAULT_HISTORY_ENTRIES_PER_PAGE,
+				(page + 1) * DEFAULT_HISTORY_ENTRIES_PER_PAGE,
 			)
 	}
 }

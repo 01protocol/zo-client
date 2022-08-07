@@ -1,6 +1,6 @@
 import { ZoDBTransferUser } from "./ZoDBTransferUser"
 import { AssetInfo } from "../../types/dataTypes"
-import { HISTORY_ENTRIES_PER_PAGE } from "../../config"
+import { DEFAULT_HISTORY_ENTRIES_PER_PAGE } from "../../config"
 
 export interface SwapHistoryEntry {
 	assetInSymbol: string
@@ -66,8 +66,8 @@ export class ZoDBSwapUser extends ZoDBTransferUser {
 		}
 
 		return swapHistory.slice(
-			page * HISTORY_ENTRIES_PER_PAGE,
-			(page + 1) * HISTORY_ENTRIES_PER_PAGE,
+			page * DEFAULT_HISTORY_ENTRIES_PER_PAGE,
+			(page + 1) * DEFAULT_HISTORY_ENTRIES_PER_PAGE,
 		)
 	}
 }

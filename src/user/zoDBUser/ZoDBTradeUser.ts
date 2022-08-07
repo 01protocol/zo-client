@@ -7,7 +7,7 @@ import { checkIfNewAndPush } from "./utils/checkIfNewAndPush"
 import {
 	ALL_MARKETS,
 	FUNDING_HISTORY,
-	HISTORY_ENTRIES_PER_PAGE,
+	DEFAULT_HISTORY_ENTRIES_PER_PAGE,
 } from "../../config"
 import { PositionInfo } from "../../types/dataTypes"
 
@@ -107,7 +107,7 @@ export class ZoDBTradeUser extends ZoDBPnlUser {
 			)
 			let tradesNotFinishedFetching = !this.tradesParsed[marketKey]
 			let enoughFundingsWereNotGenerated =
-				fundings.length < HISTORY_ENTRIES_PER_PAGE
+				fundings.length < DEFAULT_HISTORY_ENTRIES_PER_PAGE
 			while (
 				tradesNotFinishedFetching &&
 				enoughFundingsWereNotGenerated
@@ -123,7 +123,7 @@ export class ZoDBTradeUser extends ZoDBPnlUser {
 				)
 				tradesNotFinishedFetching = !this.tradesParsed[marketKey]
 				enoughFundingsWereNotGenerated =
-					fundings.length < HISTORY_ENTRIES_PER_PAGE
+					fundings.length < DEFAULT_HISTORY_ENTRIES_PER_PAGE
 			}
 			return fundings
 		} else {
@@ -190,10 +190,10 @@ export class ZoDBTradeUser extends ZoDBPnlUser {
 						TradeHistoryEntryType.Funding),
 			)
 		return filteredHistory.slice(
-			Math.min(filteredHistory.length, page * HISTORY_ENTRIES_PER_PAGE),
+			Math.min(filteredHistory.length, page * DEFAULT_HISTORY_ENTRIES_PER_PAGE),
 			Math.min(
 				filteredHistory.length,
-				(page + 1) * HISTORY_ENTRIES_PER_PAGE,
+				(page + 1) * DEFAULT_HISTORY_ENTRIES_PER_PAGE,
 			),
 		)
 	}

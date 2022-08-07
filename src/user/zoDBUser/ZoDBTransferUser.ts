@@ -1,6 +1,6 @@
 import { ZoDBSpotLiqUser } from "./ZoDBSpotLiqUser"
 import { AssetInfo } from "../../types/dataTypes"
-import { HISTORY_ENTRIES_PER_PAGE } from "../../config"
+import { DEFAULT_HISTORY_ENTRIES_PER_PAGE } from "../../config"
 
 export interface TransferHistoryEntry {
 	assetSymbol: string
@@ -48,6 +48,7 @@ export class ZoDBTransferUser extends ZoDBSpotLiqUser {
 	async getTransferHistory(
 		page: number,
 		assets: { [key: string]: AssetInfo },
+		entriesPerPage?: number
 	): Promise<TransferHistoryEntry[]> {
 		this.transferCurrentPage = page
 		if (this.transferHistory == null || this.transferHistory.length == 0) {
@@ -63,9 +64,11 @@ export class ZoDBTransferUser extends ZoDBSpotLiqUser {
 			transferHistory.push(this.transferHistory[i])
 		}
 
+		const entries = entriesPerPage ?? DEFAULT_HISTORY_ENTRIES_PER_PAGE
+
 		return transferHistory.slice(
-			page * HISTORY_ENTRIES_PER_PAGE,
-			(page + 1) * HISTORY_ENTRIES_PER_PAGE,
+			page * entries,
+			(page + 1) * entries,
 		)
 	}
 }

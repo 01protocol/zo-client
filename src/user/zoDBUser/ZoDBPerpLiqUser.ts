@@ -2,7 +2,7 @@ import { ZoDBTradeUser } from "./ZoDBTradeUser"
 import { checkIfNewAndPush } from "./utils/checkIfNewAndPush"
 import {
 	ALL_MARKETS,
-	HISTORY_ENTRIES_PER_PAGE,
+	DEFAULT_HISTORY_ENTRIES_PER_PAGE,
 	USD_DECIMALS,
 } from "../../config"
 import { MarketInfo } from "../../types/dataTypes"
@@ -89,8 +89,8 @@ export class ZoDBPerpLiqUser extends ZoDBTradeUser {
 		}
 
 		return perpLiqHistory.slice(
-			page * HISTORY_ENTRIES_PER_PAGE,
-			(page + 1) * HISTORY_ENTRIES_PER_PAGE,
+			page * DEFAULT_HISTORY_ENTRIES_PER_PAGE,
+			(page + 1) * DEFAULT_HISTORY_ENTRIES_PER_PAGE,
 		)
 	}
 }
