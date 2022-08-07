@@ -78,7 +78,6 @@ export default abstract class BaseAccount<T> {
 		withBackup = false,
 		programPassed?: Program<any>,
 	) {
-
 		const that = this
 		const program = programPassed ? programPassed : this.program
 		const eventEmitter = new EventEmitter()

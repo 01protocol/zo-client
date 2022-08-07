@@ -101,7 +101,7 @@ export default class SpecialOrders extends BaseAccount<Schema> {
 		this.eventEmitter = new EventEmitter()
 		const anchorEventEmitter = await this._subscribe("specialOrders", withBackup)
 		const that = this
-		anchorEventEmitter.addListener("specialOrders", (account) => {
+		anchorEventEmitter.addListener("change", (account) => {
 			that.data = SpecialOrders.process(account)
 			this.eventEmitter!.emit(UpdateEvents.specialOrdersUpdated, [])
 		})
