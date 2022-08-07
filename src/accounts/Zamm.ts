@@ -207,7 +207,7 @@ export default class Zamm extends BaseAccount<Schema> {
 	async unsubscribe() {
 		await this.subLock.waitAndLock()
 		try {
-			await this.zammProgram.account["zamm"].unsubscribe(this.pubkey)
+			await this._unsubscribe()
 			await this.zammMargin.unsubscribe()
 			await this.zammMargin.state.unsubscribeFromEventQueue(
 				this.marketSymbol,

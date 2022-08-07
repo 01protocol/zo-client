@@ -135,7 +135,7 @@ export default class Cache extends BaseAccount<Schema> {
 	async unsubscribe() {
 		await this.subLock.waitAndLock()
 		try {
-			await this.program.account["cache"].unsubscribe(this.pubkey)
+			await this._unsubscribe()
 			this.eventEmitter!.removeAllListeners()
 			this.eventEmitter = null
 		} catch (_) {

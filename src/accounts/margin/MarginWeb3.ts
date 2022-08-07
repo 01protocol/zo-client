@@ -24,22 +24,24 @@ import {
 	getAssociatedTokenTransactionWithPayer,
 	getClusterFromZoProgram,
 	getOrderStatus,
+	getSpecialOrderStatus,
 	getWrappedSolInstructionsAndKey,
 	loadWI80F48,
 	OrderChangeStatus,
 } from "../../utils"
 import {
 	ChangeType,
-	ControlSchema,
+	ControlSchema, SlotsState,
 	MarginSchema,
-	SpecialOrdersSchema,
-	SpecialOrderType,
 	OrderChangeType,
 	OrderType,
 	OrderTypeName,
 	parseOrderType,
+	SpecialOrdersSchema,
+	SpecialOrderType,
 	UpdateEvents,
 	UserOrderChange,
+	UserSpecialOrderChange,
 	Zo,
 } from "../../types"
 import {
@@ -58,25 +60,19 @@ import {
 } from "../../config"
 import Decimal from "decimal.js"
 import { getMintDecimals } from "@zero_one/lite-serum/lib/market"
-import {
-	OrderInfo,
-	PositionInfo,
-	SpecialOrderInfo,
-} from "../../types/dataTypes"
+import { OrderInfo, PositionInfo, SpecialOrderInfo } from "../../types/dataTypes"
 import EventEmitter from "eventemitter3"
-import {
-	ChangeEvent,
-	UserBalanceChange,
-	UserPositionChange,
-} from "../../types/changeLog"
+import { ChangeEvent, UserBalanceChange, UserPositionChange } from "../../types/changeLog"
 import assert from "assert"
 import _ from "lodash"
 
+
+
 export interface MarginClassSchema extends Omit<MarginSchema, "collateral"> {
-	/** The deposit amount divided by the entry supply or borrow multiplier */
-	rawCollateral: Decimal[]
-	/** The collateral value after applying supply/ borrow APY (i.e. the raw collateral multiplied by the current supply or borrow multiplier). */
-	actualCollateral: Num[]
+  /** The deposit amount divided by the entry supply or borrow multiplier */
+  rawCollateral: Decimal[]
+  /** The collateral value after applying supply/ borrow APY (i.e. the raw collateral multiplied by the current supply or borrow multiplier). */
+  actualCollateral: Num[]
 }
 
 /**
@@ -101,7 +97,6 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 							const res = await this.program.simulate[key](
 								...args,
 							)
-							console.log(res)
 							return res
 						} catch (_) {
 							console.log(_)
@@ -118,31 +113,41 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * returns the position info for the specific market key
-	 * @marketKey  market key
-	 */
+   * returns the position info for the specific market key
+   * @marketKey  market key
+   */
 	position(marketKey: string) {
 		return this.positions.find((el) => el.marketKey === marketKey)!
+	}
+
+	get currentSlots():SlotsState{
+		return {
+			stateSlot:this.state.slot,
+			cacheSlot:this.state.cache.slot,
+			marginSlot:this.slot,
+			controlSlot:this.control.slot,
+			specialOrdersSlot:this.specialOrdersAccount?this.specialOrdersAccount.slot:0
+		}
 	}
 
 	protected constructor(
 		program: Program<Zo>,
 		pubkey: PublicKey,
 		data: MarginClassSchema,
-		public readonly control: Control,
-		public specialOrdersAccount: SpecialOrders | null,
-		public state: State,
-		private readonly heimdallKey: PublicKey,
-		public readonly owner?: PublicKey,
-		commitment?: Commitment,
-		public readonly simulate = false,
+    public readonly control: Control,
+    public specialOrdersAccount: SpecialOrders | null,
+    public state: State,
+    private readonly heimdallKey: PublicKey,
+    public readonly owner?: PublicKey,
+    commitment?: Commitment,
+    public readonly simulate = false,
 	) {
 		super(program, pubkey, data, commitment)
 	}
 
 	/**
-	 * Loads a new Margin object.
-	 */
+   * Loads a new Margin object.
+   */
 	protected static async loadWeb3(
 		program: Program<Zo>,
 		st: State,
@@ -181,8 +186,8 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * Loads a new Margin object from prefetched schema;
-	 */
+   * Loads a new Margin object from prefetched schema;
+   */
 	protected static async loadPrefetchedWeb3(
 		program: Program<Zo>,
 		st: State,
@@ -201,16 +206,16 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 			prefetchedControlData.account,
 		)
 		const heimdallKey =
-			prefetchedHeimdallKey ??
-			(await this.getHeimdallPda(program.programId))
+      prefetchedHeimdallKey ??
+      (await this.getHeimdallPda(program.programId))
 		const specialOrders =
-			prefetchedSpecialOrdersData === undefined
-				? null
-				: await SpecialOrders.loadPrefetched(
-						program,
-						prefetchedSpecialOrdersData.publicKey,
-						prefetchedSpecialOrdersData.account,
-				  )
+      prefetchedSpecialOrdersData === undefined
+      	? null
+      	: await SpecialOrders.loadPrefetched(
+      		program,
+      		prefetchedSpecialOrdersData.publicKey,
+      		prefetchedSpecialOrdersData.account,
+      	)
 		const margin = new this(
 			program,
 			prefetchedMarginData.publicKey,
@@ -305,11 +310,11 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * Creates a margin account.
-	 * @param program The Zo Program
-	 * @param st The Zo State object, overrides the default config.
-	 * @param commitment commitment of the transaction, finalized is used as default
-	 */
+   * Creates a margin account.
+   * @param program The Zo Program
+   * @param st The Zo State object, overrides the default config.
+   * @param commitment commitment of the transaction, finalized is used as default
+   */
 	protected static async create(
 		program: Program<Zo>,
 		st: State,
@@ -349,9 +354,9 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * Gets the Margin account's PDA and bump.
-	 * @returns An array consisting of [PDA, bump]
-	 */
+   * Gets the Margin account's PDA and bump.
+   * @returns An array consisting of [PDA, bump]
+   */
 	protected static async getPda(
 		st: State,
 		traderKey: PublicKey,
@@ -422,17 +427,17 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 			actualCollateral: st.data.collaterals.map((c, i) => {
 				return new Num(
 					new BN(
-						rawCollateral[i]!.isPos()
-							? rawCollateral[i]!.times(
-									ch.data.borrowCache[i]!.supplyMultiplier,
-							  )
-									.floor()
-									.toString()
-							: rawCollateral[i]!.times(
-									ch.data.borrowCache[i]!.borrowMultiplier,
-							  )
-									.floor()
-									.toString(),
+            rawCollateral[i]!.isPos()
+            	? rawCollateral[i]!.times(
+                ch.data.borrowCache[i]!.supplyMultiplier,
+            	)
+            		.floor()
+            		.toString()
+            	: rawCollateral[i]!.times(
+                ch.data.borrowCache[i]!.borrowMultiplier,
+            	)
+            		.floor()
+            		.toString(),
 					),
 					c.decimals,
 				)
@@ -540,8 +545,8 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * load all active orders across all markets
-	 */
+   * load all active orders across all markets
+   */
 	async loadOrders(): Promise<Array<UserOrderChange>> {
 		const changeLog: Array<UserOrderChange> = []
 		const markets = this.state.markets
@@ -552,7 +557,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 				new Promise(async (res) => {
 					const marketOrders: OrderInfo[] = []
 					const { dexMarket, bids, asks } =
-						await this.state.getZoMarketAccounts({ market: market })
+            await this.state.getZoMarketAccounts({ market: market })
 					const activeOrders = dexMarket.filterForOpenOrders(
 						bids,
 						asks,
@@ -580,50 +585,50 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 				}),
 			)
 		}
+		await Promise.all(promises)
 		for (const oldOrder of this.orders) {
 			switch (getOrderStatus(oldOrder, orders)) {
-				case OrderChangeStatus.Changed:
-					const orderChange: UserOrderChange = {
-						curr: orders.find((order) =>
-							order.orderId.eq(oldOrder.orderId),
-						)!,
-						prev: oldOrder,
-						orderChangeType: OrderChangeType.PartiallyFilled,
-						time: new Date(),
-						type: ChangeType.UserOrderChange,
-					}
-					changeLog.push(orderChange)
-					break
-				case OrderChangeStatus.Missing:
-					changeLog.push({
-						curr: null,
-						prev: oldOrder,
-						orderChangeType: OrderChangeType.FilledOrCancelled,
-						time: new Date(),
-						type: ChangeType.UserOrderChange,
-					})
-					break
-				case OrderChangeStatus.Present:
-					break
+			case OrderChangeStatus.Changed:
+				const orderChange: UserOrderChange = {
+					curr: orders.find((order) =>
+						order.orderId.eq(oldOrder.orderId),
+					)!,
+					prev: oldOrder,
+					orderChangeType: OrderChangeType.PartiallyFilled,
+					time: new Date(),
+					type: ChangeType.UserOrderChange,
+				}
+				changeLog.push(orderChange)
+				break
+			case OrderChangeStatus.Missing:
+				changeLog.push({
+					curr: null,
+					prev: oldOrder,
+					orderChangeType: OrderChangeType.FilledOrCancelled,
+					time: new Date(),
+					type: ChangeType.UserOrderChange,
+				})
+				break
+			case OrderChangeStatus.Present:
+				break
 			}
 		}
 		for (const newOrder of orders) {
 			switch (getOrderStatus(newOrder, this.orders)) {
-				case OrderChangeStatus.Missing:
-					changeLog.push({
-						curr: newOrder,
-						prev: null,
-						orderChangeType: OrderChangeType.Placed,
-						time: new Date(),
-						type: ChangeType.UserOrderChange,
-					})
-					break
-				case OrderChangeStatus.Changed:
-				case OrderChangeStatus.Present:
-					break
+			case OrderChangeStatus.Missing:
+				changeLog.push({
+					curr: newOrder,
+					prev: null,
+					orderChangeType: OrderChangeType.Placed,
+					time: new Date(),
+					type: ChangeType.UserOrderChange,
+				})
+				break
+			case OrderChangeStatus.Changed:
+			case OrderChangeStatus.Present:
+				break
 			}
 		}
-		await Promise.all(promises)
 		this.orders = orders
 		return changeLog
 	}
@@ -631,17 +636,17 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	async loadSpecialOrders() {
 		if (this.specialOrdersAccount === null) {
 			this.specialOrders = []
-			return
+			return []
 		}
 
 		const keyToMarket = Object.fromEntries(
 			this.state.data.perpMarkets.map((m) => [m.dexMarket.toString(), m]),
 		)
 
-		this.specialOrders = await Promise.all(
+		const specialOrders = await Promise.all(
 			this.specialOrdersAccount.data.entries.map(async (x) => {
-				let perpMarket = keyToMarket[x.market.toString()]!
-				let market = await this.state.getMarketBySymbol(
+				const perpMarket = keyToMarket[x.market.toString()]!
+				const market = await this.state.getMarketBySymbol(
 					perpMarket.symbol,
 				)
 
@@ -661,11 +666,57 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 				}
 			}),
 		)
+		const changeLog: Array<UserSpecialOrderChange> = []
+		for (const oldOrder of this.specialOrders) {
+			switch (getSpecialOrderStatus(oldOrder, specialOrders)) {
+			case OrderChangeStatus.Changed:
+				const orderChange: UserSpecialOrderChange = {
+					curr: specialOrders.find((order) =>
+						order.id == (oldOrder.id),
+					)!,
+					prev: oldOrder,
+					orderChangeType: OrderChangeType.PartiallyFilled,
+					time: new Date(),
+					type: ChangeType.UserOrderChange,
+				}
+				changeLog.push(orderChange)
+				break
+			case OrderChangeStatus.Missing:
+				changeLog.push({
+					curr: null,
+					prev: oldOrder,
+					orderChangeType: OrderChangeType.FilledOrCancelled,
+					time: new Date(),
+					type: ChangeType.UserOrderChange,
+				})
+				break
+			case OrderChangeStatus.Present:
+				break
+			}
+		}
+		for (const newOrder of specialOrders) {
+			switch (getSpecialOrderStatus(newOrder, this.specialOrders)) {
+			case OrderChangeStatus.Missing:
+				changeLog.push({
+					curr: newOrder,
+					prev: null,
+					orderChangeType: OrderChangeType.Placed,
+					time: new Date(),
+					type: ChangeType.UserOrderChange,
+				})
+				break
+			case OrderChangeStatus.Changed:
+			case OrderChangeStatus.Present:
+				break
+			}
+		}
+		this.specialOrders = specialOrders
+		return changeLog
 	}
 
 	/**
-	 * Refreshes the data on the Margin, state, cache and control accounts.
-	 */
+   * Refreshes the data on the Margin, state, cache and control accounts.
+   */
 	async refresh(
 		refreshState = true,
 		refreshMarginData = true,
@@ -707,6 +758,88 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 
 	eventEmitter: EventEmitter<UpdateEvents, ChangeEvent<any>> | null = null
 
+	private async subscribeToState(withBackup: boolean, stateLimit: number, cacheLimit: number) {
+		const that = this
+		await this.state.subscribe(withBackup, stateLimit, cacheLimit)
+    this.state.eventEmitter!.addListener(
+    	UpdateEvents.stateModified,
+    	async (data) => {
+    		const changeLog = [
+    			...that.loadBalances(),
+    			...that.loadPositions(),
+    			...(await that.loadOrders()),
+    			...(await that.loadSpecialOrders()),
+    		]
+        this.eventEmitter!.emit(UpdateEvents.stateModified, [
+        	...data,
+        	...changeLog,
+        ])
+    	},
+    )
+    this.state.eventEmitter!.addListener(
+    	UpdateEvents._cacheModified,
+    	async (data) => {
+    		const changeLog = [
+    			...that.loadBalances(),
+    			...that.loadPositions(),
+    			...(await that.loadOrders()),
+    			...(await that.loadSpecialOrders()),
+    		]
+        this.eventEmitter!.emit(UpdateEvents._cacheModified, [
+        	...data,
+        	...changeLog,
+        ])
+    	},
+    )
+	}
+
+	private async subscribeToControl(withBackup: boolean) {
+		const that = this
+		await this.control.subscribe(withBackup)
+    //Note: when control modified only margin event is emitted
+    this.control.eventEmitter!.addListener(
+    	UpdateEvents.controlModified,
+    	async (data) => {
+    		const changeLog = [
+    			...that.loadBalances(),
+    			...that.loadPositions(),
+    			...(await that.loadOrders()),
+    			...(await that.loadSpecialOrders()),
+    		]
+    		if (changeLog.length > 0)
+          this.eventEmitter!.emit(UpdateEvents.marginModified, [
+          	...data,
+          	...changeLog,
+          ])
+    	},
+    )
+	}
+
+	async subscribeToSpecialOrdersAccount(withBackup: boolean) {
+
+		if (this.specialOrdersAccount) {
+			const that = this
+			await this.specialOrdersAccount.subscribe(withBackup)
+      //Note: when control modified only margin event is emitted
+      this.specialOrdersAccount.eventEmitter!.addListener(
+      	UpdateEvents.specialOrdersUpdated,
+      	async (data) => {
+      		const changeLog = [
+      			...that.loadBalances(),
+      			...that.loadPositions(),
+      			...(await that.loadOrders()),
+      			...(await that.loadSpecialOrders()),
+      		]
+      		if (changeLog.length > 0)
+            this.eventEmitter!.emit(UpdateEvents.marginModified, [
+            	...data,
+            	...changeLog,
+            ])
+      	},
+      )
+		}
+	}
+
 	/**
 	 * Refreshes the data on the Margin, state, cache and control accounts.
 	 *
@@ -728,72 +861,29 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 				...that.loadBalances(),
 				...that.loadPositions(),
 				...(await that.loadOrders()),
+				...(await that.loadSpecialOrders()),
 			]
 			if (changeLog.length > 0)
 				this.eventEmitter!.emit(UpdateEvents.marginModified, changeLog)
 		})
-		await this.control.subscribe(withBackup)
-		await this.state.subscribe(withBackup, stateLimit, cacheLimit)
-		//Note: when control modified only margin event is emitted
-		this.control.eventEmitter!.addListener(
-			UpdateEvents.controlModified,
-			async (data) => {
-				const changeLog = [
-					...that.loadBalances(),
-					...that.loadPositions(),
-					...(await that.loadOrders()),
-				]
-				if (changeLog.length > 0)
-					this.eventEmitter!.emit(UpdateEvents.marginModified, [
-						...data,
-						...changeLog,
-					])
-			},
-		)
-		this.state.eventEmitter!.addListener(
-			UpdateEvents.stateModified,
-			async (data) => {
-				const changeLog = [
-					...that.loadBalances(),
-					...that.loadPositions(),
-					...(await that.loadOrders()),
-				]
-				this.eventEmitter!.emit(UpdateEvents.stateModified, [
-					...data,
-					...changeLog,
-				])
-			},
-		)
-		this.state.eventEmitter!.addListener(
-			UpdateEvents._cacheModified,
-			async (data) => {
-				const changeLog = [
-					...that.loadBalances(),
-					...that.loadPositions(),
-					...(await that.loadOrders()),
-				]
-				this.eventEmitter!.emit(UpdateEvents._cacheModified, [
-					...data,
-					...changeLog,
-				])
-			},
-		)
+		await this.subscribeToSpecialOrdersAccount(withBackup)
+		await this.subscribeToControl(withBackup)
+		await this.subscribeToState(withBackup, stateLimit, cacheLimit)
 		this.subLock.unlock()
 	}
 
 	async unsubscribe() {
 		await this.subLock.waitAndLock()
 		try {
-			await this.program.account["margin"]!.unsubscribe(this.pubkey)
+			await this._unsubscribe()
 			await this.control.unsubscribe()
 			await this.state.unsubscribe()
-			this.eventEmitter!.removeAllListeners()
-			if (this.backupSubscriberChannel) {
-				await this.program.provider.connection.removeProgramAccountChangeListener(
-					this.backupSubscriberChannel,
-				)
-			}
-			this.eventEmitter = null
+      this.eventEmitter!.removeAllListeners()
+
+      if (this.specialOrdersAccount) {
+      	await this.specialOrdersAccount.unsubscribe()
+      }
+      this.eventEmitter = null
 		} catch (_) {
 			//
 		}
@@ -801,10 +891,10 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * @param symbol The market symbol. Ex: ("BTC-PERP")
-	 * @param cluster
-	 * @returns The OpenOrders account key for the given market.
-	 */
+   * @param symbol The market symbol. Ex: ("BTC-PERP")
+   * @param cluster
+   * @returns The OpenOrders account key for the given market.
+   */
 	async getOpenOrdersKeyBySymbol(
 		symbol: string,
 	): Promise<[PublicKey, number]> {
@@ -818,10 +908,10 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * @param symbol The market symbol. Ex: ("BTC-PERP")
-	 * @param create If true, creates the OpenOrders account if it doesn't exist.
-	 * @returns The OpenOrdersInfo for the given market.
-	 */
+   * @param symbol The market symbol. Ex: ("BTC-PERP")
+   * @param create If true, creates the OpenOrders account if it doesn't exist.
+   * @returns The OpenOrdersInfo for the given market.
+   */
 	async getOpenOrdersInfoBySymbol(
 		symbol: string,
 		create = false,
@@ -840,12 +930,12 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * Deposits a given amount of collateral into the Margin account. Raw implementation of the instruction.
-	 * @param tokenAccount The user's token account where tokens will be subtracted from.
-	 * @param vault The state vault where tokens will be deposited into.
-	 * @param amount The amount of tokens to deposit, in native quantity. (ex: lamports for SOL, satoshis for BTC)
-	 * @param repayOnly If true, will only deposit up to the amount borrowed. If true, amount parameter can be set to an arbitrarily large number to ensure that any outstanding borrow is fully repaid.
-	 */
+   * Deposits a given amount of collateral into the Margin account. Raw implementation of the instruction.
+   * @param tokenAccount The user's token account where tokens will be subtracted from.
+   * @param vault The state vault where tokens will be deposited into.
+   * @param amount The amount of tokens to deposit, in native quantity. (ex: lamports for SOL, satoshis for BTC)
+   * @param repayOnly If true, will only deposit up to the amount borrowed. If true, amount parameter can be set to an arbitrarily large number to ensure that any outstanding borrow is fully repaid.
+   */
 	async depositRaw(
 		tokenAccount: PublicKey,
 		vault: PublicKey,
@@ -867,11 +957,11 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * Deposits a given amount of SOL collateral into the Margin account. Raw implementation of the instruction.
-	 * @param vault The state vault where tokens will be deposited into.
-	 * @param amount The amount of tokens to deposit, in native quantity. (ex: lamports for SOL, satoshis for BTC)
-	 * @param repayOnly If true, will only deposit up to the amount borrowed. If true, amount parameter can be set to an arbitrarily large number to ensure that any outstanding borrow is fully repaid.
-	 */
+   * Deposits a given amount of SOL collateral into the Margin account. Raw implementation of the instruction.
+   * @param vault The state vault where tokens will be deposited into.
+   * @param amount The amount of tokens to deposit, in native quantity. (ex: lamports for SOL, satoshis for BTC)
+   * @param repayOnly If true, will only deposit up to the amount borrowed. If true, amount parameter can be set to an arbitrarily large number to ensure that any outstanding borrow is fully repaid.
+   */
 	async depositSol(vault: PublicKey, amount: BN, repayOnly: boolean) {
 		const {
 			createTokenAccountIx,
@@ -899,12 +989,12 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * Withdraws a given amount of collateral from the Margin account to a specified token account. If withdrawing more than the amount deposited, then account will be borrowing.
-	 * Raw implementation of the instruction.
-	 * @param vault The state vault where tokens will be withdrawn from.
-	 * @param amount The amount of tokens to withdraw, in native quantity. (ex: lamports for SOL, satoshis for BTC)
-	 * @param allowBorrow If false, will only be able to withdraw up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully withdrawn.
-	 */
+   * Withdraws a given amount of collateral from the Margin account to a specified token account. If withdrawing more than the amount deposited, then account will be borrowing.
+   * Raw implementation of the instruction.
+   * @param vault The state vault where tokens will be withdrawn from.
+   * @param amount The amount of tokens to withdraw, in native quantity. (ex: lamports for SOL, satoshis for BTC)
+   * @param allowBorrow If false, will only be able to withdraw up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully withdrawn.
+   */
 	async withdrawSol(vault: PublicKey, amount: BN, allowBorrow: boolean) {
 		const {
 			createTokenAccountIx,
@@ -937,12 +1027,12 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * Deposits a given amount of collateral into the Margin account from the associated token account.
-	 * @param mintOrSymbol
-	 * @param size The amount of tokens to deposit, in big units. (ex: 1.5 SOL, or 0.5 BTC)
-	 * @param repayOnly If true, will only deposit up to the amount borrowed. If true, amount parameter can be set to an arbitrarily large number to ensure that any outstanding borrow is fully repaid.
-	 * @param tokenAccountProvided optional param to provide the token account to use it for deposits
-	 */
+   * Deposits a given amount of collateral into the Margin account from the associated token account.
+   * @param mintOrSymbol
+   * @param size The amount of tokens to deposit, in big units. (ex: 1.5 SOL, or 0.5 BTC)
+   * @param repayOnly If true, will only deposit up to the amount borrowed. If true, amount parameter can be set to an arbitrarily large number to ensure that any outstanding borrow is fully repaid.
+   * @param tokenAccountProvided optional param to provide the token account to use it for deposits
+   */
 	async deposit(
 		mintOrSymbol: PublicKey | string,
 		size: number,
@@ -956,7 +1046,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 			mint = mintOrSymbol as PublicKey
 		}
 		const [vault, collateralInfo] =
-			this.state.getVaultCollateralByMint(mint)
+      this.state.getVaultCollateralByMint(mint)
 		const amountSmoll = new Num(size, collateralInfo.decimals).n
 		if (WRAPPED_SOL_MINT.toString() == mint.toString()) {
 			return await this.depositSol(vault, amountSmoll, repayOnly)
@@ -964,9 +1054,9 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		const tokenAccount = tokenAccountProvided
 			? tokenAccountProvided
 			: await findAssociatedTokenAddress(
-					this.program.provider.publicKey!,
-					mint,
-			  )
+        this.program.provider.publicKey!,
+        mint,
+			)
 		return await this.depositRaw(
 			tokenAccount,
 			vault,
@@ -976,14 +1066,14 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * Withdraws a given amount of collateral from the Margin account to a specified token account. If withdrawing more than the amount deposited, then account will be borrowing.
-	 * Raw implementation of the instruction.
-	 * @param tokenAccount The user's token account where tokens will be withdrawn to.
-	 * @param vault The state vault where tokens will be withdrawn from.
-	 * @param amount The amount of tokens to withdraw, in native quantity. (ex: lamports for SOL, satoshis for BTC)
-	 * @param allowBorrow If false, will only be able to withdraw up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully withdrawn.
-	 * @param preInstructions instructions executed before withdrawal
-	 */
+   * Withdraws a given amount of collateral from the Margin account to a specified token account. If withdrawing more than the amount deposited, then account will be borrowing.
+   * Raw implementation of the instruction.
+   * @param tokenAccount The user's token account where tokens will be withdrawn to.
+   * @param vault The state vault where tokens will be withdrawn from.
+   * @param amount The amount of tokens to withdraw, in native quantity. (ex: lamports for SOL, satoshis for BTC)
+   * @param allowBorrow If false, will only be able to withdraw up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully withdrawn.
+   * @param preInstructions instructions executed before withdrawal
+   */
 	async withdrawRaw(
 		tokenAccount: PublicKey,
 		vault: PublicKey,
@@ -1009,11 +1099,11 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * Withdraws a given amount of collateral from the Margin account to a specified token account. If withdrawing more than the amount deposited, then account will be borrowing.
-	 * @param mintOrSymbol
-	 * @param size The amount of tokens to withdraw, in big units. (ex: 1.5 SOL, or 0.5 BTC)
-	 * @param allowBorrow If false, will only be able to withdraw up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully withdrawn.
-	 */
+   * Withdraws a given amount of collateral from the Margin account to a specified token account. If withdrawing more than the amount deposited, then account will be borrowing.
+   * @param mintOrSymbol
+   * @param size The amount of tokens to withdraw, in big units. (ex: 1.5 SOL, or 0.5 BTC)
+   * @param allowBorrow If false, will only be able to withdraw up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully withdrawn.
+   */
 	async withdraw(
 		mintOrSymbol: PublicKey | string,
 		size: number,
@@ -1026,14 +1116,14 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 			mint = mintOrSymbol as PublicKey
 		}
 		const [vault, collateralInfo] =
-			this.state.getVaultCollateralByMint(mint)
+      this.state.getVaultCollateralByMint(mint)
 		const amountSmoll = new Num(size, collateralInfo.decimals).n
 		if (WRAPPED_SOL_MINT.toString() == mint.toString()) {
 			return await this.withdrawSol(vault, amountSmoll, allowBorrow)
 		}
 		const associatedTokenAccount = await findAssociatedTokenAddress(
-			this.program.provider.publicKey!,
-			mint,
+      this.program.provider.publicKey!,
+      mint,
 		)
 		//optimize: can be cached
 		let associatedTokenAccountExists = false
@@ -1054,19 +1144,19 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 			associatedTokenAccountExists
 				? undefined
 				: [
-						getAssociatedTokenTransactionWithPayer(
-							mint,
-							associatedTokenAccount,
-							this.program.provider.publicKey!,
-						),
-				  ],
+					getAssociatedTokenTransactionWithPayer(
+						mint,
+						associatedTokenAccount,
+            this.program.provider.publicKey!,
+					),
+				],
 		)
 	}
 
 	/**
-	 * User must create a perp OpenOrders account for every perpetual market(future and or options) they intend to trade on.
-	 * @param symbol The market symbol. Ex: ("BTC-PERP")
-	 */
+   * User must create a perp OpenOrders account for every perpetual market(future and or options) they intend to trade on.
+   * @param symbol The market symbol. Ex: ("BTC-PERP")
+   */
 	async createPerpOpenOrders(symbol: string) {
 		const [ooKey] = await this.getOpenOrdersKeyBySymbol(symbol)
 		return await this.rpc.createPerpOpenOrders({
@@ -1091,18 +1181,18 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * Raw implementation of the instruction rpc call.
-	 * Places an order on the orderbook for a given market, using lot sizes for limit and base quantity, and native units for quote quantity.
-	 * Assumes an open orders account has been created already.
-	 * @param symbol The market symbol. Ex: ("BTC-PERP")
-	 * @param orderType The order type. Either limit, immediateOrCancel, postOnly, reduceOnlyIoc, or reduceOnlyLimit
-	 * @param isLong True if buy, false if sell.
-	 * @param limitPrice The limit price in base lots per quote lots.
-	 * @param maxBaseQty The maximum amount of base lots to buy or sell.
-	 * @param maxQuoteQty The maximum amount of native quote, including fees, to pay or receive.
-	 * @param limit If this order is taking, the limit sets the number of maker orders the fill will go through, until stopping and posting. If running into compute unit issues, then set this number lower.
-	 * @param clientId
-	 */
+   * Raw implementation of the instruction rpc call.
+   * Places an order on the orderbook for a given market, using lot sizes for limit and base quantity, and native units for quote quantity.
+   * Assumes an open orders account has been created already.
+   * @param symbol The market symbol. Ex: ("BTC-PERP")
+   * @param orderType The order type. Either limit, immediateOrCancel, postOnly, reduceOnlyIoc, or reduceOnlyLimit
+   * @param isLong True if buy, false if sell.
+   * @param limitPrice The limit price in base lots per quote lots.
+   * @param maxBaseQty The maximum amount of base lots to buy or sell.
+   * @param maxQuoteQty The maximum amount of native quote, including fees, to pay or receive.
+   * @param limit If this order is taking, the limit sets the number of maker orders the fill will go through, until stopping and posting. If running into compute unit issues, then set this number lower.
+   * @param clientId
+   */
 	async placePerpOrderRaw({
 		symbol,
 		orderType,
@@ -1113,15 +1203,15 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		limit,
 		clientId,
 	}: Readonly<{
-		symbol: string
-		orderType: OrderType
-		isLong: boolean
-		limitPrice: BN
-		maxBaseQty: BN
-		maxQuoteQty: BN
-		limit?: number
-		clientId?: BN
-	}>) {
+    symbol: string
+    orderType: OrderType
+    isLong: boolean
+    limitPrice: BN
+    maxBaseQty: BN
+    maxQuoteQty: BN
+    limit?: number
+    clientId?: BN
+  }>) {
 		const market = await this.state.getMarketBySymbol(symbol)
 		const oo = await this.getOpenOrdersInfoBySymbol(symbol)
 
@@ -1159,7 +1249,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 */
+   */
 	async closePosition(symbol: string) {
 		const market = await this.state.getMarketBySymbol(symbol)
 		const oo = await this.getOpenOrdersInfoBySymbol(symbol)
@@ -1171,11 +1261,11 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		const limitPriceBn = market.priceNumberToLots(price)
 		const maxBaseQtyBn = market.baseSizeNumberToLots(position.coins.number)
 		const takerFee =
-			market.decoded.perpType.toNumber() === 1
-				? ZO_FUTURE_TAKER_FEE
-				: market.decoded.perpType.toNumber() === 2
-				? ZO_OPTION_TAKER_FEE
-				: ZO_SQUARE_TAKER_FEE
+      market.decoded.perpType.toNumber() === 1
+      	? ZO_FUTURE_TAKER_FEE
+      	: market.decoded.perpType.toNumber() === 2
+      		? ZO_OPTION_TAKER_FEE
+      		: ZO_SQUARE_TAKER_FEE
 		const feeMultiplier = isLong ? 1 + takerFee : 1 - takerFee
 		const maxQuoteQtyBn = new BN(
 			Math.round(
@@ -1220,16 +1310,16 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * Places a perp order on the orderbook. Creates an Open orders account if does not exist, in the same transaction.
-	 * @param symbol The market symbol. Ex: ("BTC-PERP")
-	 * @param orderType The order type. Either limit, immediateOrCancel, or postOnly.
-	 * @param isLong True if buy, false if sell.
-	 * @param price The limit price in big quote units per big base units. Ex: (50,000 USD/SOL)
-	 * @param size The maximum amount of big base units to buy or sell.
-	 * @param limit If this order is taking, the limit sets the number of maker orders the fill will go through, until stopping and posting. If running into compute unit issues, then set this number lower.
-	 * @param clientId Used to tag an order with a unique id, which can be used to cancel this order through cancelPerpOrderByClientId. For optimal use, make sure all ids for every order is unique.
-	 * @param maxTs If the on-chain timestamp exceeds the maxTs, the order will not be placed.
-	 */
+   * Places a perp order on the orderbook. Creates an Open orders account if does not exist, in the same transaction.
+   * @param symbol The market symbol. Ex: ("BTC-PERP")
+   * @param orderType The order type. Either limit, immediateOrCancel, or postOnly.
+   * @param isLong True if buy, false if sell.
+   * @param price The limit price in big quote units per big base units. Ex: (50,000 USD/SOL)
+   * @param size The maximum amount of big base units to buy or sell.
+   * @param limit If this order is taking, the limit sets the number of maker orders the fill will go through, until stopping and posting. If running into compute unit issues, then set this number lower.
+   * @param clientId Used to tag an order with a unique id, which can be used to cancel this order through cancelPerpOrderByClientId. For optimal use, make sure all ids for every order is unique.
+   * @param maxTs If the on-chain timestamp exceeds the maxTs, the order will not be placed.
+   */
 	async placePerpOrder({
 		symbol,
 		orderType,
@@ -1240,25 +1330,25 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		clientId,
 		maxTs,
 	}: Readonly<{
-		symbol: string
-		orderType: OrderType | OrderTypeName
-		isLong: boolean
-		price: number
-		size: number
-		limit?: number
-		clientId?: number
-		maxTs?: number
-	}>) {
+    symbol: string
+    orderType: OrderType | OrderTypeName
+    isLong: boolean
+    price: number
+    size: number
+    limit?: number
+    clientId?: number
+    maxTs?: number
+  }>) {
 		const orderTypeParsed = parseOrderType(orderType)
 		const market = await this.state.getMarketBySymbol(symbol)
 		const limitPriceBn = market.priceNumberToLots(price)
 		const maxBaseQtyBn = market.baseSizeNumberToLots(size)
 		const takerFee =
-			market.decoded.perpType.toNumber() === 1
-				? ZO_FUTURE_TAKER_FEE
-				: market.decoded.perpType.toNumber() === 2
-				? ZO_OPTION_TAKER_FEE
-				: ZO_SQUARE_TAKER_FEE
+      market.decoded.perpType.toNumber() === 1
+      	? ZO_FUTURE_TAKER_FEE
+      	: market.decoded.perpType.toNumber() === 2
+      		? ZO_OPTION_TAKER_FEE
+      		: ZO_SQUARE_TAKER_FEE
 		const feeMultiplier = isLong ? 1 + takerFee : 1 - takerFee
 		const maxQuoteQtyBn = new BN(
 			Math.round(
@@ -1313,30 +1403,30 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 					},
 					preInstructions: createOo
 						? [
-								this.program.instruction.createPerpOpenOrders({
-									accounts: {
-										state: this.state.pubkey,
-										stateSigner: this.state.signer,
-										authority: this.publicKey,
-										payer: this.publicKey,
-										margin: this.pubkey,
-										control: this.data.control,
-										openOrders: ooKey,
-										dexMarket:
-											this.state.getMarketKeyBySymbol(
-												symbol,
-											),
-										dexProgram:
-											this.program.programId.equals(
-												ZERO_ONE_DEVNET_PROGRAM_ID,
-											)
-												? ZO_DEX_DEVNET_PROGRAM_ID
-												: ZO_DEX_MAINNET_PROGRAM_ID,
-										rent: SYSVAR_RENT_PUBKEY,
-										systemProgram: SystemProgram.programId,
-									},
-								}),
-						  ]
+							this.program.instruction.createPerpOpenOrders({
+								accounts: {
+									state: this.state.pubkey,
+									stateSigner: this.state.signer,
+									authority: this.publicKey,
+									payer: this.publicKey,
+									margin: this.pubkey,
+									control: this.data.control,
+									openOrders: ooKey,
+									dexMarket:
+                    this.state.getMarketKeyBySymbol(
+                    	symbol,
+                    ),
+									dexProgram:
+                    this.program.programId.equals(
+                    	ZERO_ONE_DEVNET_PROGRAM_ID,
+                    )
+                    	? ZO_DEX_DEVNET_PROGRAM_ID
+                    	: ZO_DEX_MAINNET_PROGRAM_ID,
+									rent: SYSVAR_RENT_PUBKEY,
+									systemProgram: SystemProgram.programId,
+								},
+							}),
+						]
 						: undefined,
 				},
 			)
@@ -1372,30 +1462,30 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 					},
 					preInstructions: createOo
 						? [
-								this.program.instruction.createPerpOpenOrders({
-									accounts: {
-										state: this.state.pubkey,
-										stateSigner: this.state.signer,
-										authority: this.publicKey,
-										payer: this.publicKey,
-										margin: this.pubkey,
-										control: this.data.control,
-										openOrders: ooKey,
-										dexMarket:
-											this.state.getMarketKeyBySymbol(
-												symbol,
-											),
-										dexProgram:
-											this.program.programId.equals(
-												ZERO_ONE_DEVNET_PROGRAM_ID,
-											)
-												? ZO_DEX_DEVNET_PROGRAM_ID
-												: ZO_DEX_MAINNET_PROGRAM_ID,
-										rent: SYSVAR_RENT_PUBKEY,
-										systemProgram: SystemProgram.programId,
-									},
-								}),
-						  ]
+							this.program.instruction.createPerpOpenOrders({
+								accounts: {
+									state: this.state.pubkey,
+									stateSigner: this.state.signer,
+									authority: this.publicKey,
+									payer: this.publicKey,
+									margin: this.pubkey,
+									control: this.data.control,
+									openOrders: ooKey,
+									dexMarket:
+                    this.state.getMarketKeyBySymbol(
+                    	symbol,
+                    ),
+									dexProgram:
+                    this.program.programId.equals(
+                    	ZERO_ONE_DEVNET_PROGRAM_ID,
+                    )
+                    	? ZO_DEX_DEVNET_PROGRAM_ID
+                    	: ZO_DEX_MAINNET_PROGRAM_ID,
+									rent: SYSVAR_RENT_PUBKEY,
+									systemProgram: SystemProgram.programId,
+								},
+							}),
+						]
 						: undefined,
 				},
 			)
@@ -1403,16 +1493,16 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * Creates the instruction for placing a perp order on the orderbook.
-	 * Creates an Open orders account if does not exist, in the same transaction.
-	 * @param symbol The market symbol. Ex: ("BTC-PERP")
-	 * @param orderType The order type. Either limit, immediateOrCancel, or postOnly.
-	 * @param isLong True if buy, false if sell.
-	 * @param price The limit price in big quote units per big base units. Ex: (50,000 USD/SOL)
-	 * @param size The maximum amount of big base units to buy or sell.
-	 * @param limit If this order is taking, the limit sets the number of maker orders the fill will go through, until stopping and posting. If running into compute unit issues, then set this number lower.
-	 * @param clientId Used to tag an order with a unique id, which can be used to cancel this order through cancelPerpOrderByClientId. For optimal use, make sure all ids for every order is unique.
-	 */
+   * Creates the instruction for placing a perp order on the orderbook.
+   * Creates an Open orders account if does not exist, in the same transaction.
+   * @param symbol The market symbol. Ex: ("BTC-PERP")
+   * @param orderType The order type. Either limit, immediateOrCancel, or postOnly.
+   * @param isLong True if buy, false if sell.
+   * @param price The limit price in big quote units per big base units. Ex: (50,000 USD/SOL)
+   * @param size The maximum amount of big base units to buy or sell.
+   * @param limit If this order is taking, the limit sets the number of maker orders the fill will go through, until stopping and posting. If running into compute unit issues, then set this number lower.
+   * @param clientId Used to tag an order with a unique id, which can be used to cancel this order through cancelPerpOrderByClientId. For optimal use, make sure all ids for every order is unique.
+   */
 	async makePlacePerpOrderIx({
 		symbol,
 		orderType,
@@ -1422,24 +1512,24 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		limit,
 		clientId,
 	}: Readonly<{
-		symbol: string
-		orderType: OrderType | OrderTypeName
-		isLong: boolean
-		price: number
-		size: number
-		limit?: number
-		clientId?: number
-	}>): Promise<TransactionInstruction> {
+    symbol: string
+    orderType: OrderType | OrderTypeName
+    isLong: boolean
+    price: number
+    size: number
+    limit?: number
+    clientId?: number
+  }>): Promise<TransactionInstruction> {
 		const orderTypeParsed = parseOrderType(orderType)
 		const market = await this.state.getMarketBySymbol(symbol)
 		const limitPriceBn = market.priceNumberToLots(price)
 		const maxBaseQtyBn = market.baseSizeNumberToLots(size)
 		const takerFee =
-			market.decoded.perpType.toNumber() === 1
-				? ZO_FUTURE_TAKER_FEE
-				: market.decoded.perpType.toNumber() === 2
-				? ZO_OPTION_TAKER_FEE
-				: ZO_SQUARE_TAKER_FEE
+      market.decoded.perpType.toNumber() === 1
+      	? ZO_FUTURE_TAKER_FEE
+      	: market.decoded.perpType.toNumber() === 2
+      		? ZO_OPTION_TAKER_FEE
+      		: ZO_SQUARE_TAKER_FEE
 		const feeMultiplier = isLong ? 1 + takerFee : 1 - takerFee
 		const maxQuoteQtyBn = new BN(
 			Math.round(
@@ -1488,23 +1578,23 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * Cancels an order on the orderbook for a given market either by orderId or by clientId.
-	 * @param symbol The market symbol. Ex: ("BTC-PERP")
-	 * @param isLong True if the order being cancelled is a buy order, false if sell order.
-	 * @param orderId The order id of the order to cancel. To get order id, call loadOrdersForOwner through the market.
-	 * @param clientId The client id that was assigned to the order when it was placed.
-	 */
+   * Cancels an order on the orderbook for a given market either by orderId or by clientId.
+   * @param symbol The market symbol. Ex: ("BTC-PERP")
+   * @param isLong True if the order being cancelled is a buy order, false if sell order.
+   * @param orderId The order id of the order to cancel. To get order id, call loadOrdersForOwner through the market.
+   * @param clientId The client id that was assigned to the order when it was placed.
+   */
 	async cancelPerpOrder({
 		symbol,
 		isLong,
 		orderId,
 		clientId,
 	}: {
-		symbol: string
-		isLong?: boolean
-		orderId?: BN
-		clientId?: BN
-	}) {
+    symbol: string
+    isLong?: boolean
+    orderId?: BN
+    clientId?: BN
+  }) {
 		const market = await this.state.getMarketBySymbol(symbol)
 		const oo = await this.getOpenOrdersInfoBySymbol(symbol)
 
@@ -1541,19 +1631,19 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * Creates the instruction for cancelling a perp order.
-	 */
+   * Creates the instruction for cancelling a perp order.
+   */
 	async makeCancelPerpOrderIx({
 		symbol,
 		isLong,
 		orderId,
 		clientId,
 	}: {
-		symbol: string
-		isLong?: boolean
-		orderId?: BN
-		clientId?: BN
-	}): Promise<TransactionInstruction> {
+    symbol: string
+    isLong?: boolean
+    orderId?: BN
+    clientId?: BN
+  }): Promise<TransactionInstruction> {
 		const market = await this.state.getMarketBySymbol(symbol)
 		const oo = await this.getOpenOrdersInfoBySymbol(symbol)
 
@@ -1590,16 +1680,16 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * Swaps between USDC and a given Token B (or vice versa) on the Serum Spot DEX. This is a direct IOC trade that instantly settles.
-	 * Note that the token B needs to be swappable, as enabled by the 01 program.
-	 * @param buy If true, then swapping USDC for Token B. If false, the swapping Token B for USDC.
-	 * @param tokenMint The mint public key of Token B.
-	 * @param fromSize The amount of tokens to swap *from*. If buy, this is USDC. If not buy, this is Token B. This is in big units (ex: 0.5 BTC or 1.5 SOL, not satoshis nor lamports).
-	 * @param toSize The amount of tokens to swap *to*. In other words, the amount of expected to tokens. If buy, this is Token B. If not buy, this is USDC. This is in big units (ex: 0.5 BTC or 1.5 SOL, not satoshis nor lamports).
-	 * @param slippage The tolerance for the amount of tokens received changing from its expected toSize. Number between 0 - 1, if 1, then max slippage.
-	 * @param allowBorrow If false, will only be able to swap up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully swapped.
-	 * @param serumMarket The market public key of the Serum Spot DEX.
-	 */
+   * Swaps between USDC and a given Token B (or vice versa) on the Serum Spot DEX. This is a direct IOC trade that instantly settles.
+   * Note that the token B needs to be swappable, as enabled by the 01 program.
+   * @param buy If true, then swapping USDC for Token B. If false, the swapping Token B for USDC.
+   * @param tokenMint The mint public key of Token B.
+   * @param fromSize The amount of tokens to swap *from*. If buy, this is USDC. If not buy, this is Token B. This is in big units (ex: 0.5 BTC or 1.5 SOL, not satoshis nor lamports).
+   * @param toSize The amount of tokens to swap *to*. In other words, the amount of expected to tokens. If buy, this is Token B. If not buy, this is USDC. This is in big units (ex: 0.5 BTC or 1.5 SOL, not satoshis nor lamports).
+   * @param slippage The tolerance for the amount of tokens received changing from its expected toSize. Number between 0 - 1, if 1, then max slippage.
+   * @param allowBorrow If false, will only be able to swap up to the amount deposited. If false, amount parameter can be set to an arbitrarily large number to ensure that all deposits are fully swapped.
+   * @param serumMarket The market public key of the Serum Spot DEX.
+   */
 	async swap({
 		buy,
 		tokenMint,
@@ -1609,14 +1699,14 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		allowBorrow,
 		serumMarket,
 	}: Readonly<{
-		buy: boolean
-		tokenMint: PublicKey
-		fromSize: number
-		toSize: number
-		slippage: number
-		allowBorrow: boolean
-		serumMarket: PublicKey
-	}>) {
+    buy: boolean
+    tokenMint: PublicKey
+    fromSize: number
+    toSize: number
+    slippage: number
+    allowBorrow: boolean
+    serumMarket: PublicKey
+  }>) {
 		if (this.state.data.totalCollaterals < 1) {
 			throw new Error(
 				`<State ${this.state.pubkey.toString()}> does not have a base collateral`,
@@ -1645,21 +1735,21 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 			? new BN(fromSize * 10 ** USDC_DECIMALS)
 			: new BN(fromSize * 10 ** baseDecimals)
 		const minRate =
-			slippage === 1
-				? new BN(1)
-				: new Num(
-						(toSize * (1 - slippage)) / fromSize,
-						buy ? baseDecimals : USDC_DECIMALS,
-				  ).n
+      slippage === 1
+      	? new BN(1)
+      	: new Num(
+      		(toSize * (1 - slippage)) / fromSize,
+      		buy ? baseDecimals : USDC_DECIMALS,
+      	).n
 
 		if (
 			!market.baseMintAddress.equals(tokenMint) ||
-			!market.quoteMintAddress.equals(stateQuoteMint)
+      !market.quoteMintAddress.equals(stateQuoteMint)
 		) {
 			throw new Error(
 				`Invalid <SerumSpotMarket ${serumMarket}> for swap:\n` +
-					`  swap wants:   base=${tokenMint}, quote=${stateQuoteMint}\n` +
-					`  market wants: base=${market.baseMintAddress}, quote=${market.quoteMintAddress}`,
+        `  swap wants:   base=${tokenMint}, quote=${stateQuoteMint}\n` +
+        `  market wants: base=${market.baseMintAddress}, quote=${market.quoteMintAddress}`,
 			)
 		}
 
@@ -1687,7 +1777,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 				assetVault: this.state.getVaultCollateralByMint(tokenMint)[0],
 				swapFeeVault: this.state.data.swapFeeVault,
 				serumOpenOrders:
-					this.state.data.collaterals[colIdx]!.serumOpenOrders,
+        this.state.data.collaterals[colIdx]!.serumOpenOrders,
 				serumMarket,
 				serumRequestQueue: market.decoded.requestQueue,
 				serumEventQueue: market.decoded.eventQueue,
@@ -1708,9 +1798,9 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	/**
-	 * Settles unrealized funding and realized PnL into the margin account for a given market.
-	 * @param symbol Market symbol (ex: BTC-PERP).
-	 */
+   * Settles unrealized funding and realized PnL into the margin account for a given market.
+   * @param symbol Market symbol (ex: BTC-PERP).
+   */
 	async settleFunds(symbol: string) {
 		const market = await this.state.getMarketBySymbol(symbol)
 		const oo = await this.getOpenOrdersInfoBySymbol(symbol)
@@ -1734,9 +1824,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		})
 	}
 
-	private async createSpecialOrdersAccountIx(): Promise<
-		[TransactionInstruction, PublicKey]
-	> {
+	private async createSpecialOrdersAccountIx(): Promise<[TransactionInstruction, PublicKey]> {
 		const soKey = await SpecialOrders.getPda(
 			this.state,
 			this.data.authority,
@@ -1763,16 +1851,16 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		triggerPrice,
 		limitPrice,
 	}: Readonly<{
-		symbol: string
-		isLong: boolean
-		specialOrderType: SpecialOrderType
-		size: number
-		triggerPrice: number
-		limitPrice?: number
-	}>) {
+    symbol: string
+    isLong: boolean
+    specialOrderType: SpecialOrderType
+    size: number
+    triggerPrice: number
+    limitPrice?: number
+  }>) {
 		if (
 			_.isEqual(specialOrderType, { takeProfitLimit: {} }) ||
-			_.isEqual(specialOrderType, { stopLossLimit: {} })
+      _.isEqual(specialOrderType, { stopLossLimit: {} })
 		) {
 			assert.ok(
 				limitPrice,
@@ -1788,21 +1876,21 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 		const market = await this.state.getMarketBySymbol(symbol)
 		const baseDecimals = this.state.markets[symbol]!.assetDecimals
 		const dexMarket = this.state.getMarketKeyBySymbol(symbol)
-		let [createSoIx, soKey] =
-			this.specialOrdersAccount !== null
-				? [undefined, this.specialOrdersAccount.pubkey]
-				: await this.createSpecialOrdersAccountIx()
+		const [createSoIx, soKey] =
+      this.specialOrdersAccount !== null
+      	? [undefined, this.specialOrdersAccount.pubkey]
+      	: await this.createSpecialOrdersAccountIx()
 
 		// big / big -> small / big
 		const orderTriggerPrice = new BN(Math.round(triggerPrice * 1e6))
 		const orderLimitPrice =
-			(_.isEqual(specialOrderType, { takeProfitLimit: {} }) ||
-				_.isEqual(specialOrderType, { stopLossLimit: {} })) &&
-			limitPrice !== undefined
-				? new BN(Math.round(limitPrice * 1e6))
-				: isLong
-				? new BN(Math.round(triggerPrice * 1e6 * 20))
-				: new BN(Math.round((triggerPrice * 1e6) / 20))
+      (_.isEqual(specialOrderType, { takeProfitLimit: {} }) ||
+        _.isEqual(specialOrderType, { stopLossLimit: {} })) &&
+      limitPrice !== undefined
+      	? new BN(Math.round(limitPrice * 1e6))
+      	: isLong
+      		? new BN(Math.round(triggerPrice * 1e6 * 20))
+      		: new BN(Math.round((triggerPrice * 1e6) / 20))
 		const orderSize = market.baseSizeNumberToLots(size)
 
 		return await this.program.rpc.placeSpecialOrder(
@@ -1825,7 +1913,7 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 	}
 
 	async cancelSpecialOrder(id: number) {
-		let o = this.specialOrders.find((o) => o.id == id)
+		const o = this.specialOrders.find((o) => o.id == id)
 		if (o === undefined) {
 			throw new Error(`Special order ${id} not found`)
 		}

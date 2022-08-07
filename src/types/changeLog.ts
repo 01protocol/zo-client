@@ -1,5 +1,5 @@
 import Decimal from "decimal.js"
-import { OrderInfo, PositionInfo } from "./dataTypes"
+import { OrderInfo, PositionInfo, SpecialOrderInfo } from "./dataTypes"
 
 export enum ChangeType {
   UserBalanceChange="User Balance Changed",
@@ -33,6 +33,11 @@ export enum OrderChangeType {
 }
 
 export interface UserOrderChange extends ChangeEvent<OrderInfo | null> {
+  type: ChangeType,
+  orderChangeType: OrderChangeType
+}
+
+export interface UserSpecialOrderChange extends ChangeEvent<SpecialOrderInfo | null> {
   type: ChangeType,
   orderChangeType: OrderChangeType
 }

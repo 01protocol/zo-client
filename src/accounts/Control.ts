@@ -92,7 +92,7 @@ export default class Control extends BaseAccount<Schema> {
 	async unsubscribe() {
 		await this.subLock.waitAndLock()
 		try {
-			await this.program.account["control"].unsubscribe(this.pubkey)
+			await this._unsubscribe()
 			this.eventEmitter!.removeAllListeners()
 			this.eventEmitter = null
 		} catch (_) {

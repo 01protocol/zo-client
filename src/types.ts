@@ -66,21 +66,30 @@ export enum OrderTypeName {
 	FillOrKill = "FillOrKill",
 }
 
+
+export interface SlotsState {
+	stateSlot:number
+	cacheSlot:number
+	marginSlot:number
+	controlSlot:number
+	specialOrdersSlot:number
+}
+
 export function parseOrderType(orderType: OrderType | OrderTypeName) {
 	if (typeof orderType == "string") {
 		switch (orderType) {
-			case OrderTypeName.Limit:
-				return { limit: {} }
-			case OrderTypeName.ImmediateOrCancel:
-				return { immediateOrCancel: {} }
-			case OrderTypeName.PostOnly:
-				return { postOnly: {} }
-			case OrderTypeName.ReduceOnlyIoc:
-				return { reduceOnlyIoc: {} }
-			case OrderTypeName.ReduceOnlyLimit:
-				return { reduceOnlyLimit: {} }
-			case OrderTypeName.FillOrKill:
-				return { fillOrKill: {} }
+		case OrderTypeName.Limit:
+			return { limit: {} }
+		case OrderTypeName.ImmediateOrCancel:
+			return { immediateOrCancel: {} }
+		case OrderTypeName.PostOnly:
+			return { postOnly: {} }
+		case OrderTypeName.ReduceOnlyIoc:
+			return { reduceOnlyIoc: {} }
+		case OrderTypeName.ReduceOnlyLimit:
+			return { reduceOnlyLimit: {} }
+		case OrderTypeName.FillOrKill:
+			return { fillOrKill: {} }
 		}
 	}
 	return orderType as OrderType
@@ -174,6 +183,7 @@ export enum UpdateEvents {
 	_cacheModified = "_cacheModified",
 	// not emitted from margin
 	controlModified = "controlModified",
+	specialOrdersUpdated = "specialOrdersUpdated",
 	marginModified = "marginModified",
 	orderbookModified = "orderbookModified",
 	eventQueueModified = "eventQueueModified",

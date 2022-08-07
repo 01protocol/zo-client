@@ -32,7 +32,7 @@ import {
 	ZERO_ONE_MAINNET_PROGRAM_ID,
 } from "../config"
 import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes"
-import { OrderInfo, PositionInfo } from "../types/dataTypes"
+import { OrderInfo, PositionInfo, SpecialOrderInfo } from "../types/dataTypes"
 
 export * from "../types/dataTypes"
 
@@ -46,8 +46,8 @@ export function sleep(ms: number): Promise<void> {
 }
 
 export enum Cluster {
-	Devnet = "Devnet",
-	Mainnet = "Mainnet",
+  Devnet = "Devnet",
+  Mainnet = "Mainnet",
 }
 
 export function createProvider(
@@ -81,9 +81,15 @@ export function arePositionsEqual(a: PositionInfo, b: PositionInfo) {
 }
 
 export enum OrderChangeStatus {
-	Changed,
-	Missing,
-	Present,
+  Changed,
+  Missing,
+  Present,
+}
+
+export enum SpecialOrderChangeStatus {
+  Changed,
+  Missing,
+  Present,
 }
 
 export function getOrderStatus(
@@ -93,6 +99,22 @@ export function getOrderStatus(
 	for (const b of arr) {
 		if (a.orderId.toString() == b.orderId.toString()) {
 			if (!areOrdersEqual(a, b)) {
+				return OrderChangeStatus.Changed
+			} else {
+				return OrderChangeStatus.Present
+			}
+		}
+	}
+	return OrderChangeStatus.Missing
+}
+
+export function getSpecialOrderStatus(
+	a: SpecialOrderInfo,
+	arr: SpecialOrderInfo[],
+): OrderChangeStatus {
+	for (const b of arr) {
+		if (a.id.toString() == b.id.toString()) {
+			if (!areSpecialOrdersEqual(a, b)) {
 				return OrderChangeStatus.Changed
 			} else {
 				return OrderChangeStatus.Present
@@ -119,6 +141,37 @@ export function areOrdersEqual(a: OrderInfo, b: OrderInfo) {
 		return false
 	}
 	if (a.symbol != b.marketKey) {
+		return false
+	}
+	return true
+}
+
+export function areSpecialOrdersEqual(a: SpecialOrderInfo, b: SpecialOrderInfo) {
+	if (a.id != b.id) {
+		return false
+	}
+	if (a.marketSymbol != b.marketSymbol) {
+		return false
+	}
+	if (a.marketKey != b.marketKey) {
+		return false
+	}
+	if (a.isLong != b.isLong) {
+		return false
+	}
+	if (!a.triggerPrice.decimal.eq(b.triggerPrice.decimal)) {
+		return false
+	}
+	if (!a.limitPrice.decimal.eq(b.limitPrice.decimal)) {
+		return false
+	}
+	if (!a.size.decimal.eq(b.size.decimal)) {
+		return false
+	}
+	if (a.type != b.type) {
+		return false
+	}
+	if (a.fee.toString() != (b.fee.toString())) {
 		return false
 	}
 	return true
@@ -433,11 +486,11 @@ export async function getWrappedSolInstructionsAndKey(
 	initialSmollAmount,
 	provider,
 ): Promise<{
-	createTokenAccountIx: TransactionInstruction
-	initTokenAccountIx: TransactionInstruction
-	closeTokenAccountIx: TransactionInstruction
-	intermediary: PublicKey
-	intermediaryKeypair: Keypair
+  createTokenAccountIx: TransactionInstruction
+  initTokenAccountIx: TransactionInstruction
+  closeTokenAccountIx: TransactionInstruction
+  intermediary: PublicKey
+  intermediaryKeypair: Keypair
 }> {
 	// sol wrapping code taken from jet: https://github.com/jet-lab/jet-v1/blob/30c56d5c14b68685466164fc45c96080f1d9348a/app/src/scripts/jet.ts
 	const intermediaryKeypair = Keypair.generate()

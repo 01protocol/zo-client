@@ -798,9 +798,9 @@ export default class State extends BaseAccount<Schema> {
 	async unsubscribe() {
 		await this.subLock.waitAndLock()
 		try {
-			await this.program.account["state"]!.unsubscribe(this.pubkey)
-			this.eventEmitter!.removeAllListeners()
 			await this.cache.unsubscribe()
+			this.eventEmitter!.removeAllListeners()
+			await this._unsubscribe()
 			this.eventEmitter = null
 		} catch (_) {
 			//

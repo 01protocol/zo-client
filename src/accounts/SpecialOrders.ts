@@ -1,14 +1,15 @@
 import { PublicKey } from "@solana/web3.js"
 import { Program } from "@project-serum/anchor"
 import BaseAccount from "./BaseAccount"
-import { SpecialOrdersSchema as Schema, Zo } from "../types"
+import { ChangeEvent, SpecialOrdersSchema as Schema, UpdateEvents, Zo } from "../types"
 import State from "./State"
+import EventEmitter from "eventemitter3"
 
 /**
  * The SpecialOrders account tracks a user's trigger orders.
  */
 export default class SpecialOrders extends BaseAccount<Schema> {
-	private static process(data: any) {
+	private static process(data: Schema) {
 		return {
 			...data,
 			entries: data.entries.filter((x: any) => x.id != 0),
@@ -64,7 +65,7 @@ export default class SpecialOrders extends BaseAccount<Schema> {
 		program: Program<Zo>,
 		k: PublicKey,
 	): Promise<SpecialOrders | null> {
-		let data = await SpecialOrders.fetchNullable(program, k)
+		const data = await SpecialOrders.fetchNullable(program, k)
 
 		if (data === null) return null
 		else return new this(program, k, data)
@@ -86,5 +87,36 @@ export default class SpecialOrders extends BaseAccount<Schema> {
 
 	async refresh(): Promise<void> {
 		this.data = await SpecialOrders.fetch(this.program, this.pubkey)
+	}
+
+	eventEmitter: EventEmitter<UpdateEvents, ChangeEvent<any>> | null = null
+
+	/**
+	 *
+	 * @param withBackup - use a backup `confirmed` listener
+	 */
+	async subscribe(withBackup = false): Promise<void> {
+		await this.subLock.waitAndLock()
+		if (this.eventEmitter) return
+		this.eventEmitter = new EventEmitter()
+		const anchorEventEmitter = await this._subscribe("specialOrders", withBackup)
+		const that = this
+		anchorEventEmitter.addListener("specialOrders", (account) => {
+			that.data = SpecialOrders.process(account)
+			this.eventEmitter!.emit(UpdateEvents.specialOrdersUpdated, [])
+		})
+		this.subLock.unlock()
+	}
+
+	async unsubscribe() {
+		await this.subLock.waitAndLock()
+		try {
+			await this._unsubscribe()
+			this.eventEmitter!.removeAllListeners()
+			this.eventEmitter = null
+		} catch (_) {
+			//
+		}
+		this.subLock.unlock()
 	}
 }
