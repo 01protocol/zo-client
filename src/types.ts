@@ -19,7 +19,7 @@ export * from "./types/changeLog"
 // NOTE: These intersection types are a temporary workaround,
 // as anchor's type inference isn't complete yet.
 
-export { Zo } from "./types/zo"
+export type { Zo } from "./types/zo"
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type OracleType = { pyth: {} } | { switchboard: {} }
