@@ -10,6 +10,10 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - New `SpecialOrders` classes and methods that enable stop loss and take profit trigger orders. 
 
+## [0.11.1] - 2022-08-30
+
+- MarginWeb3: Now includes account's unrealized pnl in margin calculations.
+
 ## [0.10.0] - 2022-08-03
 
 - BREAKING: Margin's `withdraw` methods now take and additional `heimdall` account. Previous build's withdraw methods will fail.
