@@ -2,6 +2,7 @@ import { TOKEN_PROGRAM_ID } from "@solana/spl-token"
 import {
 	AccountInfo,
 	Commitment,
+	ComputeBudgetProgram,
 	Keypair,
 	PublicKey,
 	SystemProgram,
@@ -1094,7 +1095,10 @@ export default class MarginWeb3 extends BaseAccount<MarginClassSchema> {
 				tokenProgram: TOKEN_PROGRAM_ID,
 				heimdall: this.heimdallKey,
 			},
-			preInstructions: preInstructions,
+			preInstructions: [
+        ComputeBudgetProgram.setComputeUnitLimit({ units: 400_000 }),
+				...(preInstructions ?? []),
+      ],
 		})
 	}
 
