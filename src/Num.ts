@@ -57,6 +57,8 @@ export default class Num {
 	}
 
 	static fromWI80F48(data: { data: BN }, decimals: number) {
+		Decimal.set({ toExpPos: 100, toExpNeg: -100 })
+
 		const decimal = loadWI80F48(data)
 		const precisionDecimals = decimal.decimalPlaces()
 		const ogDecimal = new BN(decimal.toString().replace(".", ""))

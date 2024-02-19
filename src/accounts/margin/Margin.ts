@@ -145,10 +145,7 @@ export default abstract class Margin extends MarginWeb3 {
 		if (this.totalOpenPositionNotional.toNumber() == 0) {
 			return new Decimal(1)
 		}
-		return Decimal.min(
-			this.weightedAccountValue,
-			this.weightedCollateralValue,
-		).div(this.totalOpenPositionNotional)
+		return this.weightedAccountValue.div(this.totalOpenPositionNotional)
 	}
 
 	/**
@@ -337,10 +334,7 @@ export default abstract class Margin extends MarginWeb3 {
 	 * Collateral of the free value
 	 */
 	get freeCollateralValue() {
-		const freeCollateral = Decimal.min(
-			this.weightedAccountValue,
-			this.weightedCollateralValue,
-		).minus(this.tiedCollateral)
+		const freeCollateral = this.weightedAccountValue.minus(this.tiedCollateral)
 		return Decimal.max(new Decimal(0), freeCollateral)
 	}
 
@@ -526,10 +520,7 @@ export default abstract class Margin extends MarginWeb3 {
 		const imfBase = (1.1 * 1000) / assetBorrowed.weight - 1
 		const [initialMarginTotalWeighted, _] = this.initialMarginInfo(null)
 		const numerator = initialMarginTotalWeighted.minus(
-			Decimal.min(
-				this.weightedAccountValue,
-				this.weightedCollateralValue,
-			),
+			this.weightedAccountValue,
 		)
 
 		const denominator = assetBorrowed.indexPrice.decimal.mul(imfBase).mul(
@@ -899,10 +890,7 @@ export default abstract class Margin extends MarginWeb3 {
 			: 1 - TAKER_TRADE_FEE - VALUE_NERF
 
 		if (this.totalOpenPositionNotional.toNumber() === 0) {
-			return Decimal.min(
-				this.weightedAccountValue,
-				this.weightedCollateralValue,
-			)
+			return this.weightedAccountValue
 				.div(marketInfo.baseImf)
 				.mul(
 					trade.postOrder
